@@ -11,6 +11,94 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
+
+    /* ================= LOGIN PAGE ================= */
+     #loginPage {
+     position: fixed;
+     inset: 0;
+     background: linear-gradient(135deg, #0a8a94, #005a61);
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     z-index: 10000;
+    }
+
+    .login-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 360px;
+      padding: 28px;
+      border-radius: 14px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .login-card,
+    .login-card * {
+      box-sizing: border-box;
+    }
+
+    .login-card h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #0f172a;
+    }
+
+    .login-sub {
+      margin: 6px 0 20px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .login-field {
+     text-align: left;
+     margin-bottom: 14px;
+    }
+
+    .login-field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .login-field input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      outline: none;
+    }
+
+    .login-field input:focus {
+      border-color: #00717a;
+    }
+
+    .login-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px;
+      font-size: 15px;
+      border-radius: 10px;
+      border: none;
+      background: #00717a;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    .login-btn:hover {
+      background: #005a61;
+    }
+
+    #loginError {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #dc2626;
+      display: none;
+    }
+
     :root {
       --bg: #f4f6f8;
       --card: #ffffff;
@@ -40,7 +128,7 @@
       background: var(--card);
       border-radius: 12px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-      /* overflow: hidden; ❌ REMOVE THIS */
+      overflow: visible;   /* ✅ REQUIRED */
     }
 
     .table-wrapper {
@@ -60,8 +148,13 @@
     }
 
     thead tr.header-row th {
-      background: linear-gradient(180deg, #f9fafb, #f1f5f9);
-      border-bottom: 2px solid var(--border);
+      background: linear-gradient(
+      180deg,
+      #0a8a94 0%,
+      #00717a 50%,
+      #005a61 100%);
+      color: #ffffff;
+      border-bottom: 2px solid #155f7a;
       padding: 14px 12px;
       font-size: 13px;
       font-weight: 600;
@@ -72,7 +165,7 @@
       max-width: 220px;
       position: sticky;
       top: 0;
-      z-index: 3;
+      z-index: 5;   /* 👈 higher than filter row */
     }
 
     thead tr.filter-row th {
@@ -81,9 +174,8 @@
       padding: 6px 8px;
       text-align: center;
       position: sticky;
-      top: 48px;
-      z-index: 2;
-      width: auto;
+      top: var(--header-height);  /* 👈 NO MAGIC NUMBER */
+      z-index: 3;
     }
 
     thead input {
@@ -175,6 +267,15 @@
      color: #fff;
     }
 
+    #logoutBtn {
+     background: #fff;
+     color: #374151;
+    }
+
+    #logoutBtn:hover {
+      background: #f3f4f6;
+    }
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -182,95 +283,142 @@
 </head>
 <body>
 
-<h1>Component Capability Web</h1>
+<div id="loginPage">
+  <div class="login-card">
+    <h2>Capability Dashboard</h2>
+    <p class="login-sub">Secure Access Created By TC</p>
 
-<div style="display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-  <input id="globalSearch" type="text" placeholder="Search across all columns…" style="min-width:280px;max-width:420px;width:40%;padding:8px 12px;border-radius:10px;border:1px solid var(--border);font-size:14px;" />
-  <button id="searchBtn" style="padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;">
-    Search
-  </button>
+    <div class="login-field">
+      <label>Username</label>
+      <input id="loginUser" type="text" placeholder="Enter username">
+    </div>
+
+    <div class="login-field">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="Enter password">
+    </div>
+
+    <button class="login-btn" onclick="handleLogin()">Login</button>
+
+    <div id="loginError">Invalid username or password</div>
+  </div>
 </div>
 
-<div style="text-align:center;margin-bottom:10px;">
-  <button onclick="toggleFilters()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;">
+<div id="dashboard" style="display:none;">
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+    <button id="logoutBtn" class="action-btn">
+    Logout
+    </button>
+  </div>
+
+  <h1>Component Capability Web</h1>
+
+  <div style="display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+    <input id="globalSearch" type="text" placeholder="Search across all columns…" style="min-width:280px;max-width:420px;width:40%;padding:8px 12px; border-radius:10px;border:1px solid var(--border);font-size:14px;" />
+    <button id="searchBtn" style="padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;">
+      Search
+    </button>
+  </div>
+
+  <div style="text-align:center;margin-bottom:10px;">
+    <button onclick="toggleFilters()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;">
     Show / Hide Filters
-  </button>
-</div>
-
-<div id="loader" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.75);z-index:9999;align-items:center;justify-content:center;">
-  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-    <div class="spinner"></div>
-    <div style="font-size:13px;color:var(--muted);">Loading data…</div>
+    </button>
   </div>
-</div>
 
-<div id="paginationBar" style="
-  display:flex;
-  justify-content:flex-start;
-  align-items:center;
-  gap:10px;
-  margin-top:12px;
-  margin-bottom:16px;
-  flex-wrap:wrap;
-  font-size:13px;
-  ">
-
-  <!-- Rows per page -->
-
-  <label>
-      Show
-      <select id="rowsPerPage">
-        <option value="10">10</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-        <option value="all">All</option>
-      </select>
-      rows
-  </label>
-
-  <!-- Prev -->
-  <button id="prevPage">◀ Prev</button>
-
-  <!-- Page info -->
-  <span id="pageInfo">Page 1 of 1</span>
-
-  <!-- Go to page -->
-  <label>
-     Go to
-     <input id="gotoPage" type="number" min="1" style="width:60px;">
-  </label>
-
-  <!-- Next -->
-  <button id="nextPage">Next ▶</button>
-</div>
-
-<div class="table-card">
-  <div class="table-wrapper">
-    <table id="dataTable">
-      <thead>
-        <tr class="header-row" id="headerRow"></tr>
-        <tr class="filter-row" id="filterRow"></tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+  <div id="loader" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.75);z-index:9999;align-items:center;justify-content:center;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div class="spinner"></div>
+      <div style="font-size:13px;color:var(--muted);">Loading data…</div>
+    </div>
   </div>
-</div>
 
-<div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px;">
-  <button id="actionBtn" class="action-btn">
+  <div id="paginationBar" style="
+    display:flex;
+    justify-content:flex-start;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+    font-size:13px;
+    ">
+
+    <!-- Rows per page -->
+
+    <label>
+        Show
+        <select id="rowsPerPage">
+          <option value="10">10</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="all">All</option>
+        </select>
+        rows
+    </label>
+
+    <!-- Prev -->
+    <button id="prevPage">◀ Prev</button>
+
+    <!-- Page info -->
+    <span id="pageInfo">Page 1 of 1</span>
+
+    <!-- Go to page -->
+    <label>
+       Go to
+       <input id="gotoPage" type="number" min="1" style="width:60px;">
+    </label>
+
+    <!-- Next -->
+    <button id="nextPage">Next ▶</button>
+  </div>
+
+  <div class="table-card">
+    <div class="table-wrapper">
+      <table id="dataTable">
+        <thead>
+          <tr class="header-row" id="headerRow"></tr>
+          <tr class="filter-row" id="filterRow"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px;">
+    <button id="actionBtn" class="action-btn">
     Action
-  </button>
+    </button>
 
-  <button id="exportBtn" class="action-btn export-btn" style="display:none;">
+    <button id="exportBtn" class="action-btn export-btn" style="display:none;">
     Save to Excel
-  </button>
-</div>
+   </button>
+  </div>
 
-<div class="footer-note">
-  Created on 09 January 2026
+  <div class="footer-note">
+    Created on 10 January 2026
+  </div>
 </div>
 
 <script>
+
+
+const FIXED_USER = "caplistmadebytc";
+const FIXED_PASS = "Aeroas1@63";
+
+function handleLogin() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+  const error = document.getElementById("loginError");
+
+  if (user === FIXED_USER && pass === FIXED_PASS) {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("dashboard").style.display = "block";
+  } else {
+    error.style.display = "block";
+  }
+}
 
 // PAGNATION
 let currentPage = 1;
@@ -596,9 +744,27 @@ document.getElementById("exportBtn").addEventListener("click", () => {
   XLSX.writeFile(wb, "Selected_Capability_Data.xlsx");
 });
 
+/* ================= LOGOUT LOGIC ================= */
 
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  // Hide dashboard
+  document.getElementById("dashboard").style.display = "none";
+
+  // Show login page
+  document.getElementById("loginPage").style.display = "flex";
+
+  // Clear login fields
+  document.getElementById("loginUser").value = "";
+  document.getElementById("loginPass").value = "";
+
+  // Hide error message
+  document.getElementById("loginError").style.display = "none";
+});
 
 </script>
 
 </body>
 </html>
+
+
+
