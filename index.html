@@ -7,6 +7,8 @@
 
   <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Export to Excel-->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -34,6 +36,7 @@
     }
 
     .table-card {
+      margin-bottom: 14px;
       background: var(--card);
       border-radius: 12px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.05);
@@ -153,6 +156,25 @@
       border: 1px solid var(--border);
     }
 
+    .action-btn {
+     height: 36px;                 /* 👈 SAME HEIGHT */
+     padding: 0 16px;
+     border-radius: 8px;
+     border: 1px solid var(--border);
+     font-size: 14px;
+     font-weight: 500;
+     line-height: 36px;            /* 👈 vertical center */
+     cursor: pointer;
+     display: inline-flex;
+     align-items: center;
+     background: #fff;
+    }
+
+    .export-btn {
+     background: var(--accent);
+     color: #fff;
+    }
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
@@ -234,6 +256,16 @@
   </div>
 </div>
 
+<div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px;">
+  <button id="actionBtn" class="action-btn">
+    Action
+  </button>
+
+  <button id="exportBtn" class="action-btn export-btn" style="display:none;">
+    Save to Excel
+  </button>
+</div>
+
 <div class="footer-note">
   Created on 09 January 2026
 </div>
@@ -266,6 +298,9 @@ const DISPLAY_COLS = [0,1,2,3,4,5,6,7,8,14,15];
 let rawData = [];
 let viewData = [];
 
+let globalKeyword = "";
+let columnFilters = {};
+
 showLoader();
 Papa.parse(CSV_URL, {
   download: true,
@@ -287,24 +322,75 @@ Papa.parse(CSV_URL, {
   }
 });
 
+let actionMode = false;
+
 function buildHeader(headers) {
   const headerRow = document.getElementById("headerRow");
   const filterRow = document.getElementById("filterRow");
 
+  headerRow.innerHTML = "";
+  filterRow.innerHTML = "";
+
+  // 🔹 ACTION COLUMN (checkbox)
+  const actionTh = document.createElement("th");
+  actionTh.style.display = "none";
+  actionTh.id = "actionHeader";
+  actionTh.innerHTML = `<input type="checkbox" id="selectAll">`;
+  headerRow.appendChild(actionTh);
+
+  const actionFilterTh = document.createElement("th");
+  actionFilterTh.style.display = "none";
+  filterRow.appendChild(actionFilterTh);
+
+  // 🔹 DATA COLUMNS
   headers.forEach((h, index) => {
+    // Header label
     const th = document.createElement("th");
     th.textContent = h;
     headerRow.appendChild(th);
 
+    // Filter input
     const filterTh = document.createElement("th");
     const input = document.createElement("input");
+
     input.placeholder = "FILTER";
     input.dataset.index = index;
-    input.addEventListener("input", applyFilters);
+
+    input.addEventListener("input", e => {
+      const idx = Number(e.target.dataset.index);
+      columnFilters[idx] = e.target.value.toLowerCase();
+      applyAllFilters();   // ✅ unified pipeline
+    });
+
     filterTh.appendChild(input);
     filterRow.appendChild(filterTh);
   });
 }
+
+
+function updatePaginationInfo(totalRows) {
+  const pageInfo = document.getElementById("pageInfo");
+  const prevBtn = document.getElementById("prevPage");
+  const nextBtn = document.getElementById("nextPage");
+  const gotoInput = document.getElementById("gotoPage");
+
+  if (rowsPerPage === "all") {
+    pageInfo.textContent = `Showing all ${totalRows} rows`;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    gotoInput.disabled = true;
+    return;
+  }
+
+  const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+
+  pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+  prevBtn.disabled = currentPage <= 1;
+  nextBtn.disabled = currentPage >= totalPages;
+  gotoInput.max = totalPages;
+  gotoInput.disabled = false;
+}
+
 
 function renderTable(data) {
   const tbody = document.getElementById("tableBody");
@@ -318,42 +404,29 @@ function renderTable(data) {
     end = start + rowsPerPage;
   }
 
-  data.slice(start, end).forEach(row => {
+  data.slice(start, end).forEach((row, rowIndex) => {
     const tr = document.createElement("tr");
+
+    // ACTION CHECKBOX
+    const tdCheck = document.createElement("td");
+    tdCheck.style.display = actionMode ? "table-cell" : "none";
+    tdCheck.innerHTML = `
+      <input type="checkbox" class="rowCheck" data-index="${start + rowIndex}">
+    `;
+    tr.appendChild(tdCheck);
+
     row.forEach(cell => {
       const td = document.createElement("td");
       td.textContent = cell;
       tr.appendChild(td);
     });
+
     tbody.appendChild(tr);
   });
 
   updatePaginationInfo(data.length);
 }
 
-function updatePaginationInfo(totalRows) {
-  const pageInfo = document.getElementById("pageInfo");
-  const prevBtn = document.getElementById("prevPage");
-  const nextBtn = document.getElementById("nextPage");
-  const gotoInput = document.getElementById("gotoPage");
-
-  if (rowsPerPage === "all"){
-    pageInfo.textContent = `Showing all ${totalRows} rows`;
-    prevBtn.disabled = true;
-    nextBtn.disabled = true;
-    gotoInput.disabled = true;
-    return;
-  }
-  const totalPages = Math.ceil(totalRows / rowsPerPage);
-  pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-
-  prevBtn.disabled = currentPage <= 1;
-  nextBtn.disabled = currentPage >= totalPages;
-
-  gotoInput.max = totalPages;
-  gotoInput.disabled = false;
-
-}
 
 function applyFilters() {
   showLoader();
@@ -380,23 +453,46 @@ function applyFilters() {
 
 // GLOBAL SEARCH FUNCTION
 function applyGlobalSearch() {
+  globalKeyword = document
+    .getElementById("globalSearch")
+    .value
+    .trim()
+    .toLowerCase();
+
+  currentPage = 1;
+  applyAllFilters();
+}
+
+function applyAllFilters() {
   showLoader();
+  currentPage = 1;
 
-  currentPage = 1;   // ⭐ RESET PAGE HERE
+  let filtered = [...rawData];
 
-  const keyword = document.getElementById("globalSearch").value.trim().toLowerCase();
-  if (!keyword) {
-    viewData = rawData;
-    renderTable(viewData);
-    hideLoader();
-    return;
+  // 🔹 Column filters
+  Object.keys(columnFilters).forEach(index => {
+    const value = columnFilters[index];
+    if (value) {
+      filtered = filtered.filter(row =>
+        String(row[index]).toLowerCase().includes(value)
+      );
+    }
+  });
+
+  // 🔹 Global search (applies AFTER column filters)
+  if (globalKeyword) {
+    filtered = filtered.filter(row =>
+      row.some(cell =>
+        String(cell).toLowerCase().includes(globalKeyword)
+      )
+    );
   }
-  viewData = rawData.filter(row =>
-    row.some(cell => String(cell).toLowerCase().includes(keyword))
-  );
+
+  viewData = filtered;
   renderTable(viewData);
   hideLoader();
 }
+
 
 // Search events
 document.getElementById("globalSearch").addEventListener("keydown", e => {
@@ -449,9 +545,60 @@ document.getElementById("gotoPage").addEventListener("change", e => {
   }
 });
 
+document.getElementById("actionBtn").addEventListener("click", () => {
+  actionMode = !actionMode;
+
+  document.getElementById("exportBtn").style.display = actionMode ? "inline-block" : "none";
+  document.getElementById("actionHeader").style.display = actionMode ? "table-cell" : "none";
+
+  document.querySelectorAll("#filterRow th")[0].style.display = actionMode ? "table-cell" : "none";
+
+  document.querySelectorAll(".rowCheck").forEach(cb => {
+    cb.parentElement.style.display = actionMode ? "table-cell" : "none";
+  });
+
+  renderTable(viewData);
+});
+
+document.addEventListener("change", e => {
+  if (e.target.id === "selectAll") {
+    document.querySelectorAll(".rowCheck").forEach(cb => {
+      cb.checked = e.target.checked;
+    });
+  }
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const selectedIndexes = [...document.querySelectorAll(".rowCheck:checked")]
+    .map(cb => Number(cb.dataset.index));
+
+  if (!selectedIndexes.length) {
+    alert("No rows selected");
+    return;
+  }
+
+  const selectedData = selectedIndexes.map(i => viewData[i]);
+
+  // HEADERS
+  const headers = [...document.querySelectorAll("#headerRow th")]
+    .slice(1) // skip action column
+    .map(th => th.textContent);
+
+  const sheetData = [
+    headers,
+    ...selectedData
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Selected Data");
+
+  XLSX.writeFile(wb, "Selected_Capability_Data.xlsx");
+});
+
+
+
 </script>
 
 </body>
 </html>
-
-
