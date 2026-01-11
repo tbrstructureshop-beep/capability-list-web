@@ -338,37 +338,39 @@
     display:flex;
     flex-direction:column;
     align-items:flex-start;
-    gap:8px;
-    margin-top:12px;
+    gap:6px;
+    margin-top:6px;
     margin-bottom:16px;
     font-size:13px;
   ">
 
   <!-- Row 1: Rows per page -->
   <div style="display:flex; align-items:center; gap:8px;">
-    <label>
-      Show
-      <select id="rowsPerPage">
-        <option value="10">10</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-        <option value="all">All</option>
-      </select>
-      rows
-    </label>
+      <label>
+        Show
+        <select id="rowsPerPage">
+          <option value="10">10</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="all">All</option>
+        </select>
+        rows
+      </label>
   </div>
 
-  <!-- Row 2: Pagination controls -->
-  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <button id="prevPage">◀ Prev</button>
+  <!-- Row 2: Page info -->
+    <div>
+      <span id="pageInfo">Page 1 of 5</span>
+    </div>
 
-      <span id="pageInfo">Page 1 of 1</span>
-
+    <!-- Row 3: Go to + navigation -->
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
       <label>
         Go to
         <input id="gotoPage" type="number" min="1" style="width:60px;">
       </label>
 
+      <button id="prevPage">◀ Prev</button>
       <button id="nextPage">Next ▶</button>
     </div>
   </div>
