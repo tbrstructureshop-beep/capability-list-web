@@ -336,42 +336,41 @@
 
   <div id="paginationBar" style="
     display:flex;
-    justify-content:flex-start;
-    align-items:center;
-    gap:10px;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
     margin-top:12px;
     margin-bottom:16px;
-    flex-wrap:wrap;
     font-size:13px;
-    ">
+  ">
 
-    <!-- Rows per page -->
-
+  <!-- Row 1: Rows per page -->
+  <div style="display:flex; align-items:center; gap:8px;">
     <label>
-        Show
-        <select id="rowsPerPage">
-          <option value="10">10</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value="all">All</option>
-        </select>
-        rows
+      Show
+      <select id="rowsPerPage">
+        <option value="10">10</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="all">All</option>
+      </select>
+      rows
     </label>
+  </div>
 
-    <!-- Prev -->
-    <button id="prevPage">◀ Prev</button>
+  <!-- Row 2: Pagination controls -->
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <button id="prevPage">◀ Prev</button>
 
-    <!-- Page info -->
-    <span id="pageInfo">Page 1 of 1</span>
+      <span id="pageInfo">Page 1 of 1</span>
 
-    <!-- Go to page -->
-    <label>
-       Go to
-       <input id="gotoPage" type="number" min="1" style="width:60px;">
-    </label>
+      <label>
+        Go to
+        <input id="gotoPage" type="number" min="1" style="width:60px;">
+      </label>
 
-    <!-- Next -->
-    <button id="nextPage">Next ▶</button>
+      <button id="nextPage">Next ▶</button>
+    </div>
   </div>
 
   <div class="table-card">
