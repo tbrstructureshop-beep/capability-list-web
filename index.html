@@ -2,903 +2,622 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Capability List Dashboard</title>
+  <title>AeroCore | Component Capability Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- PapaParse -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- Export to Excel-->
+  <!-- Typography: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
-
-    /* ================= LOGIN PAGE ================= */
-     #loginPage {
-     position: fixed;
-     inset: 0;
-     background: linear-gradient(135deg, #0a8a94, #005a61);
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     z-index: 10000;
-    }
-
-    .login-card {
-      background: #ffffff;
-      width: 100%;
-      max-width: 360px;
-      padding: 28px;
-      border-radius: 14px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      text-align: center;
-    }
-
-    .login-card,
-    .login-card * {
-      box-sizing: border-box;
-    }
-
-    .login-card h2 {
-      margin: 0;
-      font-size: 22px;
-      color: #0f172a;
-    }
-
-    .login-sub {
-      margin: 6px 0 20px;
-      font-size: 13px;
-      color: #64748b;
-    }
-
-    .login-field {
-     text-align: left;
-     margin-bottom: 14px;
-    }
-
-    .login-field label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 4px;
-      display: block;
-    }
-
-    .login-field input {
-      width: 100%;
-      padding: 10px 12px;
-      font-size: 14px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      outline: none;
-    }
-
-    .login-field input:focus {
-      border-color: #00717a;
-    }
-
-    .login-btn {
-      width: 100%;
-      margin-top: 12px;
-      padding: 10px;
-      font-size: 15px;
-      border-radius: 10px;
-      border: none;
-      background: #00717a;
-      color: #ffffff;
-      cursor: pointer;
-    }
-
-    .login-btn:hover {
-      background: #005a61;
-    }
-
-    #loginError {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #dc2626;
-      display: none;
-    }
-
     :root {
-      --bg: #f4f6f8;
-      --card: #ffffff;
-      --border: #dcdfe3;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --accent: #2563eb;
+      /* Enterprise Color System */
+      --primary: #3c92a6;
+      --primary-dark: #2d6f7f;
+      --primary-light: #eef6f7;
+      --bg: #f3f7f8;
+      --card-bg: #ffffff;
+      --text-main: #1a202c;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --border: #e2e8f0;
+      --success: #10b981;
+      
+      /* Elevation & Spacing */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.04);
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { 
+      box-sizing: border-box; 
+      -webkit-font-smoothing: antialiased;
     }
 
     body {
       margin: 0;
-      padding: 20px;
-      font-family: "Segoe UI", Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
     }
 
-    h1 {
-      margin-bottom: 12px;
-      font-size: 22px;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    .table-card {
-      margin-bottom: 14px;
-      background: var(--card);
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-      overflow: visible;   /* ✅ REQUIRED */
-    }
-
-    .table-wrapper {
-      overflow: auto;
-      max-height: 70vh;
-      display: block;
-    }
-
-    table {
-      border-collapse: separate;
-      border-spacing: 0;
-      table-layout: fixed;
-      width: 100%;
-      min-width: 1200px;
-      max-width: 1800px;
+    .container {
+      max-width: 1400px;
       margin: 0 auto;
+      padding: 40px 24px;
     }
 
-    thead tr.header-row th {
-      background: linear-gradient(
-      180deg,
-      #0a8a94 0%,
-      #00717a 50%,
-      #005a61 100%);
-      color: #ffffff;
-      border-bottom: 2px solid #155f7a;
-      padding: 14px 12px;
-      font-size: 13px;
-      font-weight: 600;
-      text-align: center;
-      white-space: normal;
-      word-break: break-word;
-      min-width: 120px;
-      max-width: 220px;
-      position: sticky;
-      top: 0;
-      z-index: 5;   /* 👈 higher than filter row */
+    /* --- Header Section --- */
+    header {
+      margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
     }
 
-    thead tr.filter-row th {
-      background: #ffffff;
-      border-bottom: 1px solid var(--border);
-      padding: 6px 8px;
-      text-align: center;
-      position: sticky;
-      top: var(--header-height);  /* 👈 NO MAGIC NUMBER */
-      z-index: 3;
+    .header-left h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      margin: 0 0 8px 0;
     }
 
-    thead input {
-      width: 90%;
-      max-width: 160px;
-      padding: 6px 8px;
-      font-size: 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      outline: none;
-      text-align: center; /* center the placeholder text */
+    #dataStatus {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    thead input:focus {
-      border-color: var(--accent);
-    }
-
-    tbody td {
-      border-bottom: 1px solid var(--border);
-      padding: 12px 12px;
-      font-size: 13px;
-      text-align: center;
-      white-space: normal;
-      word-break: break-word;
-      line-height: 1.45;
-      min-width: 120px;
-      max-width: 220px;
-    }
-
-    tbody tr:hover {
-      background: #e0e7ff;
-    }
-
-    /* Zebra striping */
-    tbody tr:nth-child(odd) { background: #ffffff; }
-    tbody tr:nth-child(even) { background: #f8fafc; }
-
-    .footer-note {
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--muted);
-      text-align: center;
-    }
-
-    .spinner {
-      width: 42px;
-      height: 42px;
-      border: 4px solid #e5e7eb;
-      border-top: 4px solid var(--accent);
+    #dataStatus::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--success);
       border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      display: inline-block;
     }
 
-    .paginationBar button {
-      padding: 4px 10px;
-      border-radius: 6px;
+    /* --- Search & Controls --- */
+    .controls-wrapper {
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .search-container {
+      position: relative;
+      display: flex;
+      gap: 12px;
+    }
+
+    #globalSearch {
+      width: 100%;
+      padding: 16px 20px 16px 52px;
+      font-size: 16px;
+      border-radius: var(--radius-md);
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--card-bg);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      outline: none;
+    }
+
+    #globalSearch:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-light);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      pointer-events: none;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    /* --- Modern Data View (Replacing Table) --- */
+    #dataTable {
+      display: block; /* Break table structure */
+      width: 100%;
+    }
+
+    /* Hide the original header row but keep filter row as a panel */
+    #headerRow { display: none; }
+    
+    #filterRow {
+      display: none; /* Controlled by JS */
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 24px;
+      padding: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    #filterRow th {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-light);
+      text-align: left;
+    }
+
+    #filterRow input {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    /* --- The Data "Card" --- */
+    #tableBody {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #tableBody tr {
+      display: block;
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: var(--transition);
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+
+    #tableBody tr:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    /* Styling internal "cells" as a grid */
+    #tableBody td {
+      display: inline-block;
+      padding: 0;
+      border: none;
+      vertical-align: top;
+    }
+
+    /* Grid Layout for Desktop Card Content */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+    }
+
+    .data-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .data-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-light);
+      letter-spacing: 0.05em;
+    }
+
+    .data-value {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .data-value.highlight {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 18px;
+    }
+
+    /* --- Buttons & Inputs --- */
+    .btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--text-main);
+    }
+
+    .btn:hover {
+      background: #f8fafc;
+      border-color: var(--text-light);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      box-shadow: 0 4px 12px rgba(60, 146, 166, 0.3);
+    }
+
+    /* --- Selection Mode --- */
+    .row-selector {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary);
       cursor: pointer;
     }
 
-    .paginationBar button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    /* --- Pagination --- */
+    .pagination {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
     }
 
-    .rowsPerPage, #gotoPage {
-      padding: 4px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
+    .page-info {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-muted);
     }
 
-    .action-btn {
-     height: 36px;                 /* 👈 SAME HEIGHT */
-     padding: 0 16px;
-     border-radius: 8px;
-     border: 1px solid var(--border);
-     font-size: 14px;
-     font-weight: 500;
-     line-height: 36px;            /* 👈 vertical center */
-     cursor: pointer;
-     display: inline-flex;
-     align-items: center;
-     background: #fff;
+    /* --- Loader --- */
+    .loader-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
     }
 
-    .export-btn {
-     background: var(--accent);
-     color: #fff;
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--primary-light);
+      border-top: 3px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
     }
 
-    #logoutBtn {
-     background: #fff;
-     color: #374151;
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- Responsive --- */
+    @media (max-width: 1024px) {
+      .card-grid { grid-template-columns: 1fr 1fr; }
     }
 
-    #logoutBtn:hover {
-      background: #f3f4f6;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    @media (max-width: 768px) {
+      header { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .search-container { flex-direction: column; }
+      .card-grid { grid-template-columns: 1fr; gap: 16px; }
+      .toolbar { width: 100%; }
+      .btn { width: 100%; justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-<div id="loginPage">
-  <div class="login-card">
-    <h2>Capability Dashboard</h2>
-    <p class="login-sub">Secure Access Created By TC</p>
+<div class="container">
+  <header>
+    <div class="header-left">
+      <h1>AeroCore Dashboard</h1>
+      <div id="dataStatus">Syncing active inventory...</div>
+    </div>
+    <div class="header-right">
+      <button id="actionBtn" class="btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Selection Mode
+      </button>
+    </div>
+  </header>
 
-    <div class="login-field">
-      <label>Username</label>
-      <input id="loginUser" type="text" placeholder="Enter username">
+  <div class="controls-wrapper">
+    <div class="search-container">
+      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input id="globalSearch" type="text" placeholder="Search by Part Number, Model, or Component description..." />
+      <button id="searchBtn" class="btn btn-primary">Run Search</button>
     </div>
 
-    <div class="login-field">
-      <label>Password</label>
-      <input id="loginPass" type="password" placeholder="Enter password">
-    </div>
-
-    <button class="login-btn" onclick="handleLogin()">Login</button>
-
-    <div id="loginError">Invalid username or password</div>
-  </div>
-</div>
-
-<div id="dashboard" style="display:none;">
-
-  <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
-    <button id="logoutBtn" class="action-btn">
-    Logout
-    </button>
-  </div>
-
-  <h1>Component Capability Web</h1>
-
-  <div style="display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-    <input id="globalSearch" type="text" placeholder="Search across all columns…" style="min-width:280px;max-width:420px;width:40%;padding:8px 12px; border-radius:10px;border:1px solid var(--border);font-size:14px;" />
-    <button id="searchBtn" style="padding:8px 16px;border-radius:10px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;">
-      Search
-    </button>
-  </div>
-
-  <div style="text-align:center;margin-bottom:10px;">
-    <button onclick="toggleFilters()" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;">
-    Show / Hide Filters
-    </button>
-  </div>
-
-  <div id="loader" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.75);z-index:9999;align-items:center;justify-content:center;">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-      <div class="spinner"></div>
-      <div style="font-size:13px;color:var(--muted);">Loading data…</div>
-    </div>
-  </div>
-
-  <div id="paginationBar" style="
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:6px;
-    margin-top:6px;
-    margin-bottom:16px;
-    font-size:13px;
-  ">
-
-  <!-- Row 1: Rows per page -->
-  <div style="display:flex; align-items:center; gap:8px;">
-      <label>
-        Show
-        <select id="rowsPerPage">
-          <option value="10">10</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value="all">All</option>
+    <div class="toolbar">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <button onclick="toggleFilters()" class="btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+          Advanced Filters
+        </button>
+        <select id="rowsPerPage" class="btn" style="min-width: 130px;">
+          <option value="10">Show 10 Rows</option>
+          <option value="50">Show 50 Rows</option>
+          <option value="100">Show 100 Rows</option>
+          <option value="all">Display All</option>
         </select>
-        rows
-      </label>
-  </div>
+      </div>
 
-  <!-- Row 2: Page info -->
-    <div>
-      <span id="pageInfo">Page 1 of 5</span>
-    </div>
-
-    <!-- Row 3: Go to + navigation -->
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <label>
-        Go to
-        <input id="gotoPage" type="number" min="1" style="width:60px;">
-      </label>
-
-      <button id="prevPage">◀ Prev</button>
-      <button id="nextPage">Next ▶</button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span class="page-info">Jump to:</span>
+        <input id="gotoPage" type="number" class="btn" style="width: 70px; padding: 10px;">
+      </div>
     </div>
   </div>
 
-  <div class="table-card">
-    <div class="table-wrapper">
+  <!-- MAIN DATA VIEW -->
+  <div id="dashboard">
+    <div class="table-card">
       <table id="dataTable">
         <thead>
-          <tr class="header-row" id="headerRow"></tr>
-          <tr class="filter-row" id="filterRow"></tr>
+          <tr id="headerRow"></tr> <!-- Hidden via CSS but needed for JS -->
+          <tr id="filterRow"></tr> <!-- Styled as a panel via CSS -->
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
     </div>
-  </div>
-  
-  <div id="dataStatus" style="
-    margin-top: 8px;
-    font-size: 13px;
-    color: var(--muted);
-    text-align: left;
-    ">
-  </div>
 
-  <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:10px;">
-    <button id="actionBtn" class="action-btn">
-    Action
-    </button>
-
-    <button id="exportBtn" class="action-btn export-btn" style="display:none;">
-    Save to Excel
-   </button>
-  </div>
-
-  <div class="footer-note">
-    Created on 10 January 2026
-  </div>
-</div>
-
-<!-- LOGOUT CONFIRM MODAL -->
-<div id="logoutConfirm" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.4);
-  z-index:20000;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    background:#ffffff;
-    padding:24px;
-    border-radius:14px;
-    width:100%;
-    max-width:320px;
-    box-shadow:0 20px 40px rgba(0,0,0,0.25);
-    text-align:center;
-  ">
-    <h3 style="margin:0 0 10px;font-size:18px;color:#111827;">
-      Do you want to log out?
-    </h3>
-
-    <p style="margin:0 0 18px;font-size:13px;color:#6b7280;">
-      You will be returned to the login page.
-    </p>
-
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button id="logoutNo" style="
-        padding:8px 16px;
-        border-radius:8px;
-        border:1px solid #dc2626;
-        background:#dc2626;
-        color:#fff;
-        cursor:pointer;
-        font-size:14px;
-      ">
-        No
+    <!-- PAGINATION -->
+    <div class="pagination">
+      <button id="prevPage" class="btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Previous
       </button>
+      <span id="pageInfo" class="page-info">Page 1 of 1</span>
+      <button id="nextPage" class="btn">
+        Next
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
 
-      <button id="logoutYes" style="
-        padding:8px 16px;
-        border-radius:8px;
-        border:1px solid var(--accent);
-        background:var(--accent);
-        color:#fff;
-        cursor:pointer;
-        font-size:14px;
-      ">
-        Yes
+    <!-- FOOTER ACTIONS -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border);">
+      <div style="font-size: 13px; color: var(--text-light); font-weight: 500;">
+        AeroCore Enterprise v2.4 • System Reference: 10 JAN 2026
+      </div>
+      <button id="exportBtn" class="btn btn-primary" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Selected Data (.xlsx)
       </button>
     </div>
   </div>
 </div>
 
+<!-- LOADER -->
+<div id="loader" class="loader-overlay">
+  <div class="spinner"></div>
+  <div style="font-size:16px; color: var(--text-main); font-weight: 600; letter-spacing: -0.01em;">Processing Data Stream...</div>
+</div>
+
 <script>
-
-
-const FIXED_USER = "caplistmadebytc";
-const FIXED_PASS = "Aeroas1@63";
-
-function handleLogin() {
-  const user = document.getElementById("loginUser").value.trim();
-  const pass = document.getElementById("loginPass").value.trim();
-  const error = document.getElementById("loginError");
-
-  if (user === FIXED_USER && pass === FIXED_PASS) {
-    document.getElementById("loginPage").style.display = "none";
-    document.getElementById("dashboard").style.display = "block";
-  } else {
-    error.style.display = "block";
-  }
-}
-
-document.addEventListener("keydown", function (e) {
-  const loginVisible =
-    document.getElementById("loginPage").style.display !== "none";
-
-  if (loginVisible && e.key === "Enter") {
-    handleLogin();
-  }
-});
-
-// PAGNATION
-let currentPage = 1;
-let rowsPerPage = 10;
-
-function showLoader() {
-  document.getElementById("loader").style.display = "flex";
-}
-
-function hideLoader() {
-  document.getElementById("loader").style.display = "none";
-}
-
-let filtersVisible = false;
-function toggleFilters() {
-  const row = document.getElementById("filterRow");
-  filtersVisible = !filtersVisible;
-  row.style.display = filtersVisible ? "table-row" : "none";
-}
-
-// CSV config
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycaGtEDv-GXxAIlfGv26tYUc1IAUY2MRIgJq1IUbBdP_VrJnvA_B-6-GdRbW2RKKtJ/exec";
 const DISPLAY_COLS = [0,1,2,3,4,5,6,7,8,14,15];
 
 let rawData = [];
 let viewData = [];
-
+let headerNames = []; // Store header strings for card labels
+let currentPage = 1;
+let rowsPerPage = 10;
+let filtersVisible = false;
 let globalKeyword = "";
 let columnFilters = {};
+let actionMode = false;
 
+function showLoader() { document.getElementById("loader").style.display = "flex"; }
+function hideLoader() { document.getElementById("loader").style.display = "none"; }
+
+function toggleFilters() {
+  const row = document.getElementById("filterRow");
+  filtersVisible = !filtersVisible;
+  row.style.display = filtersVisible ? "grid" : "none";
+}
+
+// FETCH DATA ON LOAD
 showLoader();
-
-// Fetch data from GAS using the 'getCapabilityList' action
 fetch(`${GAS_API_URL}?action=getCapabilityList`)
-  .then(response => {
-    if (!response.ok) throw new Error('Network response was not ok');
-    return response.json();
-  })
+  .then(res => res.json())
   .then(rows => {
-    // rows is the 2D array returned by your fetchCapabilityData() helper in GAS
-    const headerRow1 = rows[0];
-    const headerRow2 = rows[1];
-
-    // Build the merged headers
-    const headers = DISPLAY_COLS.map(i =>
-      `${headerRow1[i] || ""} ${headerRow2[i] || ""}`.trim()
-    );
-
-    buildHeader(headers);
-
-    // Skip the first 3 rows (Headers/Notes) and map the selected columns
+    headerNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+    buildHeader(headerNames);
     rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
-    
     viewData = rawData;
     renderTable(viewData);
     updateDataStatus();
     hideLoader();
   })
-  .catch(error => {
-    console.error("Error loading data:", error);
-    alert("Failed to fetch data from Google Apps Script. Check the console for details.");
-    hideLoader();
-  });
-
-let actionMode = false;
+  .catch(err => { console.error(err); hideLoader(); });
 
 function buildHeader(headers) {
-  const headerRow = document.getElementById("headerRow");
-  const filterRow = document.getElementById("filterRow");
+  const hRow = document.getElementById("headerRow");
+  const fRow = document.getElementById("filterRow");
+  hRow.innerHTML = ""; fRow.innerHTML = "";
 
-  headerRow.innerHTML = "";
-  filterRow.innerHTML = "";
-
-  // 🔹 ACTION COLUMN (checkbox)
+  // Hidden Action Header
   const actionTh = document.createElement("th");
   actionTh.style.display = "none";
   actionTh.id = "actionHeader";
   actionTh.innerHTML = `<input type="checkbox" id="selectAll">`;
-  headerRow.appendChild(actionTh);
+  hRow.appendChild(actionTh);
 
-  const actionFilterTh = document.createElement("th");
-  actionFilterTh.style.display = "none";
-  filterRow.appendChild(actionFilterTh);
-
-  // 🔹 DATA COLUMNS
-  headers.forEach((h, index) => {
-    // Header label
+  headers.forEach((h, idx) => {
     const th = document.createElement("th");
     th.textContent = h;
-    headerRow.appendChild(th);
+    hRow.appendChild(th);
 
-    // Filter input
+    // Filter panel items
     const filterTh = document.createElement("th");
+    filterTh.innerHTML = `<label>${h}</label>`;
     const input = document.createElement("input");
-
-    input.placeholder = "FILTER";
-    input.dataset.index = index;
-
-    input.addEventListener("input", e => {
-      const idx = Number(e.target.dataset.index);
+    input.placeholder = `Filter...`;
+    input.dataset.index = idx;
+    input.oninput = (e) => {
       columnFilters[idx] = e.target.value.toLowerCase();
-      applyAllFilters();   // ✅ unified pipeline
-    });
-
+      applyAllFilters();
+    };
     filterTh.appendChild(input);
-    filterRow.appendChild(filterTh);
+    fRow.appendChild(filterTh);
   });
-
-  filterRow.style.display = filtersVisible ? "table-row" : "none";
 }
-
-
-function updatePaginationInfo(totalRows) {
-  const pageInfo = document.getElementById("pageInfo");
-  const prevBtn = document.getElementById("prevPage");
-  const nextBtn = document.getElementById("nextPage");
-  const gotoInput = document.getElementById("gotoPage");
-
-  if (rowsPerPage === "all") {
-    pageInfo.textContent = `Showing all ${totalRows} rows`;
-    prevBtn.disabled = true;
-    nextBtn.disabled = true;
-    gotoInput.disabled = true;
-    return;
-  }
-
-  const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
-
-  pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
-  prevBtn.disabled = currentPage <= 1;
-  nextBtn.disabled = currentPage >= totalPages;
-  gotoInput.max = totalPages;
-  gotoInput.disabled = false;
-}
-
 
 function renderTable(data) {
   const tbody = document.getElementById("tableBody");
   tbody.innerHTML = "";
+  
+  if (data.length === 0) {
+    tbody.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-light); background: white; border-radius: 14px; border: 1px dashed var(--border);">No matching components found in registry.</div>`;
+    return;
+  }
 
-  let start = 0;
-  let end = data.length;
-
+  let start = 0, end = data.length;
   if (rowsPerPage !== "all") {
     start = (currentPage - 1) * rowsPerPage;
     end = start + rowsPerPage;
   }
 
-  data.slice(start, end).forEach((row, rowIndex) => {
+  data.slice(start, end).forEach((row, rIdx) => {
     const tr = document.createElement("tr");
+    
+    // Selection checkbox
+    const selectionHtml = actionMode 
+      ? `<input type="checkbox" class="row-selector rowCheck" data-index="${start + rIdx}">` 
+      : "";
 
-    // ACTION CHECKBOX
-    const tdCheck = document.createElement("td");
-    tdCheck.style.display = actionMode ? "table-cell" : "none";
-    tdCheck.innerHTML = `
-      <input type="checkbox" class="rowCheck" data-index="${start + rowIndex}">
-    `;
-    tr.appendChild(tdCheck);
-
-    row.forEach(cell => {
-      const td = document.createElement("td");
-      td.textContent = cell;
-      tr.appendChild(td);
+    // Build Internal Card Grid
+    let cardContent = `<div class="card-grid">`;
+    row.forEach((cell, cIdx) => {
+      const isPrimary = cIdx === 0 || cIdx === 1; // Highlight PN and Description
+      cardContent += `
+        <div class="data-item">
+          <span class="data-label">${headerNames[cIdx]}</span>
+          <span class="data-value ${isPrimary ? 'highlight' : ''}">${cell || '—'}</span>
+        </div>`;
     });
-
+    cardContent += `</div>`;
+    
+    tr.innerHTML = selectionHtml + cardContent;
     tbody.appendChild(tr);
   });
-
   updatePaginationInfo(data.length);
 }
 
-
-function applyFilters() {
-  showLoader();
-  const inputs = document.querySelectorAll("thead input");
-
-  currentPage = 1;
-
-  let filtered = [...rawData];
-
-  inputs.forEach(input => {
-    const value = input.value.trim().toLowerCase();
-    const index = Number(input.dataset.index);
-    if (value) {
-      filtered = filtered.filter(row =>
-        String(row[index]).toLowerCase().includes(value)
-      );
-    }
-  });
-
-  viewData = filtered;
-  renderTable(viewData);
-  updateDataStatus();
-  hideLoader();
-}
-
-// GLOBAL SEARCH FUNCTION
-function applyGlobalSearch() {
-  globalKeyword = document
-    .getElementById("globalSearch")
-    .value
-    .trim()
-    .toLowerCase();
-
-  currentPage = 1;
-  applyAllFilters();
-}
-
 function applyAllFilters() {
-  showLoader();
   currentPage = 1;
-
-  let filtered = [...rawData];
-
-  // 🔹 Column filters
-  Object.keys(columnFilters).forEach(index => {
-    const value = columnFilters[index];
-    if (value) {
-      filtered = filtered.filter(row =>
-        String(row[index]).toLowerCase().includes(value)
-      );
-    }
+  let filtered = rawData.filter(row => {
+    const matchesCol = Object.keys(columnFilters).every(idx => String(row[idx]).toLowerCase().includes(columnFilters[idx]));
+    const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+    return matchesCol && matchesGlobal;
   });
-
-  // 🔹 Global search (applies AFTER column filters)
-  if (globalKeyword) {
-    filtered = filtered.filter(row =>
-      row.some(cell =>
-        String(cell).toLowerCase().includes(globalKeyword)
-      )
-    );
-  }
-
   viewData = filtered;
   renderTable(viewData);
   updateDataStatus();
-  hideLoader();
 }
 
+function updatePaginationInfo(total) {
+  const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(total / rowsPerPage) || 1;
+  document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+  document.getElementById("prevPage").disabled = currentPage <= 1;
+  document.getElementById("nextPage").disabled = currentPage >= totalPages;
+}
 
 function updateDataStatus() {
-  const el = document.getElementById("dataStatus");
-  if (!el) return;
-
-  const total = rawData.length;
   const filtered = viewData.length;
-
-  let showing;
-
-  if (rowsPerPage === "all") {
-    showing = filtered;
-  } else {
-    const start = (currentPage - 1) * rowsPerPage;
-    showing = Math.min(rowsPerPage, filtered - start);
-    if (showing < 0) showing = 0;
-  }
-
-  let text = "";
-
-  // 🔹 No filter applied
-  if (filtered === total) {
-    if (rowsPerPage === "all") {
-      text = `Showing all ${total} data`;
-    } else {
-      text = `Showing ${showing} of ${total} data`;
-    }
-  }
-  // 🔹 Filter / search applied
-  else {
-    if (rowsPerPage === "all") {
-      text = `Showing all ${filtered} related data`;
-    } else {
-      text = `Showing ${showing} of ${filtered} related data`;
-    }
-  }
-
-  el.textContent = text;
+  document.getElementById("dataStatus").textContent = `${filtered.toLocaleString()} results found`;
 }
 
-// Search events
-document.getElementById("globalSearch").addEventListener("keydown", e => {
-  if (e.key === "Enter") applyGlobalSearch();
-});
-document.getElementById("searchBtn").addEventListener("click", applyGlobalSearch);
+// EVENTS
+document.getElementById("searchBtn").onclick = () => {
+  globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
+  applyAllFilters();
+};
 
+document.getElementById("globalSearch").onkeyup = (e) => {
+  if (e.key === "Enter") {
+    globalKeyword = e.target.value.trim().toLowerCase();
+    applyAllFilters();
+  }
+};
 
-// Wire Pagnation Event
-
-document.getElementById("rowsPerPage").addEventListener("change", e => {
+document.getElementById("rowsPerPage").onchange = (e) => {
   rowsPerPage = e.target.value === "all" ? "all" : Number(e.target.value);
   currentPage = 1;
-  showLoader();
-  setTimeout(() => {
-    renderTable(viewData);
-    updateDataStatus();
-    hideLoader();
-  }, 150);
-});
-
-document.getElementById("prevPage").addEventListener("click", () => {
-  if (currentPage > 1) {
-    currentPage--;
-    showLoader();
-    setTimeout(() => {
-      renderTable(viewData);
-      updateDataStatus();
-      hideLoader();
-    }, 150);
-  }
-});
-
-document.getElementById("nextPage").addEventListener("click", () => {
-  currentPage++;
-  showLoader();
-  setTimeout(() => {
-    renderTable(viewData);
-    updateDataStatus();
-    hideLoader();
-  }, 150);
-});
-
-document.getElementById("gotoPage").addEventListener("change", e => {
-  const page = Number(e.target.value);
-  if (!isNaN(page) && page >= 1) {
-    currentPage = page;
-    showLoader();
-    setTimeout(() => {
-      renderTable(viewData);
-      updateDataStatus();
-      hideLoader();
-    }, 150);
-  }
-});
-
-document.getElementById("actionBtn").addEventListener("click", () => {
-  actionMode = !actionMode;
-
-  document.getElementById("exportBtn").style.display = actionMode ? "inline-block" : "none";
-  document.getElementById("actionHeader").style.display = actionMode ? "table-cell" : "none";
-
-  document.querySelectorAll("#filterRow th")[0].style.display = actionMode ? "table-cell" : "none";
-
-  document.querySelectorAll(".rowCheck").forEach(cb => {
-    cb.parentElement.style.display = actionMode ? "table-cell" : "none";
-  });
-
   renderTable(viewData);
-  updateDataStatus();
-});
+};
 
-document.addEventListener("change", e => {
-  if (e.target.id === "selectAll") {
-    document.querySelectorAll(".rowCheck").forEach(cb => {
-      cb.checked = e.target.checked;
-    });
+document.getElementById("prevPage").onclick = () => { if (currentPage > 1) { currentPage--; renderTable(viewData); } };
+document.getElementById("nextPage").onclick = () => { 
+  const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(viewData.length / rowsPerPage) || 1;
+  if (currentPage < totalPages) { currentPage++; renderTable(viewData); } 
+};
+
+document.getElementById("gotoPage").onchange = (e) => {
+  const val = parseInt(e.target.value);
+  const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(viewData.length / rowsPerPage) || 1;
+  if (val > 0 && val <= totalPages) {
+    currentPage = val;
+    renderTable(viewData);
   }
-});
+};
 
-document.getElementById("exportBtn").addEventListener("click", () => {
-  const selectedIndexes = [...document.querySelectorAll(".rowCheck:checked")]
-    .map(cb => Number(cb.dataset.index));
+document.getElementById("actionBtn").onclick = () => {
+  actionMode = !actionMode;
+  document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
+  document.getElementById("actionBtn").innerHTML = actionMode 
+    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg> Cancel Selection` 
+    : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> Selection Mode`;
+  renderTable(viewData);
+};
 
-  if (!selectedIndexes.length) {
-    alert("No rows selected");
-    return;
-  }
-
-  const selectedData = selectedIndexes.map(i => viewData[i]);
-
-  // HEADERS
-  const headers = [...document.querySelectorAll("#headerRow th")]
-    .slice(1) // skip action column
-    .map(th => th.textContent);
-
-  const sheetData = [
-    headers,
-    ...selectedData
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+document.getElementById("exportBtn").onclick = () => {
+  const selected = [...document.querySelectorAll(".rowCheck:checked")].map(cb => viewData[cb.dataset.index]);
+  if (!selected.length) return alert("Select at least one card to export.");
+  
+  const ws = XLSX.utils.aoa_to_sheet([headerNames, ...selected]);
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Selected Data");
-
-  XLSX.writeFile(wb, "Selected_Capability_Data.xlsx");
-});
-
-/* ================= LOGOUT LOGIC ================= */
-
-const logoutModal = document.getElementById("logoutConfirm");
-
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  logoutModal.style.display = "flex";
-});
-
-document.getElementById("logoutNo").addEventListener("click", () => {
-  logoutModal.style.display = "none";
-});
-
-document.getElementById("logoutYes").addEventListener("click", () => {
-  location.reload(); // hard reset → back to login
-});
-
-
+  XLSX.utils.book_append_sheet(wb, ws, "Capabilities");
+  XLSX.writeFile(wb, "AeroCore_Capabilities_Export.xlsx");
+};
 </script>
-
 </body>
 </html>
-
-
-
