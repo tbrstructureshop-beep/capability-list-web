@@ -513,7 +513,7 @@ function toggleFilters() {
 }
 
 // CSV config
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv9q0DjJSNZSP3uiP1OHEZSiG6uZ46Dye12w7FtQ5UxjazWR0DeISWGWGCHOCEjbH9tpvDb8yxZp7U/pub?gid=1957846393&single=true&output=csv";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycaGtEDv-GXxAIlfGv26tYUc1IAUY2MRIgJq1IUbBdP_VrJnvA_B-6-GdRbW2RKKtJ/exec";
 const DISPLAY_COLS = [0,1,2,3,4,5,6,7,8,14,15];
 
 let rawData = [];
@@ -523,26 +523,38 @@ let globalKeyword = "";
 let columnFilters = {};
 
 showLoader();
-Papa.parse(CSV_URL, {
-  download: true,
-  skipEmptyLines: true,
-  complete: function(results) {
-    const rows = results.data;
+
+// Fetch data from GAS using the 'getCapabilityList' action
+fetch(`${GAS_API_URL}?action=getCapabilityList`)
+  .then(response => {
+    if (!response.ok) throw new Error('Network response was not ok');
+    return response.json();
+  })
+  .then(rows => {
+    // rows is the 2D array returned by your fetchCapabilityData() helper in GAS
     const headerRow1 = rows[0];
     const headerRow2 = rows[1];
 
+    // Build the merged headers
     const headers = DISPLAY_COLS.map(i =>
       `${headerRow1[i] || ""} ${headerRow2[i] || ""}`.trim()
     );
 
     buildHeader(headers);
+
+    // Skip the first 3 rows (Headers/Notes) and map the selected columns
     rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+    
     viewData = rawData;
     renderTable(viewData);
     updateDataStatus();
     hideLoader();
-  }
-});
+  })
+  .catch(error => {
+    console.error("Error loading data:", error);
+    alert("Failed to fetch data from Google Apps Script. Check the console for details.");
+    hideLoader();
+  });
 
 let actionMode = false;
 
