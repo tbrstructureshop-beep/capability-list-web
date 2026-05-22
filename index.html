@@ -485,12 +485,7 @@
 <script src="../auth/script.js"></script>
 <script>
 
-const currentUser = protectPage(); 
 
-// 2. Stop execution if no user (protectPage will handle the redirect)
-if (!currentUser) {
-    throw new Error("Unauthorized"); 
-}
 /** 
  * LOGIC PRESERVED FROM ORIGINAL
  * UPDATED RENDERER TO CARD-BASED 
