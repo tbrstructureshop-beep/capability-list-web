@@ -538,289 +538,277 @@
   <div style="font-size:15px; color: var(--text-main); font-weight: 600;">Processing Capability List...</div>
 </div>
 <script src="../auth/script.js"></script>
-<script>
-
-
-/** 
- * LOGIC PRESERVED FROM ORIGINAL
- * UPDATED RENDERER TO CARD-BASED 
- */
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycaGtEDv-GXxAIlfGv26tYUc1IAUY2MRIgJq1IUbBdP_VrJnvA_B-6-GdRbW2RKKtJ/exec";
-// Add 16 to the end of the array
-const DISPLAY_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16];
-
-let rawData = [];
-let viewData = [];
-let colNames = [];
-let currentPage = 1;
-let rowsPerPage = 10;
-let filtersVisible = false;
-let globalKeyword = "";
-let columnFilters = {};
-let actionMode = false;
-
-function showLoader() { document.getElementById("loader").style.display = "flex"; }
-function hideLoader() { document.getElementById("loader").style.display = "none"; }
-
-function toggleFilters() {
-  const row = document.getElementById("filterRow");
-  filtersVisible = !filtersVisible;
-  row.style.display = filtersVisible ? "grid" : "none";
-}
-
-// FETCH DATA
-showLoader();
-fetch(`${GAS_API_URL}?action=getCapabilityList`)
-  .then(res => res.json())
-  .then(rows => {
-    colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
-    buildFilterInputs(colNames);
-    rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
-    viewData = rawData;
+  <script>
+  /** 
+   * ENTERPRISE CAPABILITY LOGIC - FIXED & OPTIMIZED
+   */
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycaGtEDv-GXxAIlfGv26tYUc1IAUY2MRIgJq1IUbBdP_VrJnvA_B-6-GdRbW2RKKtJ/exec";
+  
+  // Mapping kolom: [0..8, 14, 15, 16]
+  // Masing-masing row akan memiliki index 0 s/d 11
+  const DISPLAY_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16];
+  
+  let rawData = [];
+  let viewData = [];
+  let colNames = [];
+  let currentPage = 1;
+  let rowsPerPage = 10;
+  let filtersVisible = false;
+  let globalKeyword = "";
+  let columnFilters = {};
+  let actionMode = false;
+  
+  // 1. Fungsi Format Logo & Value
+  function formatLogoValue(val) {
+    if (!val) return '—';
+    const cleanVal = String(val).trim().toUpperCase();
+    
+    const logos = {
+      'DGCA': '../pricing/assets/DGCA_Logo.png',
+      'EASA': '../pricing/assets/EASA_Logo.png',
+      'FAA': '../pricing/assets/FAA_Logo.png'
+    };
+  
+    if (logos[cleanVal]) {
+      return `<img src="${logos[cleanVal]}" alt="${cleanVal}" class="agency-" title="${cleanVal}">`;
+    }
+    return val; 
+  }
+  
+  // 2. Konfigurasi Stepper per Authority
+  const AUTHORITY_CONFIG = {
+    'EASA': ["Inspected / Tested", "Repaired", "Modified", "Overhauled"],
+    'FAA': ["Inspection", "Testing", "Repair", "Modification", "Overhaul"],
+    'DGCA': ["Inspection", "Testing", "Repair", "Modification", "Overhaul"]
+  };
+  
+  function renderCapabilityStepper(authName, currentLevel) {
+    const cleanAuth = String(authName || "").trim().toUpperCase();
+    const levels = AUTHORITY_CONFIG[cleanAuth] || AUTHORITY_CONFIG['FAA'];
+    const levelNum = parseInt(currentLevel) || 0;
+  
+    let html = `
+      <div class="capability-container" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+        <div class="authority-tag" style="margin-bottom: 8px; color: var(--text-muted); font-size: 11px; font-weight: 700;">
+          CAPABILITY LEVEL (${cleanAuth})
+        </div>
+        <div class="stepper-wrapper" style="display: flex; gap: 6px;">
+    `;
+  
+    levels.forEach((label, index) => {
+      const stepIdx = index + 1;
+      const isActive = stepIdx <= levelNum;
+      
+      html += `
+        <div class="step-item ${isActive ? 'active' : ''}" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+          <div class="step-light" style="height: 6px; border-radius: 3px; background-color: ${isActive ? 'var(--primary)' : '#e5e7eb'}; transition: all 0.3s ease;"></div>
+          <div class="step-label" style="font-size: 9px; font-weight: 600; line-height: 1.2; color: ${isActive ? 'var(--text-main)' : 'var(--text-light)'};">
+            L${stepIdx}<br>${label}
+          </div>
+        </div>
+      `;
+    });
+  
+    return html + `</div></div>`;
+  }
+  
+  // 3. Loader Functions
+  function showLoader() { document.getElementById("loader").style.display = "flex"; }
+  function hideLoader() { document.getElementById("loader").style.display = "none"; }
+  
+  function toggleFilters() {
+    const row = document.getElementById("filterRow");
+    filtersVisible = !filtersVisible;
+    row.style.display = filtersVisible ? "grid" : "none";
+  }
+  
+  // 4. Fetch Data
+  showLoader();
+  fetch(`${GAS_API_URL}?action=getCapabilityList`)
+    .then(res => res.json())
+    .then(rows => {
+      // Ambil header dari baris 1 & 2
+      colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+      buildFilterInputs(colNames);
+      
+      // Ambil data mulai baris ke-4 (index 3)
+      rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+      viewData = rawData;
+      
+      renderCards(viewData);
+      updateDataStatus();
+      hideLoader();
+    })
+    .catch(err => { 
+      console.error("Fetch error:", err); 
+      hideLoader(); 
+    });
+  
+  // 5. Render Cards
+  function renderCards(data) {
+    const container = document.getElementById("tableBody");
+    container.innerHTML = "";
+    
+    if (data.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-light);">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        <p>No matching records found in database.</p>
+      </div>`;
+      updatePaginationInfo(0);
+      return;
+    }
+  
+    let start = 0, end = data.length;
+    if (rowsPerPage !== "all") {
+      start = (currentPage - 1) * rowsPerPage;
+      end = start + rowsPerPage;
+    }
+  
+    data.slice(start, end).forEach((row, rIdx) => {
+      const card = document.createElement("div");
+      card.className = "data-card";
+      
+      const checkHtml = actionMode ? 
+        `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
+  
+      // Index Berdasarkan DISPLAY_COLS:
+      // row[1] = Authority, row[2] = Part Number, row[10] = Level, row[11] = Status
+      const authName = row[1];
+      const capLevel = row[10];
+  
+      let detailsHtml = "";
+      row.forEach((cell, idx) => {
+        // Tampilkan detail kolom index 3-9, dan index 11 (Status)
+        // Index 10 (Level) di-skip karena sudah jadi stepper
+        if (idx > 2 && idx !== 10) { 
+          const displayValue = (idx === 11) ? formatStatus(cell) : formatLogoValue(cell);
+          detailsHtml += `
+            <div class="detail-item">
+              <span class="detail-label">${colNames[idx]}</span>
+              <span class="detail-value">${displayValue}</span>
+            </div>`;
+        }
+      });
+  
+      card.innerHTML = `
+        ${checkHtml}
+        <div class="card-main">
+          <div class="card-header-row">
+              <span class="no-badge">${row[0]}</span>
+              <div class="vertical-divider"></div>
+              ${formatLogoValue(row[1])}
+          </div>
+          
+          <div class="detail-item" style="margin-top: 10px;">
+              <span class="detail-label">${colNames[2]}</span>
+              <div class="detail-value" style="font-size: 16px; font-weight: 700; color: var(--primary);">
+                  ${row[2]}
+              </div>
+          </div>
+  
+          ${renderCapabilityStepper(authName, capLevel)}
+        </div>
+  
+        <div class="data-details">
+          ${detailsHtml}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+    updatePaginationInfo(data.length);
+  }
+  
+  // 6. Filtering & Helper Functions
+  function buildFilterInputs(headers) {
+    const fRow = document.getElementById("filterRow");
+    fRow.innerHTML = "";
+    headers.forEach((h, idx) => {
+      const field = document.createElement("div");
+      field.className = "filter-field";
+      field.innerHTML = `<label>${h}</label>
+                         <input type="text" placeholder="Filter..." data-index="${idx}">`;
+      field.querySelector('input').oninput = (e) => {
+        columnFilters[idx] = e.target.value.toLowerCase();
+        applyAllFilters();
+      };
+      fRow.appendChild(field);
+    });
+  }
+  
+  function applyAllFilters() {
+    currentPage = 1;
+    viewData = rawData.filter(row => {
+      const matchesCol = Object.keys(columnFilters).every(idx => 
+        String(row[idx]).toLowerCase().includes(columnFilters[idx])
+      );
+      const matchesGlobal = !globalKeyword || row.some(cell => 
+        String(cell).toLowerCase().includes(globalKeyword)
+      );
+      return matchesCol && matchesGlobal;
+    });
     renderCards(viewData);
     updateDataStatus();
-    hideLoader();
-  })
-  .catch(err => { console.error(err); hideLoader(); });
-
-function buildFilterInputs(headers) {
-  const fRow = document.getElementById("filterRow");
-  fRow.innerHTML = "";
-  headers.forEach((h, idx) => {
-    const field = document.createElement("div");
-    field.className = "filter-field";
-    field.innerHTML = `<label>${h}</label>
-                       <input type="text" placeholder="Filter..." data-index="${idx}">`;
-    field.querySelector('input').oninput = (e) => {
-      columnFilters[idx] = e.target.value.toLowerCase();
-      applyAllFilters();
-    };
-    fRow.appendChild(field);
-  });
-}
-
-function formatValue(val) {
-  if (!val) return '—';
+  }
   
-  // Clean the input: remove hidden spaces and make uppercase
-  const cleanVal = String(val).trim().toUpperCase();
+  function updatePaginationInfo(total) {
+    const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(total / rowsPerPage) || 1;
+    document.getElementById("pageInfo").textContent = `${currentPage} of ${totalPages}`;
+    document.getElementById("prevPage").disabled = currentPage <= 1;
+    document.getElementById("nextPage").disabled = currentPage >= totalPages;
+  }
   
-  const s = {
-    'DGCA': '../pricing/assets/DGCA_Logo.png',
-    'EASA': '../pricing/assets/EASA_Logo.png',
-    'FAA': '../pricing/assets/FAA_Logo.png'
+  function updateDataStatus() {
+    document.getElementById("dataStatus").textContent = `Displaying ${viewData.length.toLocaleString()} results from global registry`;
+  }
+  
+  function formatStatus(val) {
+    if (!val) return '';
+    const status = String(val).trim().toUpperCase();
+    let className = 'status-default';
+    if (status === 'AVAIL') className = 'status-avail';
+    if (status === 'LIMITED') className = 'status-limited';
+    return `<span class="status-badge ${className}">${status}</span>`;
+  }
+  
+  // 7. UI Events
+  document.getElementById("searchBtn").onclick = () => {
+    globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
+    applyAllFilters();
   };
-
-  if (logos[cleanVal]) {
-    return `<img src="${logos[cleanVal]}" alt="${cleanVal}" class="agency-logo" title="${cleanVal}">`;
-  }
   
-  return val; 
-}
-
-
-
-const AUTHORITY_CONFIG = {
-  'EASA': [
-    "Inspected / Tested", 
-    "Repaired", 
-    "Modified", 
-    "Overhauled"
-  ],
-  'FAA': [
-    "Inspection", 
-    "Testing", 
-    "Repair", 
-    "Modification", 
-    "Overhaul"
-  ],
-  'DGCA': [
-    "Inspection", 
-    "Testing", 
-    "Repair", 
-    "Modification", 
-    "Overhaul"
-  ]
-};
-
-function renderCapabilityStepper(authName, currentLevel) {
-  // Membersihkan input: hapus spasi dan buat uppercase untuk pengecekan key
-  const cleanAuth = String(authName || "").trim().toUpperCase();
+  document.getElementById("globalSearch").onkeyup = (e) => { 
+    if (e.key === "Enter") document.getElementById("searchBtn").click(); 
+  };
   
-  // Mengambil config berdasarkan authority, default ke FAA jika tidak terdaftar
-  const levels = AUTHORITY_CONFIG[cleanAuth] || AUTHORITY_CONFIG['FAA'];
-  const levelNum = parseInt(currentLevel) || 0;
-
-  let html = `
-    <div class="capability-container" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
-      <div class="authority-tag" style="margin-bottom: 8px; color: var(--text-muted); font-size: 11px; font-weight: 700;">
-        MAINTENANCE CAPABILITY (LEVEL 1-${levels.length})
-      </div>
-      <div class="stepper-wrapper" style="display: flex; gap: 6px;">
-  `;
-
-  levels.forEach((label, index) => {
-    const stepIdx = index + 1;
-    // Indikator aktif jika stepIdx <= level yang didapat dari data
-    const isActive = stepIdx <= levelNum;
-    
-    html += `
-      <div class="step-item ${isActive ? 'active' : ''}" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-        <div class="step-light" style="height: 6px; border-radius: 3px; background-color: ${isActive ? 'var(--primary)' : '#e5e7eb'}; transition: all 0.3s ease;"></div>
-        <div class="step-label" style="font-size: 9px; font-weight: 600; line-height: 1.2; color: ${isActive ? 'var(--text-main)' : 'var(--text-light)'};">
-          L${stepIdx}<br>${label}
-        </div>
-      </div>
-    `;
-  });
-
-  html += `</div></div>`;
-  return html;
-}
-
-function renderCards(data) {
-  const container = document.getElementById("tableBody");
-  container.innerHTML = "";
+  document.getElementById("rowsPerPage").onchange = (e) => {
+    rowsPerPage = e.target.value === "all" ? "all" : Number(e.target.value);
+    currentPage = 1;
+    renderCards(viewData);
+  };
   
-  if (data.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-light);">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-      <p>No matching records found in database.</p>
-    </div>`;
-    updatePaginationInfo(0);
-    return;
-  }
-
-  let start = 0, end = data.length;
-  if (rowsPerPage !== "all") {
-    start = (currentPage - 1) * rowsPerPage;
-    end = start + rowsPerPage;
-  }
-
-  data.slice(start, end).forEach((row, rIdx) => {
-    const card = document.createElement("div");
-    card.className = "data-card";
-    
-    const checkHtml = actionMode ? 
-      `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
-
-    // Ambil Authority (Index 1) dan Level (Index 10)
-    const authName = row[1];
-    const capLevel = row[10];
-
-    // Build detail kolom di sisi kanan (Index 3 - 11)
-    // PENTING: Index 10 di-skip karena sudah jadi Stepper di kiri
-    let detailsHtml = "";
-    row.forEach((cell, idx) => {
-      if (idx > 2 && idx !== 10) { 
-        const displayValue = (idx === 11) ? formatStatus(cell) : formatLogoValue(cell);
-        
-        detailsHtml += `
-          <div class="detail-item">
-            <span class="detail-label">${colNames[idx]}</span>
-            <span class="detail-value">${displayValue}</span>
-          </div>`;
-      }
-    });
-
-    card.innerHTML = `
-      ${checkHtml}
-      <div class="card-main">
-        <div class="card-header-row">
-            <span class="no-badge">${row[0]}</span>
-            <div class="vertical-divider"></div>
-            ${formatLogoValue(row[1])}
-        </div>
-        
-        <div class="detail-item" style="margin-top: 10px;">
-            <span class="detail-label">${colNames[2]}</span>
-            <div class="detail-value" style="font-size: 16px; font-weight: 700; color: var(--primary);">
-                ${formatLogoValue(row[2])}
-            </div>
-        </div>
-
-        <!-- INTEGRASI STEPPER DI SINI -->
-        ${renderCapabilityStepper(authName, capLevel)}
-      </div>
-
-      <div class="data-details">
-        ${detailsHtml}
-      </div>
-    `;
-    container.appendChild(card);
-  });
-  updatePaginationInfo(data.length);
-}
+  document.getElementById("prevPage").onclick = () => { 
+    if (currentPage > 1) { currentPage--; renderCards(viewData); } 
+  };
   
-function applyAllFilters() {
-  currentPage = 1;
-  viewData = rawData.filter(row => {
-    const matchesCol = Object.keys(columnFilters).every(idx => 
-      String(row[idx]).toLowerCase().includes(columnFilters[idx])
-    );
-    const matchesGlobal = !globalKeyword || row.some(cell => 
-      String(cell).toLowerCase().includes(globalKeyword)
-    );
-    return matchesCol && matchesGlobal;
-  });
-  renderCards(viewData);
-  updateDataStatus();
-}
-
-function updatePaginationInfo(total) {
-  const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(total / rowsPerPage) || 1;
-  document.getElementById("pageInfo").textContent = `${currentPage} of ${totalPages}`;
-  document.getElementById("prevPage").disabled = currentPage <= 1;
-  document.getElementById("nextPage").disabled = currentPage >= totalPages;
-}
-
-function updateDataStatus() {
-  document.getElementById("dataStatus").textContent = `Displaying ${viewData.length.toLocaleString()} results from global registry`;
-}
-
-// UI EVENTS
-document.getElementById("searchBtn").onclick = () => {
-  globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
-  applyAllFilters();
-};
-
-document.getElementById("globalSearch").onkeyup = (e) => { if (e.key === "Enter") document.getElementById("searchBtn").click(); };
-
-document.getElementById("rowsPerPage").onchange = (e) => {
-  rowsPerPage = e.target.value === "all" ? "all" : Number(e.target.value);
-  currentPage = 1;
-  renderCards(viewData);
-};
-
-document.getElementById("prevPage").onclick = () => { if (currentPage > 1) { currentPage--; renderCards(viewData); } };
-document.getElementById("nextPage").onclick = () => { currentPage++; renderCards(viewData); };
-
-document.getElementById("actionBtn").onclick = () => {
-  actionMode = !actionMode;
-  document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
-  renderCards(viewData);
-};
-
-document.getElementById("exportBtn").onclick = () => {
-  const selected = [...document.querySelectorAll(".rowCheck:checked")].map(cb => viewData[cb.dataset.index]);
-  if (!selected.length) return alert("Select entries first");
-  const ws = XLSX.utils.aoa_to_sheet([colNames, ...selected]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Capabilities");
-  XLSX.writeFile(wb, "Capability_Export.xlsx");
-};
-
-function formatStatus(val) {
-  if (!val) return '';
-  const status = String(val).trim().toUpperCase();
-  let className = 'status-default';
+  document.getElementById("nextPage").onclick = () => { 
+    const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(viewData.length / rowsPerPage);
+    if (currentPage < totalPages) { currentPage++; renderCards(viewData); }
+  };
   
-  if (status === 'AVAIL') className = 'status-avail';
-  if (status === 'LIMITED') className = 'status-limited';
+  document.getElementById("actionBtn").onclick = () => {
+    actionMode = !actionMode;
+    document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
+    renderCards(viewData);
+  };
   
-  return `<span class="status-badge ${className}">${status}</span>`;
-}
-  
-</script>
+  document.getElementById("exportBtn").onclick = () => {
+    const selected = [...document.querySelectorAll(".rowCheck:checked")].map(cb => viewData[cb.dataset.index]);
+    if (!selected.length) return alert("Select entries first");
+    const ws = XLSX.utils.aoa_to_sheet([colNames, ...selected]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Capabilities");
+    XLSX.writeFile(wb, "Capability_Export.xlsx");
+  };
+  </script>
 </body>
 </html>
