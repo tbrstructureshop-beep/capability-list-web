@@ -547,297 +547,237 @@
 </div>
 <script src="../auth/script.js"></script>
   <script>
-  /** 
-   * ENTERPRISE CAPABILITY LOGIC - FIXED & OPTIMIZED
-   */
-  const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycaGtEDv-GXxAIlfGv26tYUc1IAUY2MRIgJq1IUbBdP_VrJnvA_B-6-GdRbW2RKKtJ/exec";
-  
-  // Mapping kolom: [0..8, 14, 15, 16]
-  // Masing-masing row akan memiliki index 0 s/d 11
-  const DISPLAY_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16];
-  
-  let rawData = [];
-  let viewData = [];
-  let colNames = [];
-  let currentPage = 1;
-  let rowsPerPage = 10;
-  let filtersVisible = false;
-  let globalKeyword = "";
-  let columnFilters = {};
-  let actionMode = false;
-  
-  // 1. Fungsi Format Logo & Value
-  function formatLogoValue(val) {
-    if (!val) return '—';
-    const cleanVal = String(val).trim().toUpperCase();
+    /** 
+     * ENTERPRISE CAPABILITY LOGIC - FIXED FOR MULTILINE SUMMARY & GREEN INDICATORS
+     */
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycaGtEDv-GXxAIlfGv26tYUc1IAUY2MRIgJq1IUbBdP_VrJnvA_B-6-GdRbW2RKKtJ/exec";
     
-    const logos = {
-      'DGCA': '../pricing/assets/DGCA_Logo.png',
-      'EASA': '../pricing/assets/EASA_Logo.png',
-      'FAA': '../pricing/assets/FAA_Logo.png'
-    };
-  
-    if (logos[cleanVal]) {
-      return `<img src="${logos[cleanVal]}" alt="${cleanVal}" class="agency-" title="${cleanVal}">`;
+    // Mapping: 0:NO, 1:AUTH, 2:RATING, 3:ATA, 4:SHOP, 5:PN, 6:NAME, 7:MANUF, 8:REF, 14:A/C TYPE, 15:SUMMARY, 16:STATUS
+    const DISPLAY_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16];
+    
+    let rawData = [];
+    let viewData = [];
+    let colNames = [];
+    let currentPage = 1;
+    let rowsPerPage = 10;
+    let filtersVisible = false;
+    let globalKeyword = "";
+    let columnFilters = {};
+    let actionMode = false;
+    
+    // 1. Format Logo
+    function formatLogoValue(val) {
+      if (!val) return '—';
+      const cleanVal = String(val).trim().toUpperCase();
+      const logos = {
+        'DGCA': '../pricing/assets/DGCA_Logo.png',
+        'EASA': '../pricing/assets/EASA_Logo.png',
+        'FAA': '../pricing/assets/FAA_Logo.png'
+      };
+      if (logos[cleanVal]) {
+        return `<img src="${logos[cleanVal]}" alt="${cleanVal}" class="agency-" title="${cleanVal}">`;
+      }
+      return val; 
     }
-    return val; 
-  }
-  
-  function renderCapabilityStepper(authName, currentLevel) {
-    const cleanAuth = String(authName || "").trim().toUpperCase();
     
-    // Define exact labels based on your requirement
-    const AUTHORITY_CONFIG = {
-      'EASA': [
-        "Inspected / Tested", 
-        "Repaired", 
-        "Modified", 
-        "Overhauled"
-      ],
-      'FAA': [
-        "Inspection", 
-        "Testing", 
-        "Repair", 
-        "Modification", 
-        "Overhaul"
-      ],
-      'DGCA': [
-        "Inspection", 
-        "Testing", 
-        "Repair", 
-        "Modification", 
-        "Overhaul"
-      ]
-    };
-  
-    const levels = AUTHORITY_CONFIG[cleanAuth] || AUTHORITY_CONFIG['FAA'];
-    const levelNum = parseInt(currentLevel) || 0;
-  
-    let html = `
-      <div class="capability-container" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
-        <div class="authority-tag" style="margin-bottom: 12px; color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: 0.05em;">
-          CAPABILITY LEVEL SUMMARY
-        </div>
-        <div class="stepper-wrapper" style="display: flex; flex-direction: column; gap: 10px;">
-    `;
-  
-    levels.forEach((label, index) => {
-      const stepIdx = index + 1;
-      const isActive = stepIdx <= levelNum; // Green if current level or lower
+    // 2. Stepper Logic: Searches for "Level X" in the multiline string
+    function renderCapabilityStepper(authName, summaryText) {
+      const cleanAuth = String(authName || "").trim().toUpperCase();
+      const textContent = String(summaryText || "");
       
-      html += `
-        <div class="step-item ${isActive ? 'active' : ''}" style="display: flex; align-items: center; gap: 12px;">
-          <!-- The Green/Grey Light Indicator -->
-          <div class="step-light" style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; background-color: ${isActive ? 'var(--success)' : 'var(--inactive)'};"></div>
-          
-          <!-- The Label: Label (Level X) -->
-          <div class="step-label" style="font-size: 13px; line-height: 1;">
-            ${label} (Level ${stepIdx})
+      const AUTHORITY_CONFIG = {
+        'EASA': ["Inspected / Tested", "Repaired", "Modified", "Overhauled"],
+        'FAA': ["Inspection", "Testing", "Repair", "Modification", "Overhaul"],
+        'DGCA': ["Inspection", "Testing", "Repair", "Modification", "Overhaul"]
+      };
+    
+      const levels = AUTHORITY_CONFIG[cleanAuth] || AUTHORITY_CONFIG['FAA'];
+    
+      let html = `
+        <div class="capability-container" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+          <div class="authority-tag" style="margin-bottom: 12px; color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: 0.05em;">
+            CAPABILITY LEVEL SUMMARY
           </div>
-        </div>
+          <div class="stepper-wrapper" style="display: flex; flex-direction: column; gap: 8px;">
       `;
-    });
-  
-    return html + `</div></div>`;
-  }
-  
-  // 3. Loader Functions
-  function showLoader() { document.getElementById("loader").style.display = "flex"; }
-  function hideLoader() { document.getElementById("loader").style.display = "none"; }
-  
-  function toggleFilters() {
-    const row = document.getElementById("filterRow");
-    filtersVisible = !filtersVisible;
-    row.style.display = filtersVisible ? "grid" : "none";
-  }
-  
-  // 4. Fetch Data
-  showLoader();
-  fetch(`${GAS_API_URL}?action=getCapabilityList`)
-    .then(res => res.json())
-    .then(rows => {
-      // Ambil header dari baris 1 & 2
-      colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
-      buildFilterInputs(colNames);
+    
+      levels.forEach((label, index) => {
+        const stepIdx = index + 1;
+        // Checks if "Level 1", "Level 2", etc exists in the multiline string
+        const isActive = textContent.includes(`Level ${stepIdx}`); 
+        
+        html += `
+          <div class="step-item ${isActive ? 'active' : ''}" style="display: flex; align-items: center; gap: 12px;">
+            <!-- Circle Indicator: Green if active, Grey if inactive -->
+            <div class="step-light" style="width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; background-color: ${isActive ? 'var(--success)' : 'var(--inactive)'};"></div>
+            
+            <!-- Label: Dark Green if active, Light Grey if inactive -->
+            <div class="step-label" style="font-size: 13px; line-height: 1.2; color: ${isActive ? '#15803d' : 'var(--text-light)'}; font-weight: ${isActive ? '700' : '400'};">
+              ${label} (Level ${stepIdx})
+            </div>
+          </div>
+        `;
+      });
+    
+      return html + `</div></div>`;
+    }
+    
+    // 3. Loader & General UI
+    function showLoader() { document.getElementById("loader").style.display = "flex"; }
+    function hideLoader() { document.getElementById("loader").style.display = "none"; }
+    function toggleFilters() {
+      filtersVisible = !filtersVisible;
+      document.getElementById("filterRow").style.display = filtersVisible ? "grid" : "none";
+    }
+    
+    // 4. Fetch Data
+    showLoader();
+    fetch(`${GAS_API_URL}?action=getCapabilityList`)
+      .then(res => res.json())
+      .then(rows => {
+        colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+        buildFilterInputs(colNames);
+        rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+        viewData = rawData;
+        renderCards(viewData);
+        updateDataStatus();
+        hideLoader();
+      })
+      .catch(err => { console.error(err); hideLoader(); });
+    
+    // 5. Render Card Display
+    function renderCards(data) {
+      const container = document.getElementById("tableBody");
+      container.innerHTML = "";
       
-      // Ambil data mulai baris ke-4 (index 3)
-      rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
-      viewData = rawData;
-      
+      if (data.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-light);"><p>No matching records found.</p></div>`;
+        return;
+      }
+    
+      let start = 0, end = data.length;
+      if (rowsPerPage !== "all") {
+        start = (currentPage - 1) * rowsPerPage;
+        end = start + rowsPerPage;
+      }
+    
+      data.slice(start, end).forEach((row, rIdx) => {
+        const card = document.createElement("div");
+        card.className = "data-card";
+        const authName = row[1];
+        const summaryText = row[10]; // Multi-line text block
+    
+        const checkHtml = actionMode ? `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
+    
+        let detailsHtml = "";
+        row.forEach((cell, idx) => {
+          // Map columns: Rating(2), ATA(3), Shop(4), Part Name(6), Manufacturer(7), AC Type(9), Status(11)
+          if ([2,3,4,6,7,9,11].includes(idx)) { 
+            const displayValue = (idx === 11) ? formatStatus(cell) : cell;
+            detailsHtml += `
+              <div class="detail-item">
+                <span class="detail-label">${colNames[idx]}</span>
+                <span class="detail-value">${displayValue || '—'}</span>
+              </div>`;
+          }
+        });
+    
+        card.innerHTML = `
+          ${checkHtml}
+          <div class="card-main">
+            <div class="card-header-row">
+                <span class="no-badge">${row[0]}</span>
+                <div class="vertical-divider"></div>
+                ${formatLogoValue(row[1])}
+            </div>
+            
+            <div class="detail-item" style="margin-top: 10px;">
+                <span class="detail-label">PART NUMBER</span>
+                <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">
+                    ${row[5]}
+                </div>
+            </div>
+    
+            ${renderCapabilityStepper(authName, summaryText)}
+          </div>
+    
+          <div class="data-details">
+            ${detailsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      updatePaginationInfo(data.length);
+    }
+    
+    // 6. Logic Helpers
+    function applyAllFilters() {
+      currentPage = 1;
+      viewData = rawData.filter(row => {
+        const matchesCol = Object.keys(columnFilters).every(idx => String(row[idx]).toLowerCase().includes(columnFilters[idx]));
+        const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+        return matchesCol && matchesGlobal;
+      });
       renderCards(viewData);
       updateDataStatus();
-      hideLoader();
-    })
-    .catch(err => { 
-      console.error("Fetch error:", err); 
-      hideLoader(); 
-    });
-  
-  // 5. Render Cards
-  function renderCards(data) {
-    const container = document.getElementById("tableBody");
-    container.innerHTML = "";
+    }
     
-    if (data.length === 0) {
-      container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-light);">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:16px;"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-        <p>No matching records found in database.</p>
-      </div>`;
-      updatePaginationInfo(0);
-      return;
-    }
-  
-    let start = 0, end = data.length;
-    if (rowsPerPage !== "all") {
-      start = (currentPage - 1) * rowsPerPage;
-      end = start + rowsPerPage;
-    }
-  
-    data.slice(start, end).forEach((row, rIdx) => {
-      const card = document.createElement("div");
-      card.className = "data-card";
-      
-      const checkHtml = actionMode ? 
-        `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
-  
-      // Index Berdasarkan DISPLAY_COLS:
-      // row[1] = Authority, row[2] = Part Number, row[10] = Level, row[11] = Status
-      const authName = row[1];
-      const capLevel = row[10];
-  
-      let detailsHtml = "";
-      row.forEach((cell, idx) => {
-        // Tampilkan detail kolom index 3-9, dan index 11 (Status)
-        // Index 10 (Level) di-skip karena sudah jadi stepper
-        if (idx > 2 && idx !== 10) { 
-          const displayValue = (idx === 11) ? formatStatus(cell) : formatLogoValue(cell);
-          detailsHtml += `
-            <div class="detail-item">
-              <span class="detail-label">${colNames[idx]}</span>
-              <span class="detail-value">${displayValue}</span>
-            </div>`;
-        }
+    function buildFilterInputs(headers) {
+      const fRow = document.getElementById("filterRow");
+      fRow.innerHTML = "";
+      headers.forEach((h, idx) => {
+        const field = document.createElement("div");
+        field.className = "filter-field";
+        field.innerHTML = `<label>${h}</label><input type="text" placeholder="Filter..." data-index="${idx}">`;
+        field.querySelector('input').oninput = (e) => {
+          columnFilters[idx] = e.target.value.toLowerCase();
+          applyAllFilters();
+        };
+        fRow.appendChild(field);
       });
-  
-      card.innerHTML = `
-        ${checkHtml}
-        <div class="card-main">
-          <div class="card-header-row">
-              <span class="no-badge">${row[0]}</span>
-              <div class="vertical-divider"></div>
-              ${formatLogoValue(row[1])}
-          </div>
-          
-          <div class="detail-item" style="margin-top: 10px;">
-              <span class="detail-label">${colNames[2]}</span>
-              <div class="detail-value" style="font-size: 16px; font-weight: 700; color: var(--primary);">
-                  ${row[2]}
-              </div>
-          </div>
-  
-          ${renderCapabilityStepper(authName, capLevel)}
-        </div>
-  
-        <div class="data-details">
-          ${detailsHtml}
-        </div>
-      `;
-      container.appendChild(card);
-    });
-    updatePaginationInfo(data.length);
-  }
-  
-  // 6. Filtering & Helper Functions
-  function buildFilterInputs(headers) {
-    const fRow = document.getElementById("filterRow");
-    fRow.innerHTML = "";
-    headers.forEach((h, idx) => {
-      const field = document.createElement("div");
-      field.className = "filter-field";
-      field.innerHTML = `<label>${h}</label>
-                         <input type="text" placeholder="Filter..." data-index="${idx}">`;
-      field.querySelector('input').oninput = (e) => {
-        columnFilters[idx] = e.target.value.toLowerCase();
-        applyAllFilters();
-      };
-      fRow.appendChild(field);
-    });
-  }
-  
-  function applyAllFilters() {
-    currentPage = 1;
-    viewData = rawData.filter(row => {
-      const matchesCol = Object.keys(columnFilters).every(idx => 
-        String(row[idx]).toLowerCase().includes(columnFilters[idx])
-      );
-      const matchesGlobal = !globalKeyword || row.some(cell => 
-        String(cell).toLowerCase().includes(globalKeyword)
-      );
-      return matchesCol && matchesGlobal;
-    });
-    renderCards(viewData);
-    updateDataStatus();
-  }
-  
-  function updatePaginationInfo(total) {
-    const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(total / rowsPerPage) || 1;
-    document.getElementById("pageInfo").textContent = `${currentPage} of ${totalPages}`;
-    document.getElementById("prevPage").disabled = currentPage <= 1;
-    document.getElementById("nextPage").disabled = currentPage >= totalPages;
-  }
-  
-  function updateDataStatus() {
-    document.getElementById("dataStatus").textContent = `Displaying ${viewData.length.toLocaleString()} results from global registry`;
-  }
-  
-  function formatStatus(val) {
-    if (!val) return '';
-    const status = String(val).trim().toUpperCase();
-    let className = 'status-default';
-    if (status === 'AVAIL') className = 'status-avail';
-    if (status === 'LIMITED') className = 'status-limited';
-    return `<span class="status-badge ${className}">${status}</span>`;
-  }
-  
-  // 7. UI Events
-  document.getElementById("searchBtn").onclick = () => {
-    globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
-    applyAllFilters();
-  };
-  
-  document.getElementById("globalSearch").onkeyup = (e) => { 
-    if (e.key === "Enter") document.getElementById("searchBtn").click(); 
-  };
-  
-  document.getElementById("rowsPerPage").onchange = (e) => {
-    rowsPerPage = e.target.value === "all" ? "all" : Number(e.target.value);
-    currentPage = 1;
-    renderCards(viewData);
-  };
-  
-  document.getElementById("prevPage").onclick = () => { 
-    if (currentPage > 1) { currentPage--; renderCards(viewData); } 
-  };
-  
-  document.getElementById("nextPage").onclick = () => { 
-    const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(viewData.length / rowsPerPage);
-    if (currentPage < totalPages) { currentPage++; renderCards(viewData); }
-  };
-  
-  document.getElementById("actionBtn").onclick = () => {
-    actionMode = !actionMode;
-    document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
-    renderCards(viewData);
-  };
-  
-  document.getElementById("exportBtn").onclick = () => {
-    const selected = [...document.querySelectorAll(".rowCheck:checked")].map(cb => viewData[cb.dataset.index]);
-    if (!selected.length) return alert("Select entries first");
-    const ws = XLSX.utils.aoa_to_sheet([colNames, ...selected]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Capabilities");
-    XLSX.writeFile(wb, "Capability_Export.xlsx");
-  };
+    }
+    
+    function updatePaginationInfo(total) {
+      const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(total / rowsPerPage) || 1;
+      document.getElementById("pageInfo").textContent = `${currentPage} of ${totalPages}`;
+      document.getElementById("prevPage").disabled = currentPage <= 1;
+      document.getElementById("nextPage").disabled = currentPage >= totalPages;
+    }
+    
+    function updateDataStatus() {
+      document.getElementById("dataStatus").textContent = `Displaying ${viewData.length.toLocaleString()} records`;
+    }
+    
+    function formatStatus(val) {
+      if (!val) return '';
+      const status = String(val).trim().toUpperCase();
+      let className = 'status-default';
+      if (status === 'AVAIL') className = 'status-avail';
+      if (status === 'LIMITED') className = 'status-limited';
+      return `<span class="status-badge ${className}">${status}</span>`;
+    }
+    
+    // 7. Events
+    document.getElementById("searchBtn").onclick = () => {
+      globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
+      applyAllFilters();
+    };
+    document.getElementById("globalSearch").onkeyup = (e) => { if (e.key === "Enter") document.getElementById("searchBtn").click(); };
+    document.getElementById("rowsPerPage").onchange = (e) => {
+      rowsPerPage = e.target.value === "all" ? "all" : Number(e.target.value);
+      currentPage = 1;
+      renderCards(viewData);
+    };
+    document.getElementById("prevPage").onclick = () => { if (currentPage > 1) { currentPage--; renderCards(viewData); } };
+    document.getElementById("nextPage").onclick = () => { 
+      const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(viewData.length / rowsPerPage);
+      if (currentPage < totalPages) { currentPage++; renderCards(viewData); } 
+    };
+    document.getElementById("actionBtn").onclick = () => {
+      actionMode = !actionMode;
+      document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
+      renderCards(viewData);
+    };
   </script>
 </body>
 </html>
