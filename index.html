@@ -334,7 +334,7 @@
       animation: spin 0.8s linear infinite;
     }
 
-    .agency-logo {
+    .agency- {
       height: 35px;      /* Consistent height */
       width: auto;       /* Maintain aspect ratio */
       display: block;    /* Alignment */
@@ -342,7 +342,7 @@
       filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1)); /* Slight depth */
     }
 
-    /* Container for the No and Logo row */
+    /* Container for the No and  row */
     .card-header-row {
       display: flex;
       align-items: center;
@@ -363,8 +363,8 @@
       background-color: var(--border);
     }
     
-    /* Tweak logo size for the top row */
-    .card-header-row .agency-logo {
+    /* Tweak  size for the top row */
+    .card-header-row .agency- {
       height: 22px; /* Slightly smaller to fit in the line */
       margin-top: 0;
     }
@@ -544,13 +544,13 @@ function buildFilterInputs(headers) {
   });
 }
 
-function formatLogoValue(val) {
+function formatValue(val) {
   if (!val) return '—';
   
   // Clean the input: remove hidden spaces and make uppercase
   const cleanVal = String(val).trim().toUpperCase();
   
-  const logos = {
+  const s = {
     'DGCA': '../pricing/assets/DGCA_Logo.png',
     'EASA': '../pricing/assets/EASA_Logo.png',
     'FAA': '../pricing/assets/FAA_Logo.png'
