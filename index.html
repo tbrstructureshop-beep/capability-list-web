@@ -399,6 +399,61 @@
     .status-avail { background: #dcfce7; color: #166534; }
     .status-limited { background: #fef9c3; color: #854d0e; }
     .status-default { background: #f3f4f6; color: #374151; }
+
+    /* Styling untuk Capability Stepper */
+    .capability-container {
+      margin-top: 15px;
+      width: 100%;
+    }
+    
+    .stepper-wrapper {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    .step-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    /* Garis Indikator (Light Indicator) */
+    .step-light {
+      width: 100%;
+      height: 6px;
+      border-radius: 10px;
+      background-color: #e5e7eb; /* Grey / Inactive */
+      transition: all 0.3s ease;
+    }
+    
+    /* Warna saat Aktif */
+    .step-item.active .step-light {
+      background-color: var(--primary); /* Blue-ish / Active */
+      box-shadow: 0 0 8px rgba(60, 146, 166, 0.4);
+    }
+    
+    .step-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-align: center;
+      color: var(--text-light);
+      line-height: 1.2;
+    }
+    
+    .step-item.active .step-label {
+      color: var(--primary);
+    }
+    
+    .authority-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -563,6 +618,66 @@ function formatValue(val) {
   return val; 
 }
 
+
+
+const AUTHORITY_CONFIG = {
+  'EASA': [
+    "Inspected / Tested", 
+    "Repaired", 
+    "Modified", 
+    "Overhauled"
+  ],
+  'FAA': [
+    "Inspection", 
+    "Testing", 
+    "Repair", 
+    "Modification", 
+    "Overhaul"
+  ],
+  'DGCA': [
+    "Inspection", 
+    "Testing", 
+    "Repair", 
+    "Modification", 
+    "Overhaul"
+  ]
+};
+
+function renderCapabilityStepper(authName, currentLevel) {
+  // Membersihkan input: hapus spasi dan buat uppercase untuk pengecekan key
+  const cleanAuth = String(authName || "").trim().toUpperCase();
+  
+  // Mengambil config berdasarkan authority, default ke FAA jika tidak terdaftar
+  const levels = AUTHORITY_CONFIG[cleanAuth] || AUTHORITY_CONFIG['FAA'];
+  const levelNum = parseInt(currentLevel) || 0;
+
+  let html = `
+    <div class="capability-container" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;">
+      <div class="authority-tag" style="margin-bottom: 8px; color: var(--text-muted); font-size: 11px; font-weight: 700;">
+        MAINTENANCE CAPABILITY (LEVEL 1-${levels.length})
+      </div>
+      <div class="stepper-wrapper" style="display: flex; gap: 6px;">
+  `;
+
+  levels.forEach((label, index) => {
+    const stepIdx = index + 1;
+    // Indikator aktif jika stepIdx <= level yang didapat dari data
+    const isActive = stepIdx <= levelNum;
+    
+    html += `
+      <div class="step-item ${isActive ? 'active' : ''}" style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+        <div class="step-light" style="height: 6px; border-radius: 3px; background-color: ${isActive ? 'var(--primary)' : '#e5e7eb'}; transition: all 0.3s ease;"></div>
+        <div class="step-label" style="font-size: 9px; font-weight: 600; line-height: 1.2; color: ${isActive ? 'var(--text-main)' : 'var(--text-light)'};">
+          L${stepIdx}<br>${label}
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div></div>`;
+  return html;
+}
+
 function renderCards(data) {
   const container = document.getElementById("tableBody");
   container.innerHTML = "";
@@ -589,11 +704,15 @@ function renderCards(data) {
     const checkHtml = actionMode ? 
       `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
 
-    // Loop semua kolom detail dari index 3 sampai 11 (termasuk Status)
+    // Ambil Authority (Index 1) dan Level (Index 10)
+    const authName = row[1];
+    const capLevel = row[10];
+
+    // Build detail kolom di sisi kanan (Index 3 - 11)
+    // PENTING: Index 10 di-skip karena sudah jadi Stepper di kiri
     let detailsHtml = "";
     row.forEach((cell, idx) => {
-      if (idx > 2) { 
-        // Jika index adalah 11 (Status), gunakan formatStatus
+      if (idx > 2 && idx !== 10) { 
         const displayValue = (idx === 11) ? formatStatus(cell) : formatLogoValue(cell);
         
         detailsHtml += `
@@ -619,7 +738,11 @@ function renderCards(data) {
                 ${formatLogoValue(row[2])}
             </div>
         </div>
+
+        <!-- INTEGRASI STEPPER DI SINI -->
+        ${renderCapabilityStepper(authName, capLevel)}
       </div>
+
       <div class="data-details">
         ${detailsHtml}
       </div>
