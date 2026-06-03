@@ -37,6 +37,36 @@
       -webkit-font-smoothing: antialiased;
     }
 
+    /* --- LOADER STYLES --- */
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      gap: 15px;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--primary-light);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     body {
       margin: 0;
       padding: 0;
@@ -528,11 +558,20 @@
         buildFilterInputs(colNames);
         rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
         viewData = rawData;
+        
         renderCards(viewData);
         updateDataStatus();
-        hideLoader();
+    
+        // Use a slight timeout to ensure DOM rendering is complete before hiding
+        setTimeout(() => {
+          hideLoader();
+        }, 100); 
       })
-      .catch(err => { console.error(err); hideLoader(); });
+      .catch(err => { 
+        console.error(err); 
+        document.getElementById("dataStatus").textContent = "Error loading data.";
+        hideLoader(); 
+      });
     
     // 5. Render Card Display
     function renderCards(data) {
@@ -601,14 +640,21 @@
     
     // 6. Logic Helpers
     function applyAllFilters() {
-      currentPage = 1;
-      viewData = rawData.filter(row => {
-        const matchesCol = Object.keys(columnFilters).every(idx => String(row[idx]).toLowerCase().includes(columnFilters[idx]));
-        const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
-        return matchesCol && matchesGlobal;
-      });
-      renderCards(viewData);
-      updateDataStatus();
+      showLoader(); // Show loader during filtering
+      
+      // Wrap in setTimeout to allow the loader to appear before the CPU gets busy
+      setTimeout(() => {
+        currentPage = 1;
+        viewData = rawData.filter(row => {
+          const matchesCol = Object.keys(columnFilters).every(idx => String(row[idx]).toLowerCase().includes(columnFilters[idx]));
+          const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+          return matchesCol && matchesGlobal;
+        });
+        
+        renderCards(viewData);
+        updateDataStatus();
+        hideLoader();
+      }, 50);
     }
     
     function buildFilterInputs(headers) {
