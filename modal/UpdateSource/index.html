@@ -3,13 +3,15 @@
   <div class="modal-card" style="max-width: 900px;">
     <div class="modal-header">
       <h3 class="modal-title">Source Configuration & Process</h3>
-      <button class="close-x" onclick="closeUpdateSourceModal()">&times;</button>
+      <button class="close-x" onclick="closeUpdateSourceModal()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
     </div>
     <div class="modal-body">
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
-        Ganti file source (Excel/GSheet) atau update link PDF asli per Authority.
+        Update source spreadsheet (Excel/GSheet) atau perbarui tautan salinan PDF asli perusahaan.
       </p>
-      <div id="sourceCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px;">
+      <div id="sourceCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
         <!-- Cards loaded by JS -->
       </div>
     </div>
@@ -17,27 +19,38 @@
 </div>
 
 <style>
-  .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: #fff; }
-  .source-card h4 { margin: 0 0 10px 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
-  .status-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 800; }
-  .btn-group-proc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
-  .proc-btn { font-size: 11px; padding: 8px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: #f9fafb; font-weight: 700; }
+  .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; background: #fff; transition: var(--transition); }
+  .source-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+  .source-card h4 { margin: 0 0 12px 0; color: var(--primary); display: flex; align-items: center; gap: 10px; font-size: 16px; }
+  .status-tag { font-size: 10px; padding: 4px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+  .detail-label-sm { font-size: 10px; font-weight: 700; color: var(--text-light); text-transform: uppercase; display: block; margin-bottom: 6px; }
+  
+  .input-styled {
+    width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: 13px; margin-bottom: 15px; outline: none; transition: var(--transition);
+  }
+  .input-styled:focus { border-color: var(--primary); background: var(--primary-light); }
+
+  .btn-group-proc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  
+  .proc-btn { 
+    padding: 10px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); 
+    background: #f9fafb; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition);
+  }
+  .proc-btn:hover { background: #f3f4f6; }
   .proc-btn.run { background: var(--primary); color: #fff; border: none; }
+  .proc-btn.run:hover { background: var(--primary-dark); }
 </style>
 
 <script>
-function openUpdateSourceModal() {
-  document.getElementById('sourceModal').style.display = 'flex';
-  loadSourceCards();
-}
-
-function closeUpdateSourceModal() {
-  document.getElementById('sourceModal').style.display = 'none';
-}
+/**
+ * Logika Internal Modal UpdateSource
+ * Fungsi open/close sudah ditangani oleh index.html Utama
+ */
 
 function loadSourceCards() {
   const container = document.getElementById('sourceCardsContainer');
-  container.innerHTML = "Loading sources...";
+  container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-light);">Memuat konfigurasi source...</div>`;
   
   fetch(`${GAS_API_URL}?action=getSourceData`)
     .then(res => res.json())
@@ -48,25 +61,34 @@ function loadSourceCards() {
         card.className = "source-card";
         card.innerHTML = `
           <h4>${formatLogoValue(s.authority)} ${s.authority}</h4>
-          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
-            Last: ${s.lastSheet || '-'} / PN: ${s.lastPN || '-'} <br>
-            Updated: ${s.updateAt} <br>
-            Status: <span class="status-tag" style="background:#eef7f9;">${s.status}</span>
+          <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 8px;">
+            <strong>Last Sheet:</strong> ${s.lastSheet || '-'}<br>
+            <strong>Last PN:</strong> ${s.lastPN || '-'}<br>
+            <strong>Update At:</strong> ${s.updateAt}<br>
+            <strong>Status:</strong> <span class="status-tag" style="color:var(--primary);">${s.status}</span>
           </div>
           
-          <label class="detail-label">PDF Original URL</label>
-          <input type="text" id="pdf-${s.authority}" value="${s.pdfCopy}" style="width:100%; margin-bottom:10px;" onchange="updatePdfUrl('${s.authority}', ${s.rowIndex})">
+          <label class="detail-label-sm">PDF SharePoint URL</label>
+          <input type="text" id="pdf-${s.authority}" class="input-styled" value="${s.pdfCopy || ''}" placeholder="Paste URL SharePoint..." onchange="updatePdfUrl('${s.authority}', ${s.rowIndex})">
           
-          <label class="detail-label">Source Spreadsheet ID</label>
-          <div style="display:flex; gap:5px; align-items:center;">
-             <input type="text" value="${s.sourceId}" readonly style="flex:1; background:#f1f5f9; font-size:10px;">
-             <button class="btn" style="padding:5px;" onclick="document.getElementById('file-${s.authority}').click()">📁</button>
+          <label class="detail-label-sm">Source Spreadsheet ID</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+             <input type="text" value="${s.sourceId}" readonly style="flex:1; background:#f1f5f9; font-size:11px; border:1px solid var(--border); border-radius:8px; padding:8px;">
+             <button class="btn" style="padding:8px;" title="Upload New File" onclick="document.getElementById('file-${s.authority}').click()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+             </button>
              <input type="file" id="file-${s.authority}" style="display:none;" onchange="uploadNewSource(event, '${s.authority}', '${s.sourceId}', ${s.rowIndex})">
           </div>
 
           <div class="btn-group-proc">
-            <button class="proc-btn" onclick="triggerProc('${s.authority}', 'resume')">Resume Process</button>
-            <button class="proc-btn run" onclick="triggerProc('${s.authority}', 'scratch')">Reset & Run All</button>
+            <button class="proc-btn" onclick="triggerProc('${s.authority}', 'resume')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Resume
+            </button>
+            <button class="proc-btn run" onclick="triggerProc('${s.authority}', 'scratch')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              Reset & Run
+            </button>
           </div>
         `;
         container.appendChild(card);
@@ -76,15 +98,19 @@ function loadSourceCards() {
 
 function updatePdfUrl(auth, row) {
   const url = document.getElementById(`pdf-${auth}`).value;
+  const payload = { action: "updateSourceConfig", rowIndex: row, pdfCopy: url };
+  
   fetch(GAS_API_URL, {
     method: "POST",
     mode: "no-cors",
-    body: JSON.stringify({ action: "updateSourceConfig", rowIndex: row, pdfCopy: url })
-  }).then(() => alert('PDF URL Updated'));
+    body: JSON.stringify(payload)
+  }).then(() => alert(`${auth}: PDF URL Updated`));
 }
 
 function uploadNewSource(e, auth, oldId, row) {
   const file = e.target.files[0];
+  if (!file) return;
+
   const reader = new FileReader();
   reader.onload = function(evt) {
     const payload = {
@@ -94,18 +120,24 @@ function uploadNewSource(e, auth, oldId, row) {
       fileName: file.name,
       fileData: evt.target.result.split(",")[1]
     };
+    alert(`Uploading ${file.name} for ${auth}...`);
     fetch(GAS_API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
-      .then(() => { alert('File replaced & ID updated!'); loadSourceCards(); });
+      .then(() => { 
+        alert('File replaced successfully!'); 
+        loadSourceCards(); 
+      });
   };
   reader.readAsDataURL(file);
 }
 
 function triggerProc(auth, mode) {
-  if (mode === 'scratch' && !confirm(`Yakin ingin RESET SEMUA DATA ${auth} dan mulai dari awal?`)) return;
-  fetch(GAS_API_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify({ action: "triggerProcess", auth: auth, mode: mode })
-  }).then(() => alert(`Process ${auth} (${mode}) has been triggered in background.`));
+  if (mode === 'scratch' && !confirm(`PENTING: Reset akan menghapus semua data ${auth} di Summary dan mulai dari baris pertama. Lanjutkan?`)) return;
+  
+  const payload = { action: "triggerProcess", auth: auth, mode: mode };
+  fetch(GAS_API_URL, { 
+    method: "POST", 
+    mode: "no-cors", 
+    body: JSON.stringify(payload) 
+  }).then(() => alert(`Proses ${auth} (${mode}) telah dipicu di background.`));
 }
 </script>
