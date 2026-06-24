@@ -385,37 +385,63 @@
     /* Sidebar Styles */
     .sidebar {
       position: fixed;
-      top: 0; left: -280px; width: 280px; height: 100%;
+      top: 0; right: -300px; /* Sembunyi di kanan */
+      width: 300px; height: 100%;
       background: var(--card-bg);
-      box-shadow: var(--shadow-md);
+      box-shadow: -4px 0 15px rgba(0,0,0,0.1);
       z-index: 10000;
       transition: var(--transition);
-      padding: 30px 20px;
+      padding: 30px 24px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
-    .sidebar.active { left: 0; }
+    .sidebar.active { right: 0; } /* Muncul ke arah kiri */
+
     .sidebar-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.3);
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(2px);
       display: none; z-index: 9999;
     }
     .sidebar-overlay.active { display: block; }
     
     .burger-btn {
-      background: none; border: none; cursor: pointer;
-      padding: 10px; display: flex; align-items: center;
+      background: var(--primary-light); 
+      border: none; cursor: pointer;
+      padding: 10px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary);
+      transition: var(--transition);
     }
+    .burger-btn:hover { background: var(--primary); color: white; }
     
     .menu-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 15px; border-radius: 8px;
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px; border-radius: 12px;
       text-decoration: none; color: var(--text-main);
       font-weight: 600; font-size: 14px;
       transition: var(--transition); border: none; background: none; width: 100%; text-align: left;
+      cursor: pointer;
     }
     .menu-item:hover { background: var(--primary-light); color: var(--primary); }
+    .menu-item svg { opacity: 0.7; }
+
+    /* --- MODAL UPDATE SOURCE SPECIFIC --- */
+    .source-card { 
+      border: 1px solid var(--border); 
+      border-radius: 14px; padding: 20px; 
+      background: #fff; transition: var(--transition);
+    }
+    .source-card:hover { border-color: var(--primary); }
+    .source-card h4 { margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px; font-size: 16px;}
+    .source-meta { font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-bottom: 15px; }
+    .btn-proc-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .btn-proc { 
+      padding: 8px; font-size: 11px; font-weight: 700; border-radius: 8px; 
+      cursor: pointer; border: 1px solid var(--border); background: white;
+    }
+    .btn-proc.primary { background: var(--primary); color: white; border: none; }
 
     @media (max-width: 768px) {
       .data-card { grid-template-columns: 1fr; }
@@ -429,7 +455,10 @@
 <!-- SIDEBAR NAVIGATION & OVERLAY -->
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 <nav id="sidebar" class="sidebar">
-  <h2 style="font-size: 18px; margin-bottom: 20px; padding-left: 15px;">Menu Utama</h2>
+  <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 30px;">
+    <h2 style="font-size: 18px; margin:0;">Control Panel</h2>
+    <button onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
+  </div>
   
   <a href="./application/dashboard/index.html" class="menu-item">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
@@ -448,22 +477,17 @@
 </nav>
 
 <div class="container">
-  <!-- NEW HEADER WITH BURGER MENU -->
   <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <button class="burger-btn" onclick="toggleSidebar()">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-      </button>
-      <div>
-        <h1>Enterprise Capability Web</h1>
-        <div id="dataStatus">Connecting to secure data source...</div>
-      </div>
+    <div>
+      <h1>Enterprise Capability Web</h1>
+      <div id="dataStatus">Connecting to secure data source...</div>
     </div>
-    <div style="font-size: 12px; color: var(--text-light); text-align: right; font-weight: 500;">
-        Updated: Jan 10, 2026
-    </div>
+    
+    <button class="burger-btn" onclick="toggleSidebar()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
   </header>
-
+  
   <div id="dashboard">
     <div class="controls-wrapper">
       <!-- Premium Search Bar -->
