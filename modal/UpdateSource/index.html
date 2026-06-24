@@ -1,1 +1,111 @@
+<!-- Container Modal Update Source -->
+<div id="sourceModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card" style="max-width: 900px;">
+    <div class="modal-header">
+      <h3 class="modal-title">Source Configuration & Process</h3>
+      <button class="close-x" onclick="closeUpdateSourceModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+        Ganti file source (Excel/GSheet) atau update link PDF asli per Authority.
+      </p>
+      <div id="sourceCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px;">
+        <!-- Cards loaded by JS -->
+      </div>
+    </div>
+  </div>
+</div>
 
+<style>
+  .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: #fff; }
+  .source-card h4 { margin: 0 0 10px 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
+  .status-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 800; }
+  .btn-group-proc { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+  .proc-btn { font-size: 11px; padding: 8px; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: #f9fafb; font-weight: 700; }
+  .proc-btn.run { background: var(--primary); color: #fff; border: none; }
+</style>
+
+<script>
+function openUpdateSourceModal() {
+  document.getElementById('sourceModal').style.display = 'flex';
+  loadSourceCards();
+}
+
+function closeUpdateSourceModal() {
+  document.getElementById('sourceModal').style.display = 'none';
+}
+
+function loadSourceCards() {
+  const container = document.getElementById('sourceCardsContainer');
+  container.innerHTML = "Loading sources...";
+  
+  fetch(`${GAS_API_URL}?action=getSourceData`)
+    .then(res => res.json())
+    .then(data => {
+      container.innerHTML = "";
+      data.forEach(s => {
+        const card = document.createElement('div');
+        card.className = "source-card";
+        card.innerHTML = `
+          <h4>${formatLogoValue(s.authority)} ${s.authority}</h4>
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+            Last: ${s.lastSheet || '-'} / PN: ${s.lastPN || '-'} <br>
+            Updated: ${s.updateAt} <br>
+            Status: <span class="status-tag" style="background:#eef7f9;">${s.status}</span>
+          </div>
+          
+          <label class="detail-label">PDF Original URL</label>
+          <input type="text" id="pdf-${s.authority}" value="${s.pdfCopy}" style="width:100%; margin-bottom:10px;" onchange="updatePdfUrl('${s.authority}', ${s.rowIndex})">
+          
+          <label class="detail-label">Source Spreadsheet ID</label>
+          <div style="display:flex; gap:5px; align-items:center;">
+             <input type="text" value="${s.sourceId}" readonly style="flex:1; background:#f1f5f9; font-size:10px;">
+             <button class="btn" style="padding:5px;" onclick="document.getElementById('file-${s.authority}').click()">📁</button>
+             <input type="file" id="file-${s.authority}" style="display:none;" onchange="uploadNewSource(event, '${s.authority}', '${s.sourceId}', ${s.rowIndex})">
+          </div>
+
+          <div class="btn-group-proc">
+            <button class="proc-btn" onclick="triggerProc('${s.authority}', 'resume')">Resume Process</button>
+            <button class="proc-btn run" onclick="triggerProc('${s.authority}', 'scratch')">Reset & Run All</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    });
+}
+
+function updatePdfUrl(auth, row) {
+  const url = document.getElementById(`pdf-${auth}`).value;
+  fetch(GAS_API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify({ action: "updateSourceConfig", rowIndex: row, pdfCopy: url })
+  }).then(() => alert('PDF URL Updated'));
+}
+
+function uploadNewSource(e, auth, oldId, row) {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const payload = {
+      action: "uploadSourceFile",
+      rowIndex: row,
+      oldId: oldId,
+      fileName: file.name,
+      fileData: evt.target.result.split(",")[1]
+    };
+    fetch(GAS_API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
+      .then(() => { alert('File replaced & ID updated!'); loadSourceCards(); });
+  };
+  reader.readAsDataURL(file);
+}
+
+function triggerProc(auth, mode) {
+  if (mode === 'scratch' && !confirm(`Yakin ingin RESET SEMUA DATA ${auth} dan mulai dari awal?`)) return;
+  fetch(GAS_API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify({ action: "triggerProcess", auth: auth, mode: mode })
+  }).then(() => alert(`Process ${auth} (${mode}) has been triggered in background.`));
+}
+</script>
