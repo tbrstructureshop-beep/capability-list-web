@@ -33,12 +33,14 @@
     font-size: 13px; outline: none; transition: var(--transition);
   }
   .input-styled-group:focus { border-color: var(--primary); background: var(--primary-light); }
+  .input-styled-group:read-only { background: #f1f5f9; cursor: not-allowed; color: var(--text-muted); }
 
   .btn-icon-only {
     padding: 8px; border-radius: 8px; border: 1px solid var(--border);
     background: #fff; cursor: pointer; display: flex; align-items: center; color: var(--text-muted); transition: var(--transition);
   }
   .btn-icon-only:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
+  .btn-icon-only.active-edit { color: #f59e0b; border-color: #f59e0b; background: #fffbeb; }
   .btn-icon-only:disabled { opacity: 0.3; cursor: not-allowed; }
 
   .btn-group-proc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 15px; border-top: 1px dashed var(--border); }
@@ -69,7 +71,7 @@ function loadSourceCards() {
         const card = document.createElement('div');
         card.className = "source-card";
         
-        // Cek apakah URL SharePoint ada
+        // Status awal: Jika ada URL, maka readonly
         const hasUrl = s.pdfCopy && s.pdfCopy.trim() !== "";
 
         card.innerHTML = `
@@ -84,12 +86,23 @@ function loadSourceCards() {
           <!-- Section SharePoint PDF -->
           <label class="detail-label-sm">PDF SharePoint URL</label>
           <div class="input-group">
-            <input type="text" id="pdf-${s.authority}" class="input-styled-group" value="${s.pdfCopy || ''}" placeholder="Paste URL SharePoint...">
+            <input type="text" id="pdf-${s.authority}" class="input-styled-group" 
+                   value="${s.pdfCopy || ''}" placeholder="Paste URL SharePoint..." 
+                   ${hasUrl ? 'readonly' : ''}>
             
-            <button class="btn-icon-only" title="Simpan Tautan" onclick="updatePdfUrl('${s.authority}', ${s.rowIndex})">
+            <!-- Tombol Lock/Unlock -->
+            <button class="btn-icon-only" id="lock-${s.authority}" title="Unlock to Edit" onclick="toggleEdit('${s.authority}')">
+              <svg id="icon-lock-${s.authority}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                ${hasUrl ? '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' : '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>'}
+              </svg>
+            </button>
+
+            <!-- Tombol Simpan (Hanya berfungsi jika tidak readonly) -->
+            <button class="btn-icon-only" id="save-${s.authority}" title="Simpan Tautan" disabled onclick="updatePdfUrl('${s.authority}', ${s.rowIndex})">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             </button>
 
+            <!-- Tombol Buka -->
             <button class="btn-icon-only" id="open-${s.authority}" title="Buka Link SharePoint" ${!hasUrl ? 'disabled' : ''} onclick="window.open(document.getElementById('pdf-${s.authority}').value, '_blank')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </button>
@@ -122,6 +135,35 @@ function loadSourceCards() {
     });
 }
 
+/**
+ * Fungsi Toggle Lock/Unlock Input
+ */
+function toggleEdit(auth) {
+  const input = document.getElementById(`pdf-${auth}`);
+  const saveBtn = document.getElementById(`save-${auth}`);
+  const lockBtn = document.getElementById(`lock-${auth}`);
+  const iconBox = document.getElementById(`icon-lock-${auth}`);
+
+  const isLocked = input.readOnly;
+
+  if (isLocked) {
+    // UNLOCK
+    input.readOnly = false;
+    input.focus();
+    saveBtn.disabled = false;
+    lockBtn.classList.add('active-edit');
+    // Change to Edit/Unlock Icon (Pencil)
+    iconBox.innerHTML = '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>';
+  } else {
+    // LOCK (Cancel Edit)
+    input.readOnly = true;
+    saveBtn.disabled = true;
+    lockBtn.classList.remove('active-edit');
+    // Change back to Lock Icon
+    iconBox.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
+  }
+}
+
 function updatePdfUrl(auth, row) {
   const input = document.getElementById(`pdf-${auth}`);
   const url = input.value;
@@ -135,7 +177,12 @@ function updatePdfUrl(auth, row) {
     body: JSON.stringify(payload)
   }).then(() => {
     alert(`${auth}: Tautan SharePoint berhasil diperbarui.`);
-    // Update status tombol buka link secara instan
+    // Setelah sukses simpan, kembalikan ke mode Lock
+    input.readOnly = true;
+    document.getElementById(`save-${auth}`).disabled = true;
+    document.getElementById(`lock-${auth}`).classList.remove('active-edit');
+    document.getElementById(`icon-lock-${auth}`).innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
+    
     if (url.trim() !== "") openBtn.disabled = false;
     else openBtn.disabled = true;
   });
