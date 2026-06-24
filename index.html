@@ -684,22 +684,25 @@
     fetch(`${GAS_API_URL}?action=getCapabilityList`)
       .then(res => res.json())
       .then(rows => {
+        // Mapping headers: Menggabungkan baris 1 dan 2 dari Spreadsheet sebagai nama kolom
         colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
         buildFilterInputs(colNames);
+        
+        // Mengambil data utama mulai dari baris ke-4 (indeks 3) dan memetakan kolom sesuai DISPLAY_COLS
         rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
         viewData = rawData;
         
         renderCards(viewData);
-        updateDataStatus();
+        updateDataStatus(); // Menghitung dan menampilkan jumlah baris asli dari spreadsheet
     
-        // Use a slight timeout to ensure DOM rendering is complete before hiding
+        // Gunakan sedikit timeout untuk memastikan rendering DOM selesai sebelum loader ditutup
         setTimeout(() => {
           hideLoader();
         }, 100); 
       })
       .catch(err => { 
-        console.error(err); 
-        document.getElementById("dataStatus").textContent = "Error loading data.";
+        console.error("Fetch Error:", err); 
+        document.getElementById("dataStatus").textContent = "Error loading data. Please check your connection.";
         hideLoader(); 
       });
     
@@ -809,8 +812,20 @@
       document.getElementById("nextPage").disabled = currentPage >= totalPages;
     }
     
+    // --- UPDATED updateDataStatus logic ---
     function updateDataStatus() {
-      document.getElementById("dataStatus").textContent = `Displaying ${viewData.length.toLocaleString()} records`;
+      const totalInSheet = rawData.length;
+      const filteredCount = viewData.length;
+      
+      if (globalKeyword || Object.keys(columnFilters).length > 0) {
+        // Tampilan saat user sedang melakukan pencarian atau filter kolom
+        document.getElementById("dataStatus").textContent = 
+          `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total records)`;
+      } else {
+        // Tampilan standar saat data dimuat pertama kali
+        document.getElementById("dataStatus").textContent = 
+          `Total Database: ${totalInSheet.toLocaleString()} records`;
+      }
     }
     
     function formatStatus(val) {
