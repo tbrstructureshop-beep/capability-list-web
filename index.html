@@ -684,18 +684,21 @@
     fetch(`${GAS_API_URL}?action=getCapabilityList`)
       .then(res => res.json())
       .then(rows => {
-        // Mapping headers: Menggabungkan baris 1 dan 2 dari Spreadsheet sebagai nama kolom
+        // Mapping headers
         colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
         buildFilterInputs(colNames);
         
-        // Mengambil data utama mulai dari baris ke-4 (indeks 3) dan memetakan kolom sesuai DISPLAY_COLS
-        rawData = rows.slice(3).map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+        // REPAIR: Filter rows where Column B (index 1) is not empty
+        // This ensures the 21,900 count is accurate and ignores "ghost" empty rows
+        rawData = rows.slice(3)
+          .filter(r => r[1] && String(r[1]).trim() !== "") 
+          .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+          
         viewData = rawData;
         
         renderCards(viewData);
-        updateDataStatus(); // Menghitung dan menampilkan jumlah baris asli dari spreadsheet
+        updateDataStatus(); 
     
-        // Gunakan sedikit timeout untuk memastikan rendering DOM selesai sebelum loader ditutup
         setTimeout(() => {
           hideLoader();
         }, 100); 
@@ -705,6 +708,7 @@
         document.getElementById("dataStatus").textContent = "Error loading data. Please check your connection.";
         hideLoader(); 
       });
+    
     
     // 5. Render Card Display
     function renderCards(data) {
