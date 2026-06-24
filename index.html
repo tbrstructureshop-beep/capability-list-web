@@ -780,6 +780,65 @@
       document.getElementById('sidebar').classList.toggle('active');
       document.getElementById('sidebarOverlay').classList.toggle('active');
     }
+
+    // --- LOGIKA UNTUK MEMANGGIL MODAL DARI FOLDER LAIN ---
+
+    // 1. Fungsi untuk memuat file HTML eksternal
+    async function loadExternalModal() {
+      const container = document.getElementById("modalUpdateSourceContainer");
+      try {
+        // Sesuaikan path dengan struktur folder di Vercel/GitHub
+        const response = await fetch("./application/dashboard/modal/UpdateSource/index.html");
+        if (!response.ok) throw new Error("Gagal mengambil file modal");
+        
+        const html = await response.text();
+        container.innerHTML = html;
+        
+        // Eksekusi script yang ada di dalam file yang di-fetch (karena innerHTML tidak otomatis menjalankan script)
+        const scripts = container.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+        
+        console.log("Modal Update Source Berhasil Dimuat");
+      } catch (err) {
+        console.error("Error loading modal:", err);
+      }
+    }
+    
+    // 2. Fungsi yang dipanggil oleh tombol di Sidebar
+    function openUpdateSourceModal() {
+      const modal = document.getElementById("sourceModal");
+      
+      if (modal) {
+        // Jika modal sudah ada di DOM, langsung buka
+        modal.style.display = "flex";
+        if (typeof loadSourceConfig === "function") loadSourceConfig(); 
+      } else {
+        // Jika belum ada (first time), muat dulu lalu buka
+        loadExternalModal().then(() => {
+          const newModal = document.getElementById("sourceModal");
+          if (newModal) {
+            newModal.style.display = "flex";
+            if (typeof loadSourceConfig === "function") loadSourceConfig();
+          } else {
+            alert("File modal tidak ditemukan atau ID salah.");
+          }
+        });
+      }
+    }
+    
+    // 3. Fungsi untuk menutup modal (Tambahkan ini agar tombol Close di modal berfungsi)
+    function closeUpdateSourceModal() {
+      const modal = document.getElementById("sourceModal");
+      if (modal) modal.style.display = "none";
+    }
+    
+    // Opsional: Muat modal di awal (Background load) agar saat klik tombol terasa instan
+    window.addEventListener('DOMContentLoaded', loadExternalModal);
     
     // 7. Events
     document.getElementById("searchBtn").onclick = () => {
