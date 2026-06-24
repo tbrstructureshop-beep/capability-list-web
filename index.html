@@ -443,6 +443,50 @@
     }
     .btn-proc.primary { background: var(--primary); color: white; border: none; }
 
+    /* --- TAMBAHKAN CSS MODAL DASAR DI SINI --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(17, 24, 39, 0.6);
+      backdrop-filter: blur(4px);
+      display: none; /* Default sembunyi */
+      justify-content: center;
+      align-items: center;
+      z-index: 11000;
+      padding: 20px;
+    }
+  
+    .modal-card {
+      background: var(--card-bg);
+      width: 100%;
+      max-height: 90vh;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      animation: modalSlideUp 0.3s ease;
+    }
+  
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+  
+    .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+  
+    .close-x { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); }
+  
+    /* Style tambahan untuk cards di dalam modal */
+    .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: #fff; }
+    .source-card h4 { margin: 0 0 10px 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
+
     @media (max-width: 768px) {
       .data-card { grid-template-columns: 1fr; }
       .card-main { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
@@ -785,22 +829,16 @@
 
     // --- LOGIKA PEMANGGILAN MODAL (PATH BARU) ---
 
-    async function loadExternalModal() {
+     async function loadExternalModal() {
       const container = document.getElementById("modalUpdateSourceContainer");
-      
-      // PATH BARU: Sesuai instruksi Anda
-      const targetPath = "modal/UpdateSource/index.html";
+      const targetPath = "/modal/UpdateSource/index.html"; // Tambahkan '/' di awal untuk Vercel
       
       try {
-        console.log("Fetching modal from:", targetPath);
         const response = await fetch(targetPath);
-        
-        if (!response.ok) throw new Error(`Gagal memuat file. Status: ${response.status}`);
-        
+        if (!response.ok) throw new Error("File modal tidak ditemukan di server");
         const html = await response.text();
         container.innerHTML = html;
         
-        // RE-EXECUTE SCRIPTS: Agar fungsi loadSourceCards() dkk bisa dibaca browser
         const scripts = container.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -808,26 +846,20 @@
           newScript.appendChild(document.createTextNode(oldScript.innerHTML));
           oldScript.parentNode.replaceChild(newScript, oldScript);
         });
-        
-        console.log("Modal UpdateSource berhasil di-inject ke DOM.");
         return true;
       } catch (err) {
-        console.error("Fetch Error:", err);
+        console.error(err);
         return false;
       }
     }
-    
+  
     function openUpdateSourceModal() {
-      // Cek apakah element sudah ada di DOM
-      let modal = document.getElementById("sourceModal");
-      
+      const modal = document.getElementById("sourceModal");
       if (modal) {
         modal.style.display = "flex";
-        // Memanggil fungsi loadSourceCards() yang ada di dalam file modal
-        if (typeof loadSourceCards === "function") loadSourceCards(); 
+        if (typeof loadSourceCards === "function") loadSourceCards();
       } else {
-        // Jika belum ada, load file-nya dulu
-        loadExternalModal().then((success) => {
+        loadExternalModal().then(success => {
           if (success) {
             setTimeout(() => {
               const newModal = document.getElementById("sourceModal");
@@ -835,15 +867,14 @@
                 newModal.style.display = "flex";
                 if (typeof loadSourceCards === "function") loadSourceCards();
               }
-            }, 150);
+            }, 200);
           } else {
-            alert("File modal/UpdateSource/index.html tidak ditemukan. Pastikan folder 'modal' ada di root GitHub Anda.");
+            alert("Gagal load modal. Cek Console!");
           }
         });
       }
     }
-    
-    // Tambahkan ini agar tombol close di modal bisa diakses dari main
+  
     function closeUpdateSourceModal() {
       const modal = document.getElementById("sourceModal");
       if (modal) modal.style.display = "none";
