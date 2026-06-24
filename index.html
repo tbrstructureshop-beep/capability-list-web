@@ -781,20 +781,20 @@
       document.getElementById('sidebarOverlay').classList.toggle('active');
     }
 
-    // --- LOGIKA UNTUK MEMANGGIL MODAL DARI FOLDER LAIN ---
-
-    // 1. Fungsi untuk memuat file HTML eksternal
+    // 1. Fungsi Fetch Modal (Sangat Ketat terhadap Case-Sensitive)
     async function loadExternalModal() {
       const container = document.getElementById("modalUpdateSourceContainer");
+      // Pastikan huruf besar U dan S pada UpdateSource sama persis dengan di GitHub
+      const targetPath = "/application/dashboard/modal/UpdateSource/index.html";
+      
       try {
-        // Sesuaikan path dengan struktur folder di Vercel/GitHub
-        const response = await fetch("./application/dashboard/modal/UpdateSource/index.html");
-        if (!response.ok) throw new Error("Gagal mengambil file modal");
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const html = await response.text();
         container.innerHTML = html;
         
-        // Eksekusi script yang ada di dalam file yang di-fetch (karena innerHTML tidak otomatis menjalankan script)
+        // TRICK: Paksa eksekusi script di dalam modal
         const scripts = container.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -803,29 +803,34 @@
           oldScript.parentNode.replaceChild(newScript, oldScript);
         });
         
-        console.log("Modal Update Source Berhasil Dimuat");
+        console.log("Modal UpdateSource loaded successfully");
+        return true;
       } catch (err) {
-        console.error("Error loading modal:", err);
+        console.error("Gagal memuat modal:", err);
+        return false;
       }
     }
     
-    // 2. Fungsi yang dipanggil oleh tombol di Sidebar
+    // 2. Fungsi Tombol Sidebar (Disesuaikan dengan nama fungsi di file modal Anda)
     function openUpdateSourceModal() {
       const modal = document.getElementById("sourceModal");
       
       if (modal) {
-        // Jika modal sudah ada di DOM, langsung buka
         modal.style.display = "flex";
-        if (typeof loadSourceConfig === "function") loadSourceConfig(); 
+        // Memanggil fungsi loadSourceCards yang ada di dalam file modal
+        if (typeof loadSourceCards === "function") loadSourceCards(); 
       } else {
-        // Jika belum ada (first time), muat dulu lalu buka
-        loadExternalModal().then(() => {
-          const newModal = document.getElementById("sourceModal");
-          if (newModal) {
-            newModal.style.display = "flex";
-            if (typeof loadSourceConfig === "function") loadSourceConfig();
+        loadExternalModal().then((success) => {
+          if (success) {
+            setTimeout(() => {
+              const newModal = document.getElementById("sourceModal");
+              if (newModal) {
+                newModal.style.display = "flex";
+                if (typeof loadSourceCards === "function") loadSourceCards();
+              }
+            }, 200);
           } else {
-            alert("File modal tidak ditemukan atau ID salah.");
+            alert("File /application/dashboard/modal/UpdateSource/index.html tidak ditemukan. Periksa Case-Sensitivity di GitHub!");
           }
         });
       }
