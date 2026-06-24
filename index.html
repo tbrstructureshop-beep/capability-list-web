@@ -553,6 +553,8 @@
   <div class="spinner"></div>
   <div style="font-size:15px; color: var(--text-main); font-weight: 600;">Processing Capability List...</div>
 </div>
+
+<div id="modalUpdateSourceContainer"></div>
   
 <script src="../auth/script.js"></script>
   <script>
@@ -781,26 +783,24 @@
       document.getElementById('sidebarOverlay').classList.toggle('active');
     }
 
-    // 1. Fungsi Fetch Modal (Sangat Ketat terhadap Case-Sensitive)
+    // --- LOGIKA PEMANGGILAN MODAL (PATH BARU) ---
+
     async function loadExternalModal() {
       const container = document.getElementById("modalUpdateSourceContainer");
       
-      // Pastikan PATH ini sama persis dengan yang ada di GitHub (Perhatikan Huruf Kapitalnya!)
-      // Sesuai screenshot: UpdateSource (U besar, S besar)
-      const targetPath = "application/dashboard/modal/UpdateSource/index.html";
+      // PATH BARU: Sesuai instruksi Anda
+      const targetPath = "modal/UpdateSource/index.html";
       
       try {
-        console.log("Mencoba memuat modal dari path:", targetPath);
+        console.log("Fetching modal from:", targetPath);
         const response = await fetch(targetPath);
         
-        if (!response.ok) {
-          throw new Error(`Gagal memuat file (Status: ${response.status}). Pastikan path benar!`);
-        }
+        if (!response.ok) throw new Error(`Gagal memuat file. Status: ${response.status}`);
         
         const html = await response.text();
         container.innerHTML = html;
         
-        // Injeksi Script agar fungsi di dalam modal bisa terbaca oleh Browser
+        // RE-EXECUTE SCRIPTS: Agar fungsi loadSourceCards() dkk bisa dibaca browser
         const scripts = container.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -809,7 +809,7 @@
           oldScript.parentNode.replaceChild(newScript, oldScript);
         });
         
-        console.log("Modal Berhasil Dimuat.");
+        console.log("Modal UpdateSource berhasil di-inject ke DOM.");
         return true;
       } catch (err) {
         console.error("Fetch Error:", err);
@@ -818,34 +818,32 @@
     }
     
     function openUpdateSourceModal() {
-      // 1. Cek apakah modal sudah ada di halaman
+      // Cek apakah element sudah ada di DOM
       let modal = document.getElementById("sourceModal");
       
       if (modal) {
         modal.style.display = "flex";
+        // Memanggil fungsi loadSourceCards() yang ada di dalam file modal
         if (typeof loadSourceCards === "function") loadSourceCards(); 
       } else {
-        // 2. Jika belum ada, ambil file HTML-nya
+        // Jika belum ada, load file-nya dulu
         loadExternalModal().then((success) => {
           if (success) {
-            // Beri jeda 100ms agar browser selesai merender HTML baru
             setTimeout(() => {
               const newModal = document.getElementById("sourceModal");
               if (newModal) {
                 newModal.style.display = "flex";
                 if (typeof loadSourceCards === "function") loadSourceCards();
-              } else {
-                alert("Error: File ditemukan, tapi ID 'sourceModal' tidak ada di dalamnya.");
               }
-            }, 100);
+            }, 150);
           } else {
-            alert("Gagal memuat modal. Pastikan folder 'UpdateSource' ada di GitHub dan path benar.");
+            alert("File modal/UpdateSource/index.html tidak ditemukan. Pastikan folder 'modal' ada di root GitHub Anda.");
           }
         });
       }
     }
     
-    // 3. Fungsi untuk menutup modal (Tambahkan ini agar tombol Close di modal berfungsi)
+    // Tambahkan ini agar tombol close di modal bisa diakses dari main
     function closeUpdateSourceModal() {
       const modal = document.getElementById("sourceModal");
       if (modal) modal.style.display = "none";
