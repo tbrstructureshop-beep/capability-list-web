@@ -1,17 +1,23 @@
+<!-- SweetAlert2 for Pro Notifications -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- Container Modal Update Source -->
 <div id="sourceModal" class="modal-overlay" style="display:none;">
-  <div class="modal-card" style="max-width: 900px;">
-    <div class="modal-header">
-      <h3 class="modal-title">Source Configuration & Process</h3>
+  <div class="modal-card" style="max-width: 960px; border-radius: 20px;">
+    <div class="modal-header" style="background: var(--primary-light); border-bottom: 1px solid rgba(60, 146, 166, 0.2);">
+      <h3 class="modal-title" style="color: var(--primary-dark); display: flex; align-items: center; gap: 10px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+        Source Manager & Engine Control
+      </h3>
       <button class="close-x" onclick="closeUpdateSourceModal()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
-    <div class="modal-body">
-      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
-        Update spreadsheet sumber data (Excel/GSheet) atau perbarui tautan salinan PDF asli di SharePoint perusahaan.
+    <div class="modal-body" style="background: #fcfdfe;">
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 25px; padding: 0 5px;">
+        Konfigurasi jalur data dan kontrol mesin sinkronisasi untuk setiap otoritas penerbangan.
       </p>
-      <div id="sourceCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+      <div id="sourceCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
         <!-- Cards loaded by JS -->
       </div>
     </div>
@@ -19,49 +25,71 @@
 </div>
 
 <style>
-  .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; background: #fff; transition: var(--transition); display: flex; flex-direction: column; }
-  .source-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
-  .source-card h4 { margin: 0 0 12px 0; color: var(--primary); display: flex; align-items: center; gap: 10px; font-size: 16px; }
-  
-  .status-tag { font-size: 10px; padding: 4px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-  .detail-label-sm { font-size: 10px; font-weight: 700; color: var(--text-light); text-transform: uppercase; display: block; margin-bottom: 6px; }
-  
-  /* Input Group Layout */
-  .input-group { display: flex; gap: 4px; margin-bottom: 15px; }
-  .input-styled-group {
-    flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
-    font-size: 13px; outline: none; transition: var(--transition);
+  .source-card { 
+    background: #ffffff; border: 1px solid var(--border); border-radius: 16px; 
+    padding: 24px; transition: all 0.3s ease; display: flex; flex-direction: column;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
   }
-  .input-styled-group:focus { border-color: var(--primary); background: var(--primary-light); }
-  .input-styled-group:read-only { background: #f1f5f9; cursor: not-allowed; color: var(--text-muted); }
+  .source-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: var(--shadow-md); }
+  
+  .card-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .auth-label { font-size: 18px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+  
+  .meta-box { 
+    background: var(--bg); border-radius: 12px; padding: 14px; margin-bottom: 20px;
+    border: 1px solid #edf2f7;
+  }
+  .meta-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; }
+  .meta-row:last-child { margin-bottom: 0; }
+  .meta-label { color: var(--text-light); font-weight: 600; text-transform: uppercase; }
+  .meta-value { color: var(--text-main); font-weight: 700; }
 
-  .btn-icon-only {
-    padding: 8px; border-radius: 8px; border: 1px solid var(--border);
-    background: #fff; cursor: pointer; display: flex; align-items: center; color: var(--text-muted); transition: var(--transition);
+  .section-divider-label {
+    font-size: 10px; font-weight: 800; color: var(--primary); text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
   }
-  .btn-icon-only:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
-  .btn-icon-only.active-edit { color: #f59e0b; border-color: #f59e0b; background: #fffbeb; }
-  .btn-icon-only:disabled { opacity: 0.3; cursor: not-allowed; }
+  .section-divider-label::after { content: ""; flex: 1; height: 1px; background: var(--primary-light); }
 
-  .btn-group-proc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 15px; border-top: 1px dashed var(--border); }
-  
-  .proc-btn { 
-    padding: 10px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); 
-    background: #f9fafb; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: var(--transition);
+  .input-group-pro { display: flex; gap: 6px; margin-bottom: 20px; }
+  .input-pro {
+    flex: 1; padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+    font-size: 13px; font-weight: 500; transition: all 0.2s; outline: none;
   }
-  .proc-btn:hover { background: #f3f4f6; }
-  .proc-btn.run { background: var(--primary); color: #fff; border: none; }
-  .proc-btn.run:hover { background: var(--primary-dark); }
+  .input-pro:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1); }
+  .input-pro:read-only { background: #f8fafc; color: var(--text-muted); cursor: not-allowed; border-style: dashed; }
+
+  .btn-pro-icon {
+    width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border);
+    background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; color: var(--text-muted);
+  }
+  .btn-pro-icon:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+  .btn-pro-icon.active-edit { background: #fff7ed; color: #ea580c; border-color: #fdba74; }
+  .btn-pro-icon:disabled { opacity: 0.3; pointer-events: none; }
+
+  .btn-group-engine { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: auto; padding-top: 20px; }
+  
+  .engine-btn { 
+    padding: 12px; border-radius: 12px; cursor: pointer; border: 1.5px solid var(--border); 
+    background: #fff; font-weight: 700; font-size: 12px; display: flex; align-items: center; 
+    justify-content: center; gap: 8px; transition: all 0.2s;
+  }
+  .engine-btn:hover { background: #f8fafc; border-color: var(--text-light); }
+  .engine-btn.run { background: var(--primary); color: #fff; border: none; box-shadow: 0 4px 12px rgba(60, 146, 166, 0.3); }
+  .engine-btn.run:hover { background: var(--primary-dark); transform: translateY(-2px); }
 </style>
 
 <script>
 /**
- * Logika Internal Modal UpdateSource
+ * Logika Internal Pro Modal UpdateSource
  */
 
 function loadSourceCards() {
   const container = document.getElementById('sourceCardsContainer');
-  container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-light);">Memuat konfigurasi source...</div>`;
+  container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text-light);">
+    <div class="spinner" style="margin: 0 auto 15px;"></div>
+    <p>Synchronizing configurations...</p>
+  </div>`;
   
   fetch(`${GAS_API_URL}?action=getSourceData`)
     .then(res => res.json())
@@ -70,63 +98,63 @@ function loadSourceCards() {
       data.forEach(s => {
         const card = document.createElement('div');
         card.className = "source-card";
-        
-        // Status awal: Jika ada URL, maka readonly
         const hasUrl = s.pdfCopy && s.pdfCopy.trim() !== "";
 
         card.innerHTML = `
-          <h4>${formatLogoValue(s.authority)} ${s.authority}</h4>
-          <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 8px;">
-            <strong>Last Sheet:</strong> ${s.lastSheet || '-'}<br>
-            <strong>Last PN:</strong> ${s.lastPN || '-'}<br>
-            <strong>Update At:</strong> ${s.updateAt}<br>
-            <strong>Status:</strong> <span class="status-tag" style="color:var(--primary);">${s.status}</span>
+          <div class="card-header-top">
+            <div class="auth-label">
+              ${formatLogoValue(s.authority)}
+              <span>${s.authority}</span>
+            </div>
+            <span class="status-tag" style="background: ${s.status === 'COMPLETED' ? '#dcfce7' : '#fef3c7'}; color: ${s.status === 'COMPLETED' ? '#15803d' : '#92400e'};">
+              ${s.status}
+            </span>
+          </div>
+
+          <div class="meta-box">
+            <div class="meta-row"><span class="meta-label">Last Sheet</span><span class="meta-value">${s.lastSheet || '-'}</span></div>
+            <div class="meta-row"><span class="meta-label">Last Sync PN</span><span class="meta-value">${s.lastPN || '-'}</span></div>
+            <div class="meta-row"><span class="meta-label">Timestamp</span><span class="meta-value">${s.updateAt}</span></div>
           </div>
           
-          <!-- Section SharePoint PDF -->
-          <label class="detail-label-sm">PDF SharePoint URL</label>
-          <div class="input-group">
-            <input type="text" id="pdf-${s.authority}" class="input-styled-group" 
-                   value="${s.pdfCopy || ''}" placeholder="Paste URL SharePoint..." 
+          <div class="section-divider-label">PDF SharePoint</div>
+          <div class="input-group-pro">
+            <input type="text" id="pdf-${s.authority}" class="input-pro" 
+                   value="${s.pdfCopy || ''}" placeholder="URL SharePoint..." 
                    ${hasUrl ? 'readonly' : ''}>
             
-            <!-- Tombol Lock/Unlock -->
-            <button class="btn-icon-only" id="lock-${s.authority}" title="Unlock to Edit" onclick="toggleEdit('${s.authority}')">
-              <svg id="icon-lock-${s.authority}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button class="btn-pro-icon" id="lock-${s.authority}" title="Edit Tautan" onclick="toggleEdit('${s.authority}')">
+              <svg id="icon-lock-${s.authority}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 ${hasUrl ? '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' : '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>'}
               </svg>
             </button>
 
-            <!-- Tombol Simpan (Hanya berfungsi jika tidak readonly) -->
-            <button class="btn-icon-only" id="save-${s.authority}" title="Simpan Tautan" disabled onclick="updatePdfUrl('${s.authority}', ${s.rowIndex})">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            <button class="btn-pro-icon" id="save-${s.authority}" title="Simpan" disabled onclick="updatePdfUrl('${s.authority}', ${s.rowIndex})">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline></svg>
             </button>
 
-            <!-- Tombol Buka -->
-            <button class="btn-icon-only" id="open-${s.authority}" title="Buka Link SharePoint" ${!hasUrl ? 'disabled' : ''} onclick="window.open(document.getElementById('pdf-${s.authority}').value, '_blank')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            <button class="btn-pro-icon" id="open-${s.authority}" title="Buka" ${!hasUrl ? 'disabled' : ''} onclick="window.open(document.getElementById('pdf-${s.authority}').value, '_blank')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </button>
           </div>
           
-          <!-- Section Source Spreadsheet -->
-          <label class="detail-label-sm">Source Spreadsheet ID</label>
-          <div class="input-group">
-             <input type="text" value="${s.sourceId}" readonly style="flex:1; background:#f1f5f9; font-size:11px; border:1px solid var(--border); border-radius:8px; padding:8px; outline:none;">
-             <button class="btn-icon-only" title="Upload & Ganti Spreadsheet" onclick="document.getElementById('file-${s.authority}').click()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <div class="section-divider-label">Source Master</div>
+          <div class="input-group-pro">
+             <input type="text" value="${s.sourceId}" readonly class="input-pro" style="background:#f1f5f9; font-size:11px;">
+             <button class="btn-pro-icon" title="Replace GSheet Source" onclick="document.getElementById('file-${s.authority}').click()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
              </button>
              <input type="file" id="file-${s.authority}" style="display:none;" onchange="uploadNewSource(event, '${s.authority}', '${s.sourceId}', ${s.rowIndex})">
           </div>
 
-          <!-- Section Process Control -->
-          <div class="btn-group-proc">
-            <button class="proc-btn" onclick="triggerProc('${s.authority}', 'resume')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              Resume
+          <div class="btn-group-engine">
+            <button class="engine-btn" onclick="triggerProc('${s.authority}', 'resume')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Resume Sync
             </button>
-            <button class="proc-btn run" onclick="triggerProc('${s.authority}', 'scratch')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-              Reset & Run
+            <button class="engine-btn run" onclick="triggerProc('${s.authority}', 'scratch')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              Full Rebuild
             </button>
           </div>
         `;
@@ -135,90 +163,79 @@ function loadSourceCards() {
     });
 }
 
-/**
- * Fungsi Toggle Lock/Unlock Input
- */
 function toggleEdit(auth) {
   const input = document.getElementById(`pdf-${auth}`);
   const saveBtn = document.getElementById(`save-${auth}`);
   const lockBtn = document.getElementById(`lock-${auth}`);
   const iconBox = document.getElementById(`icon-lock-${auth}`);
-
   const isLocked = input.readOnly;
 
   if (isLocked) {
-    // UNLOCK
-    input.readOnly = false;
-    input.focus();
-    saveBtn.disabled = false;
-    lockBtn.classList.add('active-edit');
-    // Change to Edit/Unlock Icon (Pencil)
+    input.readOnly = false; input.focus(); saveBtn.disabled = false; lockBtn.classList.add('active-edit');
     iconBox.innerHTML = '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>';
   } else {
-    // LOCK (Cancel Edit)
-    input.readOnly = true;
-    saveBtn.disabled = true;
-    lockBtn.classList.remove('active-edit');
-    // Change back to Lock Icon
+    input.readOnly = true; saveBtn.disabled = true; lockBtn.classList.remove('active-edit');
     iconBox.innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
   }
 }
 
 function updatePdfUrl(auth, row) {
-  const input = document.getElementById(`pdf-${auth}`);
-  const url = input.value;
-  const openBtn = document.getElementById(`open-${auth}`);
-  
-  const payload = { action: "updateSourceConfig", rowIndex: row, pdfCopy: url };
-  
+  const url = document.getElementById(`pdf-${auth}`).value;
+  Swal.fire({ title: 'Updating URL...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
   fetch(GAS_API_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify(payload)
+    method: "POST", mode: "no-cors",
+    body: JSON.stringify({ action: "updateSourceConfig", rowIndex: row, pdfCopy: url })
   }).then(() => {
-    alert(`${auth}: Tautan SharePoint berhasil diperbarui.`);
-    // Setelah sukses simpan, kembalikan ke mode Lock
-    input.readOnly = true;
-    document.getElementById(`save-${auth}`).disabled = true;
-    document.getElementById(`lock-${auth}`).classList.remove('active-edit');
-    document.getElementById(`icon-lock-${auth}`).innerHTML = '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>';
-    
-    if (url.trim() !== "") openBtn.disabled = false;
-    else openBtn.disabled = true;
-  });
+    Swal.fire({ icon: 'success', title: 'Updated!', text: `SharePoint URL for ${auth} has been saved.`, timer: 2000, showConfirmButton: false });
+    loadSourceCards();
+  }).catch(() => Swal.fire('Error', 'Failed to update URL', 'error'));
 }
 
 function uploadNewSource(e, auth, oldId, row) {
   const file = e.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    const payload = {
-      action: "uploadSourceFile",
-      rowIndex: row,
-      oldId: oldId,
-      fileName: file.name,
-      fileData: evt.target.result.split(",")[1]
-    };
-    alert(`Sedang mengunggah ${file.name} untuk ${auth}...`);
-    fetch(GAS_API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
-      .then(() => { 
-        alert('Spreadsheet berhasil diganti!'); 
-        loadSourceCards(); 
-      });
-  };
-  reader.readAsDataURL(file);
+  Swal.fire({
+    title: 'Replace Source?',
+    text: `You are about to replace ${auth} spreadsheet with ${file.name}`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Upload'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const reader = new FileReader();
+      Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      
+      reader.onload = function(evt) {
+        fetch(GAS_API_URL, { 
+          method: "POST", mode: "no-cors", 
+          body: JSON.stringify({ action: "uploadSourceFile", rowIndex: row, oldId: oldId, fileName: file.name, fileData: evt.target.result.split(",")[1] }) 
+        }).then(() => { 
+          Swal.fire('Success!', 'Master source has been replaced.', 'success');
+          loadSourceCards(); 
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  });
 }
 
 function triggerProc(auth, mode) {
-  if (mode === 'scratch' && !confirm(`PENTING: Reset akan menghapus semua bodi data Summary ${auth} dan mulai dari awal. Lanjutkan?`)) return;
-  
-  const payload = { action: "triggerProcess", auth: auth, mode: mode };
-  fetch(GAS_API_URL, { 
-    method: "POST", 
-    mode: "no-cors", 
-    body: JSON.stringify(payload) 
-  }).then(() => alert(`Proses ${auth} (${mode}) telah dipicu di Apps Script.`));
+  const config = mode === 'scratch' 
+    ? { title: 'Full Rebuild?', text: `This will WIPE all current ${auth} data and start from scratch. Proceed?`, icon: 'warning' }
+    : { title: 'Resume Process?', text: `Continue processing ${auth} from last checkpoint?`, icon: 'question' };
+
+  Swal.fire({
+    ...config,
+    showCancelButton: true,
+    confirmButtonColor: mode === 'scratch' ? '#d33' : '#3c92a6',
+    confirmButtonText: 'Confirm'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(GAS_API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "triggerProcess", auth: auth, mode: mode }) });
+      Swal.fire('Engine Started', 'Process is running in the background. Check status in a few minutes.', 'success');
+    }
+  });
 }
 </script>
