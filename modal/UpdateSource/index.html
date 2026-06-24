@@ -9,7 +9,7 @@
     </div>
     <div class="modal-body">
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
-        Update source spreadsheet (Excel/GSheet) atau perbarui tautan salinan PDF asli perusahaan.
+        Update spreadsheet sumber data (Excel/GSheet) atau perbarui tautan salinan PDF asli di SharePoint perusahaan.
       </p>
       <div id="sourceCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
         <!-- Cards loaded by JS -->
@@ -19,19 +19,29 @@
 </div>
 
 <style>
-  .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; background: #fff; transition: var(--transition); }
+  .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; background: #fff; transition: var(--transition); display: flex; flex-direction: column; }
   .source-card:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
   .source-card h4 { margin: 0 0 12px 0; color: var(--primary); display: flex; align-items: center; gap: 10px; font-size: 16px; }
+  
   .status-tag { font-size: 10px; padding: 4px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
   .detail-label-sm { font-size: 10px; font-weight: 700; color: var(--text-light); text-transform: uppercase; display: block; margin-bottom: 6px; }
   
-  .input-styled {
-    width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
-    font-size: 13px; margin-bottom: 15px; outline: none; transition: var(--transition);
+  /* Input Group Layout */
+  .input-group { display: flex; gap: 4px; margin-bottom: 15px; }
+  .input-styled-group {
+    flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: 13px; outline: none; transition: var(--transition);
   }
-  .input-styled:focus { border-color: var(--primary); background: var(--primary-light); }
+  .input-styled-group:focus { border-color: var(--primary); background: var(--primary-light); }
 
-  .btn-group-proc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  .btn-icon-only {
+    padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+    background: #fff; cursor: pointer; display: flex; align-items: center; color: var(--text-muted); transition: var(--transition);
+  }
+  .btn-icon-only:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
+  .btn-icon-only:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-group-proc { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 15px; border-top: 1px dashed var(--border); }
   
   .proc-btn { 
     padding: 10px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); 
@@ -45,7 +55,6 @@
 <script>
 /**
  * Logika Internal Modal UpdateSource
- * Fungsi open/close sudah ditangani oleh index.html Utama
  */
 
 function loadSourceCards() {
@@ -59,6 +68,10 @@ function loadSourceCards() {
       data.forEach(s => {
         const card = document.createElement('div');
         card.className = "source-card";
+        
+        // Cek apakah URL SharePoint ada
+        const hasUrl = s.pdfCopy && s.pdfCopy.trim() !== "";
+
         card.innerHTML = `
           <h4>${formatLogoValue(s.authority)} ${s.authority}</h4>
           <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-bottom: 15px; background: #f8fafc; padding: 10px; border-radius: 8px;">
@@ -68,18 +81,31 @@ function loadSourceCards() {
             <strong>Status:</strong> <span class="status-tag" style="color:var(--primary);">${s.status}</span>
           </div>
           
+          <!-- Section SharePoint PDF -->
           <label class="detail-label-sm">PDF SharePoint URL</label>
-          <input type="text" id="pdf-${s.authority}" class="input-styled" value="${s.pdfCopy || ''}" placeholder="Paste URL SharePoint..." onchange="updatePdfUrl('${s.authority}', ${s.rowIndex})">
+          <div class="input-group">
+            <input type="text" id="pdf-${s.authority}" class="input-styled-group" value="${s.pdfCopy || ''}" placeholder="Paste URL SharePoint...">
+            
+            <button class="btn-icon-only" title="Simpan Tautan" onclick="updatePdfUrl('${s.authority}', ${s.rowIndex})">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            </button>
+
+            <button class="btn-icon-only" id="open-${s.authority}" title="Buka Link SharePoint" ${!hasUrl ? 'disabled' : ''} onclick="window.open(document.getElementById('pdf-${s.authority}').value, '_blank')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </button>
+          </div>
           
+          <!-- Section Source Spreadsheet -->
           <label class="detail-label-sm">Source Spreadsheet ID</label>
-          <div style="display:flex; gap:8px; align-items:center;">
-             <input type="text" value="${s.sourceId}" readonly style="flex:1; background:#f1f5f9; font-size:11px; border:1px solid var(--border); border-radius:8px; padding:8px;">
-             <button class="btn" style="padding:8px;" title="Upload New File" onclick="document.getElementById('file-${s.authority}').click()">
+          <div class="input-group">
+             <input type="text" value="${s.sourceId}" readonly style="flex:1; background:#f1f5f9; font-size:11px; border:1px solid var(--border); border-radius:8px; padding:8px; outline:none;">
+             <button class="btn-icon-only" title="Upload & Ganti Spreadsheet" onclick="document.getElementById('file-${s.authority}').click()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
              </button>
              <input type="file" id="file-${s.authority}" style="display:none;" onchange="uploadNewSource(event, '${s.authority}', '${s.sourceId}', ${s.rowIndex})">
           </div>
 
+          <!-- Section Process Control -->
           <div class="btn-group-proc">
             <button class="proc-btn" onclick="triggerProc('${s.authority}', 'resume')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -97,14 +123,22 @@ function loadSourceCards() {
 }
 
 function updatePdfUrl(auth, row) {
-  const url = document.getElementById(`pdf-${auth}`).value;
+  const input = document.getElementById(`pdf-${auth}`);
+  const url = input.value;
+  const openBtn = document.getElementById(`open-${auth}`);
+  
   const payload = { action: "updateSourceConfig", rowIndex: row, pdfCopy: url };
   
   fetch(GAS_API_URL, {
     method: "POST",
     mode: "no-cors",
     body: JSON.stringify(payload)
-  }).then(() => alert(`${auth}: PDF URL Updated`));
+  }).then(() => {
+    alert(`${auth}: Tautan SharePoint berhasil diperbarui.`);
+    // Update status tombol buka link secara instan
+    if (url.trim() !== "") openBtn.disabled = false;
+    else openBtn.disabled = true;
+  });
 }
 
 function uploadNewSource(e, auth, oldId, row) {
@@ -120,10 +154,10 @@ function uploadNewSource(e, auth, oldId, row) {
       fileName: file.name,
       fileData: evt.target.result.split(",")[1]
     };
-    alert(`Uploading ${file.name} for ${auth}...`);
+    alert(`Sedang mengunggah ${file.name} untuk ${auth}...`);
     fetch(GAS_API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
       .then(() => { 
-        alert('File replaced successfully!'); 
+        alert('Spreadsheet berhasil diganti!'); 
         loadSourceCards(); 
       });
   };
@@ -131,13 +165,13 @@ function uploadNewSource(e, auth, oldId, row) {
 }
 
 function triggerProc(auth, mode) {
-  if (mode === 'scratch' && !confirm(`PENTING: Reset akan menghapus semua data ${auth} di Summary dan mulai dari baris pertama. Lanjutkan?`)) return;
+  if (mode === 'scratch' && !confirm(`PENTING: Reset akan menghapus semua bodi data Summary ${auth} dan mulai dari awal. Lanjutkan?`)) return;
   
   const payload = { action: "triggerProcess", auth: auth, mode: mode };
   fetch(GAS_API_URL, { 
     method: "POST", 
     mode: "no-cors", 
     body: JSON.stringify(payload) 
-  }).then(() => alert(`Proses ${auth} (${mode}) telah dipicu di background.`));
+  }).then(() => alert(`Proses ${auth} (${mode}) telah dipicu di Apps Script.`));
 }
 </script>
