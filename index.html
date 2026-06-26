@@ -796,23 +796,35 @@
     // 4. Fetch Data
     showLoader();
     fetch(`${GAS_API_URL}?action=getCapabilityList`)
-          .then(res => res.json())
-          .then(rows => {
-            colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
-            
-            rawData = rows.slice(3)
-              .filter(r => r[1] && String(r[1]).trim() !== "") 
-              .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
-              
-            viewData = rawData;
-            
-            // --- SEKARANG DATA SUDAH SIAP, BARU BANGUN FILTER ---
-            buildFilterInputs(colNames); 
-            
-            renderCards(viewData);
-            updateDataStatus(); 
-            hideLoader(); 
-          });  
+      .then(res => res.json())
+      .then(rows => {
+        if (!rows || rows.length < 3) throw new Error("Data empty");
+
+        // 1. Ambil Header
+        colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+        
+        // 2. Isi data ke memori
+        rawData = rows.slice(3)
+          .filter(r => r[1] && String(r[1]).trim() !== "") 
+          .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+          
+        viewData = rawData;
+        
+        // 3. Bangun wadah filter
+        buildFilterInputs(colNames); 
+        
+        // 4. Tampilkan kartu
+        renderCards(viewData);
+        updateDataStatus(); 
+        
+        // 5. Matikan Loader
+        hideLoader(); 
+      })
+      .catch(err => { 
+        console.error("Fetch Error:", err); 
+        document.getElementById("dataStatus").textContent = "Connection Error. Please refresh.";
+        hideLoader(); // Tetap matikan loader jika error
+      });  
     
     
     // 5. Render Card Display
@@ -884,26 +896,29 @@
     function applyAllFilters() {
       showLoader();
       setTimeout(() => {
-        currentPage = 1;
-        
-        viewData = rawData.filter(row => {
-          // A. Cek Global Search
-          const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
-          if (!matchesGlobal) return false;
+        try {
+          currentPage = 1;
+          globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
 
-          // B. Cek Column Filters (Dropdown)
-          return Object.keys(activeFilters).every(colIdx => {
-            const selected = activeFilters[colIdx];
-            if (!selected || selected.size === 0) return true;
-            const cellVal = String(row[colIdx]).trim() || "(Blanks)";
-            return selected.has(cellVal);
+          viewData = rawData.filter(row => {
+            const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+            if (!matchesGlobal) return false;
+
+            return Object.keys(activeFilters).every(colIdx => {
+              const selected = activeFilters[colIdx];
+              if (!selected || selected.size === 0) return true;
+              return selected.has(String(row[colIdx]).trim() || "(Blanks)");
+            });
           });
-        });
 
-        renderCards(viewData);
-        updateDataStatus();
-        refreshAllDropdowns(); // Update list dropdown lain agar sinkron
-        hideLoader();
+          renderCards(viewData);
+          updateDataStatus();
+          refreshAllDropdowns();
+        } catch (e) {
+          console.error("Filter Error:", e);
+        } finally {
+          hideLoader();
+        }
       }, 50);
     }
     
@@ -1036,8 +1051,10 @@
         if (mode === 'AZ') return valA.localeCompare(valB);
         if (mode === 'ZA') return valB.localeCompare(valA);
         if (mode === 'FREQ') {
-          const freqA = parseInt(a.querySelector('small').textContent.replace(/[()]/g, ''));
-          const freqB = parseInt(b.querySelector('small').textContent.replace(/[()]/g, ''));
+          const smallA = a.querySelector('small');
+          const smallB = b.querySelector('small');
+          const freqA = smallA ? parseInt(smallA.textContent.replace(/[()]/g, '')) : 0;
+          const freqB = smallB ? parseInt(smallB.textContent.replace(/[()]/g, '')) : 0;
           return freqB - freqA;
         }
       });
@@ -1085,12 +1102,13 @@
       const totalInSheet = rawData.length;
       const filteredCount = viewData.length;
       
-      if (globalKeyword || Object.keys(columnFilters).length > 0) {
-        // Tampilan saat user sedang melakukan pencarian atau filter kolom
+      // Hitung apakah ada filter dropdown yang aktif
+      const hasActiveDropdown = Object.values(activeFilters).some(set => set.size > 0);
+
+      if (globalKeyword || hasActiveDropdown) {
         document.getElementById("dataStatus").textContent = 
           `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total records)`;
       } else {
-        // Tampilan standar saat data dimuat pertama kali
         document.getElementById("dataStatus").textContent = 
           `Total Database: ${totalInSheet.toLocaleString()} records`;
       }
