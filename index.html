@@ -169,6 +169,7 @@
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 12px;
       box-shadow: var(--shadow-sm);
+      overflow: visible !important;
     }
 
     /* Styling Baru untuk Smart Filter */
@@ -212,7 +213,7 @@
       margin-top: 5px;
     }
     
-    .filter-popover.active { display: flex; }
+    .filter-popover.active { display: flex !important; }
     
     .popover-search {
       padding: 8px;
@@ -797,18 +798,20 @@
     fetch(`${GAS_API_URL}?action=getCapabilityList`)
       .then(res => res.json())
       .then(rows => {
-        // Mapping headers
+        // A. Petakan Header dulu
         colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
-        buildFilterInputs(colNames);
         
-        // REPAIR: Filter rows where Column B (index 1) is not empty
-        // This ensures the 21,900 count is accurate and ignores "ghost" empty rows
+        // B. ISI rawData TERLEBIH DAHULU (PENTING!)
         rawData = rows.slice(3)
           .filter(r => r[1] && String(r[1]).trim() !== "") 
           .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
           
         viewData = rawData;
+
+        // C. BARU BANGUN INPUT FILTER (Setelah data ada di memori)
+        buildFilterInputs(colNames);
         
+        // D. Tampilkan data
         renderCards(viewData);
         updateDataStatus(); 
     
@@ -818,7 +821,7 @@
       })
       .catch(err => { 
         console.error("Fetch Error:", err); 
-        document.getElementById("dataStatus").textContent = "Error loading data. Please check your connection.";
+        document.getElementById("dataStatus").textContent = "Error loading data.";
         hideLoader(); 
       });
     
@@ -953,17 +956,19 @@
     
     // 3. Fungsi Refresh Isi List Dropdown (Logika Cascading)
     function refreshAllDropdowns() {
-      DISPLAY_COLS.forEach((realColIdx, displayIdx) => {
+      // Loop berdasarkan jumlah kolom yang ditampilkan
+      colNames.forEach((name, displayIdx) => {
         const listContainer = document.getElementById(`list-${displayIdx}`);
         if (!listContainer) return;
 
-        // Hitung frekuensi nilai yang tersedia berdasarkan filter kolom LAIN
+        // Logika Cascading: Ambil data unik dari viewData 
+        // tapi abaikan filter kolom itu sendiri agar user bisa "tambah pilihan"
         const tempFilteredData = rawData.filter(row => {
           const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
           if (!matchesGlobal) return false;
           
           return Object.keys(activeFilters).every(cIdx => {
-            if (parseInt(cIdx) === displayIdx) return true; // Jangan filter kolomnya sendiri di list dropdown-nya
+            if (parseInt(cIdx) === displayIdx) return true;
             const selectedValues = activeFilters[cIdx];
             if (selectedValues.size === 0) return true;
             return selectedValues.has(String(row[cIdx]).trim() || "(Blanks)");
@@ -976,7 +981,6 @@
           counts[val] = (counts[val] || 0) + 1;
         });
 
-        // Bangun HTML list item
         const uniqueValues = Object.keys(counts).sort();
         listContainer.innerHTML = uniqueValues.map(val => `
           <label class="list-item">
@@ -987,7 +991,6 @@
           </label>
         `).join('');
         
-        // Update label trigger (All Values vs X Selected)
         const labelEl = document.getElementById(`label-col-${displayIdx}`);
         const countSelected = activeFilters[displayIdx].size;
         labelEl.textContent = countSelected === 0 ? "All Values" : `${countSelected} selected`;
@@ -998,10 +1001,15 @@
     
     function togglePopover(idx) {
       const el = document.getElementById(`popover-${idx}`);
-      const isVisible = el.style.display === 'flex';
-      // Close all others
-      document.querySelectorAll('.filter-popover').forEach(p => p.style.display = 'none');
-      el.style.display = isVisible ? 'none' : 'flex';
+      const isAlreadyActive = el.classList.contains('active');
+      
+      // Tutup semua popover yang sedang terbuka
+      document.querySelectorAll('.filter-popover').forEach(p => p.classList.remove('active'));
+      
+      // Jika sebelumnya tidak aktif, buka sekarang
+      if (!isAlreadyActive) {
+        el.classList.add('active');
+      }
     }
     
     function updateFilterState(colIdx, value, isChecked) {
@@ -1054,7 +1062,7 @@
     // Menutup dropdown saat klik di luar
     window.onclick = function(event) {
       if (!event.target.closest('.filter-field')) {
-        document.querySelectorAll('.filter-popover').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.filter-popover').forEach(p => p.classList.remove('active'));
       }
     };
     
