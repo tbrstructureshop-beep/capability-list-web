@@ -76,25 +76,41 @@
       line-height: 1.5;
     }
 
+    /* --- UPDATED: Sticky Header Logic --- */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000; /* Di bawah sidebar tapi di atas kartu */
+      background-color: rgba(249, 250, 251, 0.9); /* Transparan dengan warna BG */
+      backdrop-filter: blur(10px); /* Efek kaca premium */
+      padding: 20px 0;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid transparent;
+      transition: var(--transition);
+    }
+    
+    /* Garis halus muncul saat di-scroll (Opsional: via JS jika ingin lebih detail) */
+    header.scrolled {
+      border-bottom: 1px solid var(--border);
+      padding: 15px 0;
+    }
+    
+    /* Penyesuaian container agar tidak terlalu mepet ke atas karena header sticky */
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 40px 24px;
+      padding: 0 24px 40px 24px; /* Hilangkan padding top 40px karena sudah diambil header */
     }
-
-    /* --- Header Section --- */
-    header {
-      margin-bottom: 40px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-    }
-
+    
+    /* Pastikan judul tidak terlalu besar saat sticky */
     h1 {
-      font-size: 24px;
+      font-size: 22px; /* Dikecilkan sedikit agar fit */
       font-weight: 700;
       letter-spacing: -0.02em;
-      margin: 0 0 4px 0;
+      margin: 0;
       color: var(--text-main);
     }
 
@@ -634,15 +650,17 @@
 </nav>
 
 <div class="container">
-  <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-    <div>
+  <header>
+    <div class="header-left">
       <h1>Enterprise Capability Web</h1>
-      <div id="dataStatus">Connecting to secure data source...</div>
+      <div id="dataStatus">Total Database: 0 records</div>
     </div>
     
-    <button class="burger-btn" onclick="toggleSidebar()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-    </button>
+    <div class="header-right">
+      <button class="burger-btn" onclick="toggleSidebar()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
   </header>
   
   <div id="dashboard">
@@ -1206,6 +1224,17 @@
       document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
       renderCards(viewData);
     };
+
+    // Tambahkan efek border pada header saat scroll
+    window.addEventListener('scroll', () => {
+      const header = document.querySelector('header');
+      if (window.scrollY > 10) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+    
   </script>
 </body>
 </html>
