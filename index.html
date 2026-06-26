@@ -796,34 +796,23 @@
     // 4. Fetch Data
     showLoader();
     fetch(`${GAS_API_URL}?action=getCapabilityList`)
-      .then(res => res.json())
-      .then(rows => {
-        // A. Petakan Header dulu
-        colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
-        
-        // B. ISI rawData TERLEBIH DAHULU (PENTING!)
-        rawData = rows.slice(3)
-          .filter(r => r[1] && String(r[1]).trim() !== "") 
-          .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
-          
-        viewData = rawData;
-
-        // C. BARU BANGUN INPUT FILTER (Setelah data ada di memori)
-        buildFilterInputs(colNames);
-        
-        // D. Tampilkan data
-        renderCards(viewData);
-        updateDataStatus(); 
-    
-        setTimeout(() => {
-          hideLoader();
-        }, 100); 
-      })
-      .catch(err => { 
-        console.error("Fetch Error:", err); 
-        document.getElementById("dataStatus").textContent = "Error loading data.";
-        hideLoader(); 
-      });
+          .then(res => res.json())
+          .then(rows => {
+            colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+            
+            rawData = rows.slice(3)
+              .filter(r => r[1] && String(r[1]).trim() !== "") 
+              .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+              
+            viewData = rawData;
+            
+            // --- SEKARANG DATA SUDAH SIAP, BARU BANGUN FILTER ---
+            buildFilterInputs(colNames); 
+            
+            renderCards(viewData);
+            updateDataStatus(); 
+            hideLoader(); 
+          });  
     
     
     // 5. Render Card Display
@@ -891,46 +880,46 @@
       updatePaginationInfo(data.length);
     }
     
-    // 1. Fungsi Utama Filter
+    // 1. Fungsi Filter Utama (Logic Cascading)
     function applyAllFilters() {
       showLoader();
       setTimeout(() => {
         currentPage = 1;
         
         viewData = rawData.filter(row => {
-          // 1. Cek Global Search (Top Search Bar)
+          // A. Cek Global Search
           const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
           if (!matchesGlobal) return false;
 
-          // 2. Cek Column Filters (Multi-Select Dropdowns)
+          // B. Cek Column Filters (Dropdown)
           return Object.keys(activeFilters).every(colIdx => {
-            const selectedValues = activeFilters[colIdx];
-            if (selectedValues.size === 0) return true; // Jika tidak ada yang dipilih, anggap lolos (Show All)
-            return selectedValues.has(String(row[colIdx]).trim() || "(Blanks)");
+            const selected = activeFilters[colIdx];
+            if (!selected || selected.size === 0) return true;
+            const cellVal = String(row[colIdx]).trim() || "(Blanks)";
+            return selected.has(cellVal);
           });
         });
 
         renderCards(viewData);
         updateDataStatus();
-        refreshAllDropdowns(); // <--- CRITICAL: Update isi dropdown lain agar sinkron (Cascading)
+        refreshAllDropdowns(); // Update list dropdown lain agar sinkron
         hideLoader();
       }, 50);
     }
     
-    // 2. Fungsi Membangun UI Filter (Dipanggil sekali saat data pertama muat)
+    // 2. Membangun Struktur UI Dropdown (Dipanggil setelah Fetch Data)
     function buildFilterInputs(headers) {
       const fRow = document.getElementById("filterRow");
       fRow.innerHTML = "";
       
       headers.forEach((h, idx) => {
-        // Inisialisasi Set kosong untuk setiap kolom
         activeFilters[idx] = new Set(); 
         
         const field = document.createElement("div");
         field.className = "filter-field";
         field.innerHTML = `
           <label>${h}</label>
-          <div class="filter-trigger" onclick="togglePopover(${idx})">
+          <div class="filter-trigger" id="trigger-${idx}">
             <span id="label-col-${idx}">All Values</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </div>
@@ -943,38 +932,48 @@
             </div>
             <div class="popover-list" id="list-${idx}"></div>
             <div class="popover-footer">
-              <button class="btn-sort" style="color:var(--primary)" onclick="setAllChecks(${idx}, true)">Select All</button>
+              <button class="btn-sort" onclick="setAllChecks(${idx}, true)">Select All</button>
               <button class="btn-sort" onclick="setAllChecks(${idx}, false)">Clear</button>
-              <button class="btn-sort" style="background:var(--primary); color:white; border:none;" onclick="togglePopover(${idx})">Done</button>
+              <button class="btn-sort" style="background:var(--primary); color:white; border:none;" onclick="closeAllPopovers()">Done</button>
             </div>
           </div>
         `;
+
+        // Event Listener khusus agar klik tidak "bocor" (Propagation)
+        field.querySelector('.filter-trigger').onclick = (e) => {
+          e.stopPropagation();
+          const popover = document.getElementById(`popover-${idx}`);
+          const isCurrentlyActive = popover.classList.contains('active');
+          closeAllPopovers();
+          if (!isCurrentlyActive) popover.classList.add('active');
+        };
+
+        field.querySelector('.filter-popover').onclick = (e) => e.stopPropagation();
+
         fRow.appendChild(field);
       });
-      refreshAllDropdowns(); // Isi list pertama kali
+      refreshAllDropdowns(); 
     }
     
-    // 3. Fungsi Refresh Isi List Dropdown (Logika Cascading)
+    // 3. Mengisi List Item di dalam Dropdown (Cascading)
     function refreshAllDropdowns() {
-      // Loop berdasarkan jumlah kolom yang ditampilkan
       colNames.forEach((name, displayIdx) => {
         const listContainer = document.getElementById(`list-${displayIdx}`);
         if (!listContainer) return;
 
-        // Logika Cascading: Ambil data unik dari viewData 
-        // tapi abaikan filter kolom itu sendiri agar user bisa "tambah pilihan"
+        // Ambil data yang tersedia berdasarkan filter kolom LAIN
         const tempFilteredData = rawData.filter(row => {
           const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
           if (!matchesGlobal) return false;
           
           return Object.keys(activeFilters).every(cIdx => {
-            if (parseInt(cIdx) === displayIdx) return true;
-            const selectedValues = activeFilters[cIdx];
-            if (selectedValues.size === 0) return true;
-            return selectedValues.has(String(row[cIdx]).trim() || "(Blanks)");
+            if (parseInt(cIdx) === displayIdx) return true; // Abaikan filter dirinya sendiri
+            const selected = activeFilters[cIdx];
+            return !selected || selected.size === 0 || selected.has(String(row[cIdx]).trim() || "(Blanks)");
           });
         });
 
+        // Hitung Unique Values
         const counts = {};
         tempFilteredData.forEach(row => {
           const val = String(row[displayIdx]).trim() || "(Blanks)";
@@ -991,27 +990,13 @@
           </label>
         `).join('');
         
+        // Update Label Button (All vs X Selected)
         const labelEl = document.getElementById(`label-col-${displayIdx}`);
         const countSelected = activeFilters[displayIdx].size;
         labelEl.textContent = countSelected === 0 ? "All Values" : `${countSelected} selected`;
       });
     }
-    
-    // --- HELPER FUNCTIONS ---
-    
-    function togglePopover(idx) {
-      const el = document.getElementById(`popover-${idx}`);
-      const isAlreadyActive = el.classList.contains('active');
-      
-      // Tutup semua popover yang sedang terbuka
-      document.querySelectorAll('.filter-popover').forEach(p => p.classList.remove('active'));
-      
-      // Jika sebelumnya tidak aktif, buka sekarang
-      if (!isAlreadyActive) {
-        el.classList.add('active');
-      }
-    }
-    
+
     function updateFilterState(colIdx, value, isChecked) {
       if (isChecked) activeFilters[colIdx].add(value);
       else activeFilters[colIdx].delete(value);
@@ -1021,12 +1006,14 @@
     function setAllChecks(colIdx, status) {
       const list = document.getElementById(`list-${colIdx}`);
       const checks = list.querySelectorAll('input');
-      checks.forEach(c => {
-        c.checked = status;
-        const val = c.parentElement.textContent.split(' (')[0].trim();
-        if (status) activeFilters[colIdx].add(val);
-        else activeFilters[colIdx].delete(val);
-      });
+      if (status) {
+        checks.forEach(c => {
+          const val = c.parentElement.textContent.split(' (')[0].trim();
+          activeFilters[colIdx].add(val);
+        });
+      } else {
+        activeFilters[colIdx].clear();
+      }
       applyAllFilters();
     }
     
@@ -1049,22 +1036,20 @@
         if (mode === 'AZ') return valA.localeCompare(valB);
         if (mode === 'ZA') return valB.localeCompare(valA);
         if (mode === 'FREQ') {
-          const freqA = parseInt(valA.match(/\((\d+)\)/)[1]);
-          const freqB = parseInt(valB.match(/\((\d+)\)/)[1]);
+          const freqA = parseInt(a.querySelector('small').textContent.replace(/[()]/g, ''));
+          const freqB = parseInt(b.querySelector('small').textContent.replace(/[()]/g, ''));
           return freqB - freqA;
         }
       });
-      
       list.innerHTML = "";
       items.forEach(i => list.appendChild(i));
     }
+
+    function closeAllPopovers() {
+      document.querySelectorAll('.filter-popover').forEach(p => p.classList.remove('active'));
+    }
     
-    // Menutup dropdown saat klik di luar
-    window.onclick = function(event) {
-      if (!event.target.closest('.filter-field')) {
-        document.querySelectorAll('.filter-popover').forEach(p => p.classList.remove('active'));
-      }
-    };
+    window.onclick = () => closeAllPopovers();
     
     // Tambahkan event listener untuk Input GoTo Page
     document.getElementById("gotoPage").onchange = (e) => {
