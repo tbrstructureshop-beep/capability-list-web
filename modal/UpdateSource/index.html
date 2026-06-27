@@ -147,24 +147,22 @@ function loadSourceCards() {
           const isInProgress = (s.status === "IN PROGRESS");
           const isTimeout = (s.status === "TIMEOUT (PLEASE RERUN)");
   
-          // 1. Resume Sync Nonaktif jika COMPLETED atau File Kosong
-          const resumeDisabled = (isCompleted || isFileMissing) ? "disabled" : "";
+          // 1. Resume Sync Inactive jika: Selesai OR Sedang Jalan OR File Kosong
+          const resumeDisabled = (isCompleted || isInProgress || isFileMissing) ? "disabled" : "";
           
-          // 2. Full Rebuild Nonaktif jika IN PROGRESS atau TIMEOUT atau File Kosong (Sesuai Permintaan)
+          // 2. Full Rebuild Inactive jika: Sedang Jalan OR Timeout OR File Kosong
           const rebuildDisabled = (isInProgress || isTimeout || isFileMissing) ? "disabled" : "";
   
           // Dinamisasi Warna Status Tag
-          let statusBg = '#fef3c7'; // Default Amber
-          let statusColor = '#92400e';
+          let statusBg = '#f3f4f6'; // Default Gray
+          let statusColor = '#374151';
+          
           if (isCompleted) { 
-            statusBg = '#dcfce7'; 
-            statusColor = '#15803d'; 
+            statusBg = '#dcfce7'; statusColor = '#15803d'; 
           } else if (isInProgress) { 
-            statusBg = '#e0f2fe'; 
-            statusColor = '#0369a1'; 
+            statusBg = '#e0f2fe'; statusColor = '#0369a1'; 
           } else if (isTimeout) {
-            statusBg = '#fee2e2'; // Light Red for Timeout
-            statusColor = '#b91c1c';
+            statusBg = '#fee2e2'; statusColor = '#b91c1c';
           }
   
           card.innerHTML = `
@@ -188,7 +186,7 @@ function loadSourceCards() {
             <div class="input-group-pro">
               <input type="text" id="pdf-${s.authority}" class="input-pro" 
                      value="${s.pdfCopy || ''}" placeholder="URL SharePoint..." 
-                     ${hasUrl ? 'readonly' : ''}>
+                   ${hasUrl ? 'readonly' : ''}>
               
               <button class="btn-pro-icon" id="lock-${s.authority}" title="Edit Tautan" onclick="toggleEdit('${s.authority}')">
                 <svg id="icon-lock-${s.authority}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -216,12 +214,12 @@ function loadSourceCards() {
   
             <div class="btn-group-engine">
               <button class="engine-btn" ${resumeDisabled} onclick="triggerProc('${s.authority}', 'resume')" 
-                      style="${resumeDisabled ? 'opacity:0.4; cursor:not-allowed; background:#f3f4f6;' : ''}">
+                style="${resumeDisabled ? 'opacity:0.4; cursor:not-allowed; background:#f3f4f6; pointer-events:none;' : ''}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 Resume Sync
               </button>
               <button class="engine-btn run" ${rebuildDisabled} onclick="triggerProc('${s.authority}', 'scratch')" 
-                      style="${rebuildDisabled ? 'opacity:0.4; cursor:not-allowed; background:#9ca3af; border:none;' : ''}">
+                style="${rebuildDisabled ? 'opacity:0.4; cursor:not-allowed; background:#9ca3af; border:none; pointer-events:none;' : ''}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
                 Full Rebuild
               </button>
@@ -231,6 +229,7 @@ function loadSourceCards() {
       });
     });
 }
+  
 function toggleEdit(auth) {
   const input = document.getElementById(`pdf-${auth}`);
   const saveBtn = document.getElementById(`save-${auth}`);
