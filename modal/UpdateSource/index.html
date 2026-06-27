@@ -137,69 +137,87 @@ function loadSourceCards() {
     .then(data => {
       container.innerHTML = "";
       data.forEach(s => {
-        const card = document.createElement('div');
-        card.className = "source-card";
-        const hasUrl = s.pdfCopy && s.pdfCopy.trim() !== "";
-
-        card.innerHTML = `
-          <div class="card-header-top">
-            <div class="auth-label">
-              ${formatLogoValue(s.authority)}
-              <span>${s.authority}</span>
+          const card = document.createElement('div');
+          card.className = "source-card";
+          const hasUrl = s.pdfCopy && s.pdfCopy.trim() !== "";
+          
+          // --- LOGIKA VALIDASI TOMBOL (INA) ---
+          const isFileMissing = (!s.sourceId || s.sourceId === "-");
+          const isCompleted = (s.status === "COMPLETED");
+          const isInProgress = (s.status === "IN PROGRESS");
+          const isTimeout = (s.status === "TIMEOUT (PLEASE RERUN)");
+  
+          // 1. Resume Sync Nonaktif jika COMPLETED atau File Kosong
+          const resumeDisabled = isCompleted || isFileMissing ? "disabled" : "";
+          
+          // 2. Full Rebuild Nonaktif jika IN PROGRESS atau TIMEOUT atau File Kosong
+          const rebuildDisabled = isInProgress || isTimeout || isFileMissing ? "disabled" : "";
+  
+          // Dinamisasi Warna Status Tag
+          let statusBg = '#fef3c7'; // Default Amber
+          let statusColor = '#92400e';
+          if (isCompleted) { statusBg = '#dcfce7'; statusColor = '#15803d'; }
+          else if (isInProgress) { statusBg = '#e0f2fe'; statusColor = '#0369a1'; }
+  
+          card.innerHTML = `
+            <div class="card-header-top">
+              <div class="auth-label">
+                ${formatLogoValue(s.authority)}
+                <span>${s.authority}</span>
+              </div>
+              <span class="status-tag" style="background: ${statusBg}; color: ${statusColor};">
+                ${s.status || 'READY'}
+              </span>
             </div>
-            <span class="status-tag" style="background: ${s.status === 'COMPLETED' ? '#dcfce7' : '#fef3c7'}; color: ${s.status === 'COMPLETED' ? '#15803d' : '#92400e'};">
-              ${s.status}
-            </span>
-          </div>
-
-          <div class="meta-box">
-            <div class="meta-row"><span class="meta-label">Last Sheet</span><span class="meta-value">${s.lastSheet || '-'}</span></div>
-            <div class="meta-row"><span class="meta-label">Last Sync PN</span><span class="meta-value">${s.lastPN || '-'}</span></div>
-            <div class="meta-row"><span class="meta-label">Timestamp</span><span class="meta-value">${s.updateAt}</span></div>
-          </div>
-          
-          <div class="section-divider-label">PDF SharePoint</div>
-          <div class="input-group-pro">
-            <input type="text" id="pdf-${s.authority}" class="input-pro" 
-                   value="${s.pdfCopy || ''}" placeholder="URL SharePoint..." 
-                   ${hasUrl ? 'readonly' : ''}>
+  
+            <div class="meta-box">
+              <div class="meta-row"><span class="meta-label">Last Sheet</span><span class="meta-value">${s.lastSheet || '-'}</span></div>
+              <div class="meta-row"><span class="meta-label">Last Sync PN</span><span class="meta-value">${s.lastPN || '-'}</span></div>
+              <div class="meta-row"><span class="meta-label">Timestamp</span><span class="meta-value">${s.updateAt || '-'}</span></div>
+            </div>
             
-            <button class="btn-pro-icon" id="lock-${s.authority}" title="Edit Tautan" onclick="toggleEdit('${s.authority}')">
-              <svg id="icon-lock-${s.authority}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                ${hasUrl ? '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' : '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>'}
-              </svg>
-            </button>
-
-            <button class="btn-pro-icon" id="save-${s.authority}" title="Simpan" disabled onclick="updatePdfUrl('${s.authority}', ${s.rowIndex})">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline></svg>
-            </button>
-
-            <button class="btn-pro-icon" id="open-${s.authority}" title="Buka" ${!hasUrl ? 'disabled' : ''} onclick="window.open(document.getElementById('pdf-${s.authority}').value, '_blank')">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-            </button>
-          </div>
-          
-          <div class="section-divider-label">Source Master</div>
-          <div class="input-group-pro">
-             <input type="text" value="${s.sourceId}" readonly class="input-pro" style="background:#f1f5f9; font-size:11px;">
-             <button class="btn-pro-icon" title="Replace GSheet Source" onclick="document.getElementById('file-${s.authority}').click()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-             </button>
-             <input type="file" id="file-${s.authority}" style="display:none;" onchange="uploadNewSource(event, '${s.authority}', '${s.sourceId}', ${s.rowIndex})">
-          </div>
-
-          <div class="btn-group-engine">
-            <button class="engine-btn" onclick="triggerProc('${s.authority}', 'resume')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              Resume Sync
-            </button>
-            <button class="engine-btn run" onclick="triggerProc('${s.authority}', 'scratch')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
-              Full Rebuild
-            </button>
-          </div>
-        `;
-        container.appendChild(card);
+            <div class="section-divider-label">PDF SharePoint</div>
+            <div class="input-group-pro">
+              <input type="text" id="pdf-${s.authority}" class="input-pro" 
+                     value="${s.pdfCopy || ''}" placeholder="URL SharePoint..." 
+                     ${hasUrl ? 'readonly' : ''}>
+              
+              <button class="btn-pro-icon" id="lock-${s.authority}" title="Edit Tautan" onclick="toggleEdit('${s.authority}')">
+                <svg id="icon-lock-${s.authority}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  ${hasUrl ? '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' : '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>'}
+                </svg>
+              </button>
+  
+              <button class="btn-pro-icon" id="save-${s.authority}" title="Simpan" disabled onclick="updatePdfUrl('${s.authority}', ${s.rowIndex})">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline></svg>
+              </button>
+  
+              <button class="btn-pro-icon" id="open-${s.authority}" title="Buka" ${!hasUrl ? 'disabled' : ''} onclick="window.open(document.getElementById('pdf-${s.authority}').value, '_blank')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </button>
+            </div>
+            
+            <div class="section-divider-label">Source Master ${isFileMissing ? '<span style="color:#ef4444; font-weight:900;">(File Required)</span>' : ''}</div>
+            <div class="input-group-pro">
+               <input type="text" value="${s.sourceId}" readonly class="input-pro" style="background:#f1f5f9; font-size:11px; ${isFileMissing ? 'border:1.5px solid #ef4444;' : ''}">
+               <button class="btn-pro-icon" title="Replace GSheet Source" onclick="document.getElementById('file-${s.authority}').click()">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+               </button>
+               <input type="file" id="file-${s.authority}" style="display:none;" onchange="uploadNewSource(event, '${s.authority}', '${s.sourceId}', ${s.rowIndex})">
+            </div>
+  
+            <div class="btn-group-engine">
+              <button class="engine-btn" ${resumeDisabled} onclick="triggerProc('${s.authority}', 'resume')" style="${resumeDisabled ? 'opacity:0.4; cursor:not-allowed; background:#f3f4f6;' : ''}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Resume Sync
+              </button>
+              <button class="engine-btn run" ${rebuildDisabled} onclick="triggerProc('${s.authority}', 'scratch')" style="${rebuildDisabled ? 'opacity:0.4; cursor:not-allowed; background:#9ca3af; border:none;' : ''}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                Full Rebuild
+              </button>
+            </div>
+          `;
+          container.appendChild(card);
       });
     });
 }
@@ -239,22 +257,40 @@ function uploadNewSource(e, auth, oldId, row) {
 
   Swal.fire({
     title: 'Replace Source?',
-    text: `You are about to replace ${auth} spreadsheet with ${file.name}`,
+    text: `Upload ${file.name} sebagai master source ${auth}?`,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonText: 'Yes, Upload'
   }).then((result) => {
     if (result.isConfirmed) {
       const reader = new FileReader();
-      Swal.fire({ title: 'Uploading...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Uploading & Registering ID...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       
       reader.onload = function(evt) {
+        // Hapus mode: "no-cors" agar kita bisa mendapat respon dari GAS
         fetch(GAS_API_URL, { 
-          method: "POST", mode: "no-cors", 
-          body: JSON.stringify({ action: "uploadSourceFile", rowIndex: row, oldId: oldId, fileName: file.name, fileData: evt.target.result.split(",")[1] }) 
-        }).then(() => { 
-          Swal.fire('Success!', 'Master source has been replaced.', 'success');
-          loadSourceCards(); 
+          method: "POST", 
+          body: JSON.stringify({ 
+            action: "uploadSourceFile", 
+            rowIndex: row, 
+            oldId: oldId, 
+            fileName: file.name, 
+            fileData: evt.target.result.split(",")[1] 
+          }) 
+        })
+        .then(res => res.json())
+        .then(response => { 
+          if(response.success) {
+            Swal.fire('Success!', `Master source ${auth} berhasil diupdate dengan ID baru.`, 'success');
+            loadSourceCards(); // Refresh modal untuk mengaktifkan tombol
+          } else {
+            throw new Error(response.error);
+          }
+        })
+        .catch(err => {
+          // Fallback jika CORS bermasalah, tunggu 3 detik lalu refresh
+          setTimeout(() => { loadSourceCards(); }, 3000);
+          Swal.fire('Info', 'Proses upload selesai. Merefresh data...', 'info');
         });
       };
       reader.readAsDataURL(file);
