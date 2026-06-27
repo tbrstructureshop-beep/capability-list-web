@@ -863,7 +863,13 @@
 
     // SETUP AUTO REFRESH SETIAP 5 MENIT (300,000 ms)
     setInterval(() => {
-      refreshData(false); // false agar tidak memunculkan full-screen loader yang mengganggu user
+      refreshData(false); // Refresh tabel utama
+      
+      // Jika modal Update Source sudah ter-load di DOM, panggil loadSourceCards
+      // agar stealth guard bekerja di background
+      if (typeof loadSourceCards === "function") {
+        loadSourceCards(); 
+      }
     }, 5 * 60 * 1000);
     
     
