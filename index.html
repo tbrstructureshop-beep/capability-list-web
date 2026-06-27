@@ -815,38 +815,56 @@
       document.getElementById("filterRow").style.display = filtersVisible ? "grid" : "none";
     }
     
-    // 4. Fetch Data
-    showLoader();
-    fetch(`${GAS_API_URL}?action=getCapabilityList`)
-      .then(res => res.json())
-      .then(rows => {
-        if (!rows || rows.length < 3) throw new Error("Data empty");
+    // 4. Fetch Data Function
+    function refreshData(isInitial = false) {
+      if (isInitial) showLoader();
+      
+      // Menambahkan timestamp cache-buster agar browser selalu mengambil data terbaru
+      const url = `${GAS_API_URL}?action=getCapabilityList&_=${new Date().getTime()}`;
+      
+      fetch(url)
+        .then(res => res.json())
+        .then(rows => {
+          if (!rows || rows.length < 3) throw new Error("Data empty");
 
-        // 1. Ambil Header
-        colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
-        
-        // 2. Isi data ke memori
-        rawData = rows.slice(3)
-          .filter(r => r[1] && String(r[1]).trim() !== "") 
-          .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+          // 1. Ambil Header (Hanya dilakukan saat pertama kali atau jika header bisa berubah)
+          colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
           
-        viewData = rawData;
-        
-        // 3. Bangun wadah filter
-        buildFilterInputs(colNames); 
-        
-        // 4. Tampilkan kartu
-        renderCards(viewData);
-        updateDataStatus(); 
-        
-        // 5. Matikan Loader
-        hideLoader(); 
-      })
-      .catch(err => { 
-        console.error("Fetch Error:", err); 
-        document.getElementById("dataStatus").textContent = "Connection Error. Please refresh.";
-        hideLoader(); // Tetap matikan loader jika error
-      });  
+          // 2. Isi data ke memori (Update rawData)
+          rawData = rows.slice(3)
+            .filter(r => r[1] && String(r[1]).trim() !== "") 
+            .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+          
+          // 3. Jika ini loading pertama, bangun input filter
+          if (isInitial) {
+            buildFilterInputs(colNames);
+          }
+          
+          // 4. Terapkan filter yang sedang aktif ke data baru
+          // Ini memastikan jika user sedang memfilter, tampilannya tidak tiba-tiba reset ke "Show All"
+          applyAllFilters();
+          
+          // 5. Update Status Terakhir
+          const now = new Date();
+          const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+          console.log(`Data auto-refreshed at: ${timeStr}`);
+          
+          if (isInitial) hideLoader(); 
+        })
+        .catch(err => { 
+          console.error("Fetch Error:", err); 
+          document.getElementById("dataStatus").textContent = "Connection Error. Retrying in 5 mins...";
+          if (isInitial) hideLoader();
+        });
+    }
+
+    // Jalankan pertama kali saat halaman dibuka
+    refreshData(true);
+
+    // SETUP AUTO REFRESH SETIAP 5 MENIT (300,000 ms)
+    setInterval(() => {
+      refreshData(false); // false agar tidak memunculkan full-screen loader yang mengganggu user
+    }, 5 * 60 * 1000);
     
     
     // 5. Render Card Display
