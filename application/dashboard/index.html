@@ -1,39 +1,71 @@
 <script>
 /**
- * SUBMISSION MODULE
+ * SUBMISSION MODULE - Independent Logic (No Ruin)
  */
 let allSubmissions = [];
 let filteredSubmissions = [];
-let subCurrentPage = 1;
-let subRowsPerPage = 10;
 
+/**
+ * 1. Load data dari Server
+ */
 function loadSubmissions() {
-  fetch(`${GAS_API_URL}?action=getSubmissions`)
+  // Tambahkan timestamp agar data tidak sangkut di cache browser
+  fetch(`${GAS_API_URL}?action=getSubmissions&_=${new Date().getTime()}`)
     .then(res => res.json())
     .then(data => {
       allSubmissions = data;
       filteredSubmissions = data;
+      
+      // Reset ke halaman 1 saat pertama load
+      currentPage = 1; 
+      
       renderSubmissionCards();
+      updateDataStatus(); // Pastikan teks "Total Records" di header sinkron
+    })
+    .catch(err => {
+      console.error("Load Submissions Error:", err);
+      document.getElementById("tableBody").innerHTML = `<div style="text-align:center; padding:60px; color:red;">Failed to load submissions.</div>`;
     });
 }
 
+/**
+ * 2. Fungsi Filter / Search khusus Submission
+ */
 function applySubmissionFilters() {
-  const keyword = document.getElementById("globalSearch").value.toLowerCase();
+  const keyword = document.getElementById("globalSearch").value.toLowerCase().trim();
+  
   filteredSubmissions = allSubmissions.filter(s => 
     s.partNumber.toLowerCase().includes(keyword) || 
     s.id.toLowerCase().includes(keyword) ||
-    s.partName.toLowerCase().includes(keyword)
+    s.partName.toLowerCase().includes(keyword) ||
+    (s.username && s.username.toLowerCase().includes(keyword))
   );
-  subCurrentPage = 1;
+
+  currentPage = 1; // Kembali ke halaman 1 hasil pencarian
   renderSubmissionCards();
+  updateDataStatus();
 }
 
+/**
+ * 3. Render Kartu Submission ke tableBody
+ */
 function renderSubmissionCards() {
   const container = document.getElementById("tableBody");
   container.innerHTML = "";
 
-  const start = (subCurrentPage - 1) * subRowsPerPage;
-  const end = start + subRowsPerPage;
+  if (filteredSubmissions.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding:60px; color:var(--text-light);"><p>No matching submissions found.</p></div>`;
+    updatePaginationInfo(0);
+    return;
+  }
+
+  // Gunakan variabel paginasi global (currentPage & rowsPerPage dari index.html)
+  let start = 0, end = filteredSubmissions.length;
+  if (rowsPerPage !== "all") {
+    start = (currentPage - 1) * rowsPerPage;
+    end = start + rowsPerPage;
+  }
+
   const pageData = filteredSubmissions.slice(start, end);
 
   pageData.forEach(row => {
@@ -46,7 +78,7 @@ function renderSubmissionCards() {
     const s = statusMap[row.status] || { bg: '#f3f4f6', color: '#374151', state: 'UNKNOWN' };
 
     const card = document.createElement("div");
-    card.className = "data-card";
+    card.className = "data-card"; // Mengikuti style Main DB agar lebar konsisten
     
     card.innerHTML = `
       <div class="card-main">
@@ -66,13 +98,13 @@ function renderSubmissionCards() {
 
         <div style="margin-top:15px; font-size:11px; background:var(--primary-light); padding:10px; border-radius:8px;">
           <div class="detail-label">REQUESTED LEVELS</div>
-          <div class="detail-value">${row.levels || '—'}</div>
+          <div class="detail-value" style="font-weight:700; color:var(--primary-dark);">${row.levels || '—'}</div>
         </div>
 
-        <!-- TOMBOL EDIT UNTUK SUBMISSION -->
-        <button onclick='openEditForm(${JSON.stringify(row).replace(/'/g, "&apos;")})' class="btn" style="margin-top:15px; width:100%; border-color:var(--primary); color:var(--primary);">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-          Edit / Manage Submission
+        <!-- TOMBOL EDIT / MANAGE (INA - FEATURE) -->
+        <button onclick='openEditForm(${JSON.stringify(row).replace(/'/g, "&apos;")})' class="btn" style="margin-top:15px; width:100%; border-color:var(--primary); color:var(--primary); font-size:12px; font-weight:700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Manage Submission
         </button>
       </div>
 
@@ -82,7 +114,7 @@ function renderSubmissionCards() {
         <div class="detail-item"><span class="detail-label">SHOP</span><span class="detail-value">${row.shop}</span></div>
         <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username}</span></div>
         <div class="detail-item"><span class="detail-label">DATE</span><span class="detail-value">${row.date}</span></div>
-        <div class="detail-item" style="grid-column: span 2;">
+        <div class="detail-item" style="grid-column: span 2; border-top: 1px solid var(--border); padding-top:8px;">
           <span class="detail-label">ATTACHMENTS</span>
           <div class="detail-value">${renderFileList(row.fileUrl)}</div>
         </div>
@@ -90,6 +122,27 @@ function renderSubmissionCards() {
     `;
     container.appendChild(card);
   });
+
+  // SINKRONISASI PAGINASI: Update info halaman di footer index.html
   updatePaginationInfo(filteredSubmissions.length);
+}
+
+/**
+ * 4. Helper Render List File
+ */
+function renderFileList(jsonFiles) {
+  try {
+    if(!jsonFiles || jsonFiles === "" || jsonFiles === "[]") return "<em style='color:var(--text-light)'>No files</em>";
+    const files = JSON.parse(jsonFiles);
+    return files.map(f => `
+      <a href="${f.url}" target="_blank" style="color:var(--primary); text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-right:15px; font-size:12px; font-weight:600;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+        ${f.name}
+      </a>
+    `).join("");
+  } catch(e) { 
+    // Fallback untuk data URL lama (string tunggal)
+    return `<a href="${jsonFiles}" target="_blank" style="color:var(--primary); font-size:12px; font-weight:600;">View Attachment</a>`; 
+  }
 }
 </script>
