@@ -157,6 +157,124 @@
  */
 const MODAL_COL_MAP = { AUTH: 1, SHOP: 4, NAME: 6, MANUF: 7, REF: 8, ACTYPE: 9, CAT: 11 };
 
+let uploadedFiles = []; // Array untuk menyimpan blob data sebelum dikirim
+
+/**
+ * Penanganan Multi-File (INA - Logic)
+ */
+function handleMultiFile(input) {
+  const preview = document.getElementById("fileListPreview");
+  const label = document.getElementById("fileCountLabel");
+  preview.innerHTML = "";
+  uploadedFiles = [];
+
+  if (input.files.length === 0) {
+    label.textContent = "Click to upload PDF";
+    return;
+  }
+
+  label.textContent = input.files.length + " files ready to upload";
+
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      // Masukkan ke array global
+      uploadedFiles.push({
+        name: file.name,
+        data: e.target.result.split(',')[1] // Pure Base64
+      });
+      
+      // Tampilkan preview kecil
+      preview.innerHTML += `
+        <div style="font-size:11px; color:#15803d; background:#f0fdf4; padding:5px 10px; border-radius:6px; border:1px solid #bbf7d0; display:flex; align-items:center; gap:5px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          ${file.name}
+        </div>`;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * SINKRONISASI PROSES SUBMISSION (INA - Process)
+ */
+async function submitForm() {
+  const form = document.getElementById("newCapForm");
+  
+  // 1. Validasi Input
+  if (!form.reportValidity()) return;
+
+  // 2. Tampilkan Loading Spinner Blocking (SweetAlert2)
+  Swal.fire({
+    title: 'Processing Submission',
+    html: 'Uploading documents and writing metadata...<br><b>Please do not close this window.</b>',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  const isEdit = document.getElementById("editId").value !== "";
+  const selectedLevels = Array.from(document.querySelectorAll('input[name="authLevels"]:checked')).map(c => c.value).join(", ");
+
+  // 3. Construct Payload
+  const payload = {
+    action: isEdit ? "updateSubmission" : "newSubmission",
+    id: document.getElementById("editId").value,
+    date: document.getElementById("submitDate").value,
+    username: document.getElementById("username").value,
+    unit: document.getElementById("unit").value,
+    authority: document.getElementById("authSelect").value,
+    caplistItem: document.getElementById("caplistItem").value,
+    partNumber: document.getElementById("partNumber").value,
+    partName: document.getElementById("partName").value,
+    manufacturer: document.getElementById("manufacturer").value,
+    ataChapter: document.getElementById("ataChapter").value,
+    shop: document.getElementById("shop").value,
+    aircraftType: document.getElementById("aircraftType").value,
+    levels: selectedLevels,
+    status: isEdit ? document.getElementById("statusSelect").value : "SUBMITTED",
+    reviewer: document.getElementById("reviewerName").value,
+    reason: document.getElementById("statusReason").value,
+    files: uploadedFiles // Kirim array file blob
+  };
+
+  try {
+    const response = await fetch(GAS_API_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await response.json();
+
+    if (result.success) {
+      // 4. Sukses: Tutup Loading & Tampilkan Notifikasi Sukses
+      Swal.fire({
+        icon: 'success',
+        title: isEdit ? 'Updated!' : 'Submitted!',
+        text: `Submission ${result.id || payload.id} has been processed successfully.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      closeModal(); // Tutup Modal Form
+      
+      // Refresh list di dashboard jika fungsi tersedia
+      if (typeof loadSubmissions === "function") loadSubmissions();
+      
+    } else {
+      throw new Error(result.error || "Server responded with failure");
+    }
+  } catch (err) {
+    console.error("Submission Error:", err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Submission Failed',
+      text: 'Check connection or logs: ' + err.message
+    });
+  }
+}
+
 // Fungsi Search Advice ala Google
 function showAdvice(input, colIdx) {
   const list = input.nextElementSibling;
