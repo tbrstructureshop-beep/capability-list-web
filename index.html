@@ -622,10 +622,10 @@
   </div>
   
   <!-- Menu yang sudah ada -->
-  <a href="./application/dashboard/index.html" class="menu-item">
+  <button onclick="switchView('submissions'); toggleSidebar();" class="menu-item">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
     Dashboard Pengajuan
-  </a>
+  </button>
 
   <button onclick="toggleFilters(); toggleSidebar();" class="menu-item">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
@@ -760,41 +760,105 @@
     async function switchView(view) {
       currentView = view;
       const container = document.getElementById("tableBody");
-      const dataStatus = document.getElementById("dataStatus");
       const filterRow = document.getElementById("filterRow");
       const title = document.querySelector("h1");
+      const searchWrapper = document.querySelector(".search-container");
     
-      // Reset UI
+      // Reset UI Dasar
       filterRow.style.display = "none";
       filtersVisible = false;
-      container.innerHTML = `<div class="loader-overlay" style="position:relative; background:none;"><div class="spinner"></div></div>`;
+      container.innerHTML = `<div style="text-align:center; padding:100px;"><div class="spinner" style="margin:0 auto;"></div><p>Switching View...</p></div>`;
     
       if (view === "submissions") {
         title.textContent = "Submission Tracking";
-        // Load script dashboard pengajuan secara dinamis jika belum ada
+        
+        // Tambahkan Tombol "New Submission" di area pencarian jika belum ada
+        if (!document.getElementById("btnNewSub")) {
+          const btn = document.createElement("button");
+          btn.id = "btnNewSub";
+          btn.className = "btn btn-primary";
+          btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> New Application`;
+          btn.style.marginLeft = "12px";
+          btn.onclick = openSubmissionForm; // Fungsi ini nanti kita buat
+          searchWrapper.appendChild(btn);
+        }
+    
+        // Load Module jika belum ada
         if (typeof loadSubmissions !== "function") {
           await injectSubmissionModule();
         }
-        loadSubmissions(); // Fungsi ini ada di application/dashboard/index.html
+        loadSubmissions(); 
       } else {
+        // Mode Database Original
         title.textContent = "Enterprise Capability Web";
+        const btnNewSub = document.getElementById("btnNewSub");
+        if (btnNewSub) btnNewSub.remove();
         refreshData(true);
       }
     }
     
     async function injectSubmissionModule() {
-      const response = await fetch("/application/dashboard/index.html");
-      const html = await response.text();
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = html;
-      
-      // Ambil script saja dan inject ke body
-      const scripts = tempDiv.querySelectorAll("script");
-      scripts.forEach(oldScript => {
-        const newScript = document.createElement("script");
-        newScript.text = oldScript.innerHTML;
-        document.body.appendChild(newScript);
-      });
+      // Gunakan relative path yang benar untuk Vercel
+      const targetPath = "application/dashboard/index.html"; 
+      try {
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("Module Submission tidak ditemukan");
+        const html = await response.text();
+        
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html;
+        
+        const scripts = tempDiv.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+        console.log("Submission Module Injected.");
+      } catch (err) {
+        console.error("Injection Error:", err);
+      }
+    }
+
+    async function openSubmissionForm() {
+      const container = document.getElementById("modalUpdateSourceContainer"); // Kita pinjam container modal yang sudah ada
+      const targetPath = "application/dashboard/modal/form/index.html";
+    
+      try {
+        const response = await fetch(targetPath);
+        const html = await response.text();
+        
+        // Buat overlay modal baru agar tidak bentrok dengan UpdateSource
+        let subModal = document.getElementById("submissionModalOverlay");
+        if (!subModal) {
+          subModal = document.createElement("div");
+          subModal.id = "submissionModalOverlay";
+          subModal.className = "modal-overlay";
+          document.body.appendChild(subModal);
+        }
+        
+        subModal.innerHTML = html;
+        subModal.style.display = "flex";
+    
+        // Jalankan script internal modal
+        const scripts = subModal.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+        
+        // Inisialisasi tanggal
+        if (typeof initFormScript === "function") initFormScript();
+    
+      } catch (err) {
+        console.error("Form Load Error:", err);
+      }
+    }
+    
+    function closeModal() {
+      const subModal = document.getElementById("submissionModalOverlay");
+      if (subModal) subModal.style.display = "none";
     }
     
     // 1. Format Logo
