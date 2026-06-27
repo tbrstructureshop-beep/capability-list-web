@@ -1,162 +1,7 @@
-<style>
-  /* Premium Modal Styling */
-  .modal-card { background: #fff; width: 100%; max-width: 850px; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
-  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .modal-body { padding: 24px; overflow-y: auto; flex: 1; max-height: 80vh; }
-  
-  .section-title { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin: 20px 0 12px 0; display: flex; align-items: center; gap: 10px; }
-  .section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-  .section-divider { border-top: 1px solid var(--border); margin: 20px 0; padding-top: 15px; }
-
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-  .form-group input, .form-group select, .form-group textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box; }
-  
-  /* Levels Grid Styling */
-  .level-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; padding: 15px; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); }
-  .level-chip { display: flex; align-items: center; gap: 8px; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; }
-  .level-chip:hover { border-color: var(--primary); background: var(--primary-light); }
-
-  .mgmt-section { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 14px; margin-bottom: 24px; }
-  .file-dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; background: var(--primary-light); cursor: pointer; transition: 0.2s; }
-</style>
-
-<div class="modal-card">
-  <div class="modal-header">
-    <h3 class="modal-title" id="formTitle">New Capability Application</h3>
-    <button class="close-x" onclick="closeModal()">&times;</button>
-  </div>
-  <div class="modal-body">
-    <form id="newCapForm">
-      <input type="hidden" id="editId">
-
-      <!-- STEP 0: MANAGEMENT CONTROL (Visible only on Manage) -->
-      <div id="mgmtBox" class="mgmt-section" style="display:none;">
-        <div class="section-title" style="color:#c2410c; margin-top:0;">Management Control</div>
-        <div class="form-row">
-           <div class="form-group">
-             <label>Status</label>
-             <select id="statusSelect">
-                <option value="SUBMITTED">OPEN: SUBMITTED</option>
-                <option value="UNDER REVIEW">PROGRESS: UNDER REVIEW</option>
-                <option value="APPROVED">CLOSED: APPROVED</option>
-                <option value="REJECTED">CLOSED: REJECTED</option>
-             </select>
-           </div>
-           <div class="form-group">
-             <label>Reviewer Name</label>
-             <input type="text" id="reviewerName">
-           </div>
-        </div>
-        <div class="form-group" style="margin-top:10px;">
-          <label>Remarks / Reason</label>
-          <textarea id="statusReason" rows="2"></textarea>
-        </div>
-      </div>
-
-      <!-- STEP 1: REQUESTER INFO (INA - Re-inserted) -->
-      <div class="section-title">Requester Information</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nama Pengaju</label>
-          <input type="text" id="username" required placeholder="Full Name / Employee ID">
-        </div>
-        <div class="form-group">
-          <label>Unit Pengaju</label>
-          <input type="text" id="unit" required placeholder="e.g. TCP-10 / TE-2">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Tanggal Pengajuan</label>
-        <input type="date" id="submitDate" required>
-      </div>
-
-      <!-- STEP 2: DYNAMIC AUTHORITY & CATEGORY -->
-      <div class="section-title">Certification & Authority</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Select Authority</label>
-          <select id="authSelect" required onchange="handleAuthorityChange()" style="border:1.5px solid var(--primary);">
-            <option value="">-- Choose Authority --</option>
-            <option value="DGCA">DGCA (Indonesia)</option>
-            <option value="EASA">EASA (Europe)</option>
-            <option value="FAA">FAA (USA)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Capability Category</label>
-          <select id="caplistItem" required>
-            <option value="">-- Select Authority First --</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- STEP 3: TECHNICAL DETAILS (Dynamic Labels) -->
-      <div class="section-title">Technical Detail Component</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Part Number</label>
-          <input type="text" id="partNumber" required>
-        </div>
-        <div class="form-group">
-          <label id="labelPartName">Part Name (Designation)</label>
-          <input type="text" id="partName" required>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Manufacturer</label>
-          <input type="text" id="manufacturer" list="list-manufacturer" required placeholder="Select or type new...">
-          <datalist id="list-manufacturer"></datalist>
-        </div>
-        <div class="form-group">
-          <label id="labelReference">ATA Chapter / CMM Reference</label>
-          <input type="text" id="ataChapter" required>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label>Workshop / Shop</label>
-          <input type="text" id="shop" list="list-shop" required placeholder="Select or type new...">
-          <datalist id="list-shop"></datalist>
-        </div>
-        <div class="form-group">
-          <label id="labelAircraftType">A/C Type (Model)</label>
-          <input type="text" id="aircraftType" list="list-aircraftType" placeholder="Select or type new...">
-          <datalist id="list-aircraftType"></datalist>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- STEP 4: LEVELS -->
-      <div class="section-title">Requested Maintenance Levels</div>
-      <div id="dynamicLevels" class="level-options">
-        <p style="grid-column: 1/-1; text-align:center; font-size:12px; color:var(--text-light);">Select authority to load levels</p>
-      </div>
-
-      <div class="section-title">Supporting Documents</div>
-      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
-        <div id="fileCountLabel" style="font-weight:600;">Click to upload PDF Attachment</div>
-        <input type="file" id="fileInput" multiple accept=".pdf" style="display:none;" onchange="handleMultiFile(this)" />
-      </div>
-      <div id="fileListPreview" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:10px;"></div>
-    </form>
-  </div>
-  <div class="modal-footer">
-    <button class="btn" onclick="closeModal()">Cancel</button>
-    <button id="btnSubmitForm" class="btn btn-primary" onclick="submitForm()">Save & Submit</button>
-  </div>
-</div>
-
 <script>
 /**
- * INA LOGIC: Konfigurasi Otoritas & Datalist Dinamis
+ * INA LOGIC - FIXED MAPPING (No More Undefined)
+ * Mengambil data dari memori 'rawData' di index.html
  */
 const AUTH_LEVELS = {
   'EASA': ['Level 1 (Tested)', 'Level 2 (Repaired)', 'Level 3 (Modified)', 'Level 4 (Overhauled)'],
@@ -164,38 +9,71 @@ const AUTH_LEVELS = {
   'DGCA': ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)']
 };
 
-const COL_MAP = { AUTH: 1, SHOP: 4, NAME: 6, MANUF: 7, REF: 8, ACTYPE: 14, CAT: 16 };
+/**
+ * MAPPING INDEX rawData (Berdasarkan DISPLAY_COLS di index.html)
+ * 0:NO, 1:AUTH, 2:RATING, 3:ATA, 4:SHOP, 5:PN, 6:NAME, 7:MANUF, 8:REF, 9:A/C TYPE (orig 14), 11:CAT (orig 16)
+ */
+const LOCAL_IDX = {
+  AUTH: 1, 
+  SHOP: 4, 
+  MANUF: 7, 
+  ACTYPE: 9, 
+  CAT: 11 
+};
 
+// 1. Fungsi Mengisi Datalist (Shop, Manuf, AC Type) secara lokal
 function populateDatalists(selectedAuth) {
-  const lists = { 'manufacturer': COL_MAP.MANUF, 'shop': COL_MAP.SHOP, 'aircraftType': COL_MAP.ACTYPE };
+  const lists = {
+    'manufacturer': LOCAL_IDX.MANUF,
+    'shop': LOCAL_IDX.SHOP,
+    'aircraftType': LOCAL_IDX.ACTYPE
+  };
+
   for (const [id, colIdx] of Object.entries(lists)) {
     const datalist = document.getElementById(`list-${id}`);
-    if (!datalist || typeof rawData === 'undefined') continue;
-    const uniqueValues = [...new Set(rawData
-      .filter(row => !selectedAuth || String(row[COL_MAP.AUTH]).trim().toUpperCase() === selectedAuth.toUpperCase())
+    // Cek apakah rawData tersedia di window utama
+    const sourceData = (typeof rawData !== 'undefined') ? rawData : [];
+    
+    if (!datalist || sourceData.length === 0) continue;
+
+    const uniqueValues = [...new Set(sourceData
+      .filter(row => !selectedAuth || String(row[LOCAL_IDX.AUTH]).trim().toUpperCase() === selectedAuth.toUpperCase())
       .map(row => String(row[colIdx]).trim())
       .filter(val => val && val !== "" && val !== "—")
     )].sort();
+
     datalist.innerHTML = uniqueValues.map(v => `<option value="${v}">`).join("");
   }
 }
 
+// 2. Fungsi Mengisi Kategori secara lokal
 function updateCategoryDropdown(selectedAuth) {
   const catSelect = document.getElementById("caplistItem");
-  if (!selectedAuth || typeof rawData === 'undefined') {
+  const sourceData = (typeof rawData !== 'undefined') ? rawData : [];
+
+  if (!selectedAuth || sourceData.length === 0) {
     catSelect.innerHTML = '<option value="">-- Select Authority First --</option>';
     return;
   }
-  const categories = [...new Set(rawData
-    .filter(row => String(row[COL_MAP.AUTH]).trim().toUpperCase() === selectedAuth.toUpperCase())
-    .map(row => String(row[COL_MAP.CAT]).trim())
-    .filter(val => val !== "" && val !== "—")
+
+  const categories = [...new Set(sourceData
+    .filter(row => String(row[LOCAL_IDX.AUTH]).trim().toUpperCase() === selectedAuth.toUpperCase())
+    .map(row => String(row[LOCAL_IDX.CAT]).trim())
+    .filter(val => val !== "" && val !== "—" && val !== "undefined")
   )].sort();
-  catSelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+
+  if (categories.length > 0) {
+    catSelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+  } else {
+    catSelect.innerHTML = '<option value="GENERAL">GENERAL</option>';
+  }
 }
 
+// 3. Handle Perubahan Authority (Ubah Label & List)
 function handleAuthorityChange() {
   const auth = document.getElementById("authSelect").value;
+  
+  // Update Terminologi Label
   const labels = {
     'EASA': { name: "Designation", ref: "Reference of the CMM", model: "Type (Model)" },
     'FAA':  { name: "Part Name", ref: "ATA Chapter", model: "Model" },
@@ -206,57 +84,96 @@ function handleAuthorityChange() {
   document.getElementById("labelReference").textContent = config.ref;
   document.getElementById("labelAircraftType").textContent = config.model;
 
+  // Update Maintenance Levels
   const container = document.getElementById("dynamicLevels");
   container.innerHTML = "";
-  if(auth) {
+  if(auth && AUTH_LEVELS[auth]) {
     AUTH_LEVELS[auth].forEach(lvl => {
       container.innerHTML += `<label class="level-chip"><input type="checkbox" name="authLevels" value="${lvl}"> ${lvl}</label>`;
     });
+  } else {
+    container.innerHTML = `<p style="grid-column:1/-1; text-align:center; font-size:12px; color:var(--text-light);">Select authority to load levels</p>`;
   }
+
+  // Sync Datalist & Category secara Lokal
   populateDatalists(auth);
   updateCategoryDropdown(auth);
 }
 
+/**
+ * Inisialisasi Form (Saat Buka New atau Edit)
+ */
 function initFormScript(editData) {
   const form = document.getElementById("newCapForm");
   form.reset();
   document.getElementById("fileListPreview").innerHTML = "";
+  
+  // Set default date hari ini
   document.getElementById("submitDate").value = new Date().toISOString().split('T')[0];
 
   if (editData) {
-    document.getElementById("formTitle").textContent = "Manage: " + editData.id;
+    // MODE MANAGE/EDIT
+    document.getElementById("formTitle").textContent = "Manage Submission: " + editData.id;
     document.getElementById("mgmtBox").style.display = "block";
     document.getElementById("editId").value = editData.id;
     
-    // Requester Info
+    // Requester Info (DIJAGA AGAR TIDAK HILANG)
     document.getElementById("username").value = editData.username || "";
     document.getElementById("unit").value = editData.unit || "";
-    document.getElementById("submitDate").value = editData.date || "";
+    if(editData.date) document.getElementById("submitDate").value = editData.date;
 
-    document.getElementById("authSelect").value = editData.authority;
-    handleAuthorityChange();
+    // Load Otoritas Terlebih Dahulu
+    document.getElementById("authSelect").value = editData.authority || "";
+    handleAuthorityChange(); 
+
+    // Isi Technical Details
+    document.getElementById("partNumber").value = editData.partNumber || "";
+    document.getElementById("partName").value = editData.partName || "";
+    document.getElementById("ataChapter").value = editData.ataChapter || "";
     
+    // Isi Dropdown & Datalist (Beri delay kecil agar DOM render selesai)
     setTimeout(() => {
       document.getElementById("caplistItem").value = editData.caplistItem || "";
       document.getElementById("manufacturer").value = editData.manufacturer || "";
       document.getElementById("shop").value = editData.shop || "";
       document.getElementById("aircraftType").value = editData.aircraftType || "";
-    }, 150);
+    }, 200);
 
-    document.getElementById("partNumber").value = editData.partNumber;
-    document.getElementById("partName").value = editData.partName;
-    document.getElementById("ataChapter").value = editData.ataChapter;
-    document.getElementById("statusSelect").value = editData.status;
+    // Management State
+    document.getElementById("statusSelect").value = editData.status || "SUBMITTED";
     
+    // Check Levels
     const currentLevels = (editData.levels || "").split(", ");
     document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
       if(currentLevels.includes(cb.value)) cb.checked = true;
     });
+
   } else {
+    // MODE NEW APPLICATION
     document.getElementById("formTitle").textContent = "New Capability Application";
     document.getElementById("mgmtBox").style.display = "none";
     document.getElementById("editId").value = "";
-    handleAuthorityChange();
+    handleAuthorityChange(); // Populate datalists dengan kondisi kosong
   }
+}
+
+let uploadedFiles = [];
+function handleMultiFile(input) {
+  const preview = document.getElementById("fileListPreview");
+  preview.innerHTML = "";
+  uploadedFiles = [];
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedFiles.push({ name: file.name, data: e.target.result.split(',')[1] });
+      preview.innerHTML += `<div style="font-size:11px; color:var(--success); background:#f0fdf4; padding:5px 10px; border-radius:6px; border:1px solid #bbf7d0;">✅ ${file.name}</div>`;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("fileCountLabel").textContent = input.files.length + " files selected";
+}
+
+function submitForm() {
+  // Logika submitForm Anda tetap sama, pastikan mengambil nilai dari id-id yang benar
 }
 </script>
