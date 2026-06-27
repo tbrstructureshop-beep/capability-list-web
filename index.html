@@ -755,22 +755,46 @@
     let globalKeyword = "";
     let activeFilters = {};    // <--- TAMBAHKAN INI (State untuk Multi-Select)
     let actionMode = false;
-    let currentView = "database"; // "database" or "submissions"
+    let currentView = "database"; 
 
-    function switchView(view) {
+    async function switchView(view) {
       currentView = view;
-      document.getElementById("globalSearch").value = "";
-      document.getElementById("filterRow").style.display = "none";
+      const container = document.getElementById("tableBody");
+      const dataStatus = document.getElementById("dataStatus");
+      const filterRow = document.getElementById("filterRow");
+      const title = document.querySelector("h1");
+    
+      // Reset UI
+      filterRow.style.display = "none";
       filtersVisible = false;
+      container.innerHTML = `<div class="loader-overlay" style="position:relative; background:none;"><div class="spinner"></div></div>`;
     
       if (view === "submissions") {
-        document.querySelector("h1").textContent = "Submission Tracking";
-        document.getElementById("dataStatus").textContent = "Loading submissions...";
-        loadSubmissions();
+        title.textContent = "Submission Tracking";
+        // Load script dashboard pengajuan secara dinamis jika belum ada
+        if (typeof loadSubmissions !== "function") {
+          await injectSubmissionModule();
+        }
+        loadSubmissions(); // Fungsi ini ada di application/dashboard/index.html
       } else {
-        document.querySelector("h1").textContent = "Enterprise Capability Web";
+        title.textContent = "Enterprise Capability Web";
         refreshData(true);
       }
+    }
+    
+    async function injectSubmissionModule() {
+      const response = await fetch("/application/dashboard/index.html");
+      const html = await response.text();
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = html;
+      
+      // Ambil script saja dan inject ke body
+      const scripts = tempDiv.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        newScript.text = oldScript.innerHTML;
+        document.body.appendChild(newScript);
+      });
     }
     
     // 1. Format Logo
