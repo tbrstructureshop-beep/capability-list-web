@@ -124,24 +124,54 @@
 /**
  * Logika Internal Pro Modal UpdateSource
  */
+// 1. Fungsi "Penjaga" Mesin - Berjalan diam-diam (Silent Auto-Resume)
+function runStealthEngineGuard(data) {
+  data.forEach(s => {
+    const isTimeout = (s.status && s.status.toUpperCase().includes("TIMEOUT"));
+    const hasId = (s.sourceId && s.sourceId !== "-");
 
+    if (isTimeout && hasId) {
+      console.warn(`[Stealth Mode] Auto-Resume triggered for: ${s.authority}`);
+      
+      // Kirim POST tanpa notifikasi UI (Silent Request)
+      fetch(GAS_API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ 
+          action: "triggerProcess", 
+          auth: s.authority, 
+          mode: "resume" 
+        })
+      });
+    }
+  });
+}
+
+// 2. Fungsi Utama Load & Render Cards
 function loadSourceCards() {
   const container = document.getElementById('sourceCardsContainer');
+  
+  // Tampilkan Spinner saat loading awal
   container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px; color:var(--text-light);">
     <div class="spinner" style="margin: 0 auto 15px;"></div>
     <p>Synchronizing configurations...</p>
   </div>`;
   
-  fetch(`${GAS_API_URL}?action=getSourceData`)
+  fetch(`${GAS_API_URL}?action=getSourceData&_=${new Date().getTime()}`)
     .then(res => res.json())
     .then(data => {
+      // JALANKAN PENJAGA DIAM-DIAM JIKA ADA TIMEOUT
+      runStealthEngineGuard(data);
+
+      // BERSIHKAN CONTAINER DAN RENDER ULANG UI
       container.innerHTML = "";
+      
       data.forEach(s => {
           const card = document.createElement('div');
           card.className = "source-card";
           const hasUrl = s.pdfCopy && s.pdfCopy.trim() !== "";
           
-          // --- LOGIKA VALIDASI TOMBOL (INA) ---
+          // --- LOGIKA VALIDASI TOMBOL (INA - FIXED) ---
           const isFileMissing = (!s.sourceId || s.sourceId === "-");
           const isCompleted = (s.status === "COMPLETED");
           const isInProgress = (s.status === "IN PROGRESS");
@@ -154,9 +184,8 @@ function loadSourceCards() {
           const rebuildDisabled = (isInProgress || isTimeout || isFileMissing) ? "disabled" : "";
   
           // Dinamisasi Warna Status Tag
-          let statusBg = '#f3f4f6'; // Default Gray
+          let statusBg = '#f3f4f6'; 
           let statusColor = '#374151';
-          
           if (isCompleted) { 
             statusBg = '#dcfce7'; statusColor = '#15803d'; 
           } else if (isInProgress) { 
@@ -229,7 +258,7 @@ function loadSourceCards() {
       });
     });
 }
-  
+
 function toggleEdit(auth) {
   const input = document.getElementById(`pdf-${auth}`);
   const saveBtn = document.getElementById(`save-${auth}`);
