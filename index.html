@@ -827,15 +827,22 @@
       }
     }
 
-    async function openSubmissionForm() {
-      const container = document.getElementById("modalUpdateSourceContainer"); // Kita pinjam container modal yang sudah ada
+    // 1. Tambahkan Bridge Function agar tombol Manage di kartu bisa memanggil modal
+    function openEditForm(data) {
+      openSubmissionForm(data); 
+    }
+    
+    // 2. Gabungkan Logic openSubmissionForm (Mendukung New & Edit)
+    async function openSubmissionForm(editData = null) {
+      // Tetap pertahankan baris ini dari script asli Anda
+      const container = document.getElementById("modalUpdateSourceContainer"); 
       const targetPath = "application/dashboard/modal/form/index.html";
     
       try {
         const response = await fetch(targetPath);
         const html = await response.text();
         
-        // Buat overlay modal baru agar tidak bentrok dengan UpdateSource
+        // Buat/Gunakan overlay modal agar tidak bentrok
         let subModal = document.getElementById("submissionModalOverlay");
         if (!subModal) {
           subModal = document.createElement("div");
@@ -847,7 +854,7 @@
         subModal.innerHTML = html;
         subModal.style.display = "flex";
     
-        // Jalankan script internal modal
+        // Jalankan script internal modal (Penting untuk interaktivitas form)
         const scripts = subModal.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -855,14 +862,19 @@
           document.body.appendChild(newScript);
         });
         
-        // Inisialisasi tanggal
-        if (typeof initFormScript === "function") initFormScript();
+        // REPAIR: Inisialisasi Form dengan mengirimkan parameter editData
+        // Jika editData null, maka form akan menjadi form kosong (New Application)
+        // Jika editData berisi objek, maka form akan terisi data (Manage Submission)
+        if (typeof initFormScript === "function") {
+          initFormScript(editData); 
+        }
     
       } catch (err) {
         console.error("Form Load Error:", err);
       }
     }
     
+    // 3. Fungsi Close Modal tetap dipertahankan
     function closeModal() {
       const subModal = document.getElementById("submissionModalOverlay");
       if (subModal) subModal.style.display = "none";
