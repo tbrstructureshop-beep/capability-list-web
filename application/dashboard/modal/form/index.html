@@ -1,13 +1,68 @@
-<div class="modal-card" style="max-width: 800px;">
-  <div class="modal-header" style="background:var(--primary-light);">
-    <h3 class="modal-title" style="color:var(--primary-dark);">New Capability Application</h3>
+<style>
+  /* Premium Modal Styling */
+  .modal-card { background: #fff; width: 100%; max-width: 800px; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-body { padding: 24px; overflow-y: auto; flex: 1; max-height: 80vh; }
+  
+  .section-title { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin: 20px 0 12px 0; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .section-divider { border-top: 1px solid var(--border); margin: 20px 0; padding-top: 15px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box; }
+  
+  /* Levels Grid Styling */
+  .level-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding: 15px; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); }
+  .level-chip { display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; transition: 0.2s; }
+  .level-chip:hover { border-color: var(--primary); background: var(--primary-light); }
+  .level-chip input { cursor: pointer; }
+
+  /* Management Box Styling */
+  .mgmt-section { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 14px; margin-bottom: 24px; box-shadow: var(--shadow-sm); }
+  
+  /* File Dropzone Premium */
+  .file-dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; background: var(--primary-light); cursor: pointer; transition: 0.2s; }
+  .file-dropzone:hover { border-color: var(--primary); background: #e0f2fe; }
+</style>
+
+<div class="modal-card">
+  <div class="modal-header">
+    <h3 class="modal-title" id="formTitle">New Capability Application</h3>
     <button class="close-x" onclick="closeModal()">&times;</button>
   </div>
   <div class="modal-body">
     <form id="newCapForm">
-      
+      <!-- Hidden Input for Edit ID -->
+      <input type="hidden" id="editId">
+
+      <!-- STEP 0: MANAGEMENT CONTROL (Only visible on Manage/Edit) -->
+      <div id="mgmtBox" class="mgmt-section" style="display:none;">
+        <div class="section-title" style="color:#c2410c; margin-top:0;">Management Control (Admin Only)</div>
+        <div class="form-row">
+           <div class="form-group">
+             <label>Current Status</label>
+             <select id="statusSelect" style="border:1.5px solid #f97316; font-weight:700; background:white;">
+                <option value="SUBMITTED">OPEN: SUBMITTED</option>
+                <option value="UNDER REVIEW">PROGRESS: UNDER REVIEW</option>
+                <option value="APPROVED">CLOSED: APPROVED</option>
+                <option value="REJECTED">CLOSED: REJECTED</option>
+             </select>
+           </div>
+           <div class="form-group">
+             <label>Admin / Reviewer Name</label>
+             <input type="text" id="reviewerName" placeholder="Staff Name">
+           </div>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+          <label>Status Change Reason / Feedback</label>
+          <textarea id="statusReason" rows="2" placeholder="e.g. Approved per Audit 2024 / Need more tooling data..."></textarea>
+        </div>
+      </div>
+
       <!-- STEP 1: AUTHORITY & CATEGORY -->
-      <div class="section-title">Certification & Category</div>
+      <div class="section-title">Certification & Authority</div>
       <div class="form-row">
         <div class="form-group">
           <label>Select Authority</label>
@@ -35,7 +90,7 @@
       <div class="section-divider"></div>
 
       <!-- STEP 2: TECHNICAL DETAILS -->
-      <div class="section-title">Technical Details</div>
+      <div class="section-title">Technical Detail Component</div>
       <div class="form-row">
         <div class="form-group">
           <label>Part Number</label>
@@ -50,7 +105,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Manufacturer</label>
-          <input type="text" id="manufacturer" required placeholder="e.g. Boeing / Airbus" />
+          <input type="text" id="manufacturer" required placeholder="e.g. Honeywell" />
         </div>
         <div class="form-group">
           <label>ATA Chapter</label>
@@ -73,15 +128,15 @@
 
       <!-- STEP 3: LEVELS -->
       <div class="section-title">Certification Levels</div>
-      <div id="dynamicLevels" class="level-options" style="background:var(--bg); padding:15px; border-radius:10px; border:1px solid var(--border);">
-        <p style="font-size:12px; color:var(--text-muted); text-align:center;">Please select authority to see available levels.</p>
+      <div id="dynamicLevels" class="level-options">
+        <p style="grid-column: 1/-1; font-size:12px; color:var(--text-muted); text-align:center;">Please select authority to see available levels.</p>
       </div>
 
       <div class="section-divider"></div>
 
       <!-- STEP 4: ATTACHMENTS -->
-      <div class="section-title">Attachments (PDF Only)</div>
-      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()" style="background:var(--primary-light); padding:30px;">
+      <div class="section-title">Supporting Documents (PDF Only)</div>
+      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:10px; color:var(--primary);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
         <div id="fileCountLabel" style="font-weight:600;">Click to upload supporting documents</div>
         <input type="file" id="fileInput" multiple accept=".pdf" style="display:none;" onchange="handleMultiFile(this)" />
@@ -92,6 +147,136 @@
   </div>
   <div class="modal-footer">
     <button class="btn" onclick="closeModal()">Cancel</button>
-    <button id="btnSubmitForm" class="btn btn-primary" onclick="submitForm()" style="padding:10px 30px;">Submit Application</button>
+    <button id="btnSubmitForm" class="btn btn-primary" onclick="submitForm()" style="padding:10px 30px;">Save Application</button>
   </div>
 </div>
+
+<script>
+const AUTH_LEVELS = {
+  'EASA': ['Level 1 (Tested)', 'Level 2 (Repaired)', 'Level 3 (Modified)', 'Level 4 (Overhauled)'],
+  'FAA': ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)'],
+  'DGCA': ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)']
+};
+
+/**
+ * Inisialisasi Form (INA Logic)
+ */
+function initFormScript(editData) {
+  const form = document.getElementById("newCapForm");
+  form.reset();
+  document.getElementById("fileListPreview").innerHTML = "";
+  uploadedFiles = [];
+
+  if (editData) {
+    document.getElementById("formTitle").textContent = "Manage Submission: " + editData.id;
+    document.getElementById("mgmtBox").style.display = "block";
+    document.getElementById("editId").value = editData.id;
+    document.getElementById("btnSubmitForm").textContent = "Update Submission";
+    
+    // Fill Technical Fields
+    document.getElementById("authSelect").value = editData.authority;
+    updateLevelOptions(); // Load level checkboxes first
+    
+    document.getElementById("caplistItem").value = editData.caplistItem || "Accessories";
+    document.getElementById("partNumber").value = editData.partNumber;
+    document.getElementById("partName").value = editData.partName;
+    document.getElementById("manufacturer").value = editData.manufacturer || "";
+    document.getElementById("ataChapter").value = editData.ataChapter || "";
+    document.getElementById("shop").value = editData.shop;
+    document.getElementById("aircraftType").value = editData.aircraftType || "";
+    
+    // Fill Management Fields
+    document.getElementById("statusSelect").value = editData.status;
+    
+    // Pre-check Levels
+    const currentLevels = (editData.levels || "").split(", ");
+    document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
+      if(currentLevels.includes(cb.value)) cb.checked = true;
+    });
+  } else {
+    document.getElementById("formTitle").textContent = "New Capability Application";
+    document.getElementById("mgmtBox").style.display = "none";
+    document.getElementById("editId").value = "";
+    document.getElementById("btnSubmitForm").textContent = "Submit Application";
+  }
+}
+
+function updateLevelOptions() {
+  const auth = document.getElementById("authSelect").value;
+  const container = document.getElementById("dynamicLevels");
+  container.innerHTML = "";
+  if(!auth) return;
+
+  AUTH_LEVELS[auth].forEach(lvl => {
+    container.innerHTML += `
+      <label class="level-chip">
+        <input type="checkbox" name="authLevels" value="${lvl}"> ${lvl}
+      </label>`;
+  });
+}
+
+let uploadedFiles = [];
+function handleMultiFile(input) {
+  const preview = document.getElementById("fileListPreview");
+  preview.innerHTML = "";
+  uploadedFiles = [];
+
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      uploadedFiles.push({ name: file.name, data: e.target.result.split(',')[1] });
+      preview.innerHTML += `<div style="font-size:11px; color:var(--success); background:#f0fdf4; padding:5px 10px; border-radius:6px; border:1px solid #bbf7d0;">✅ ${file.name}</div>`;
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById("fileCountLabel").textContent = input.files.length + " files selected";
+}
+
+function submitForm() {
+  const form = document.getElementById("newCapForm");
+  if (!form.reportValidity()) return;
+
+  const btn = document.getElementById("btnSubmitForm");
+  btn.disabled = true;
+  btn.textContent = "Processing...";
+
+  const selectedLevels = Array.from(document.querySelectorAll('input[name="authLevels"]:checked')).map(c => c.value).join(", ");
+  const isEdit = document.getElementById("editId").value !== "";
+
+  const payload = {
+    action: isEdit ? "updateSubmission" : "newSubmission",
+    id: document.getElementById("editId").value,
+    authority: document.getElementById("authSelect").value,
+    caplistItem: document.getElementById("caplistItem").value,
+    partNumber: document.getElementById("partNumber").value,
+    partName: document.getElementById("partName").value,
+    manufacturer: document.getElementById("manufacturer").value,
+    ataChapter: document.getElementById("ataChapter").value,
+    shop: document.getElementById("shop").value,
+    aircraftType: document.getElementById("aircraftType").value,
+    levels: selectedLevels,
+    status: isEdit ? document.getElementById("statusSelect").value : "SUBMITTED",
+    reviewer: document.getElementById("reviewerName").value,
+    reason: document.getElementById("statusReason").value,
+    files: uploadedFiles // Multi-file array
+  };
+
+  fetch(GAS_API_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(res => {
+    if(res.success) {
+      alert("Submission processed successfully!");
+      closeModal();
+      if(typeof loadSubmissions === "function") loadSubmissions();
+    }
+  })
+  .catch(err => alert("Error: " + err))
+  .finally(() => {
+    btn.disabled = false;
+    btn.textContent = isEdit ? "Save Changes" : "Submit Application";
+  });
+}
+</script>
