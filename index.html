@@ -755,6 +755,23 @@
     let globalKeyword = "";
     let activeFilters = {};    // <--- TAMBAHKAN INI (State untuk Multi-Select)
     let actionMode = false;
+    let currentView = "database"; // "database" or "submissions"
+
+    function switchView(view) {
+      currentView = view;
+      document.getElementById("globalSearch").value = "";
+      document.getElementById("filterRow").style.display = "none";
+      filtersVisible = false;
+    
+      if (view === "submissions") {
+        document.querySelector("h1").textContent = "Submission Tracking";
+        document.getElementById("dataStatus").textContent = "Loading submissions...";
+        loadSubmissions();
+      } else {
+        document.querySelector("h1").textContent = "Enterprise Capability Web";
+        refreshData(true);
+      }
+    }
     
     // 1. Format Logo
     function formatLogoValue(val) {
