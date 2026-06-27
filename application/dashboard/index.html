@@ -16,11 +16,6 @@ function renderSubmissionCards(data) {
   const container = document.getElementById("tableBody");
   container.innerHTML = "";
 
-  if (data.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:60px; color:var(--text-light);"><p>No submissions found.</p></div>`;
-    return;
-  }
-
   data.forEach(row => {
     const statusMap = {
       'SUBMITTED':    { bg: '#e0f2fe', color: '#0369a1', state: 'OPEN' },
@@ -31,8 +26,8 @@ function renderSubmissionCards(data) {
     const s = statusMap[row.status] || { bg: '#f3f4f6', color: '#374151', state: 'UNKNOWN' };
 
     const card = document.createElement("div");
-    card.className = "data-card"; // Konsisten dengan Main DB Card
-    
+    card.className = "data-card"; // SAMA DENGAN DATABASE UTAMA
+
     card.innerHTML = `
       <div class="card-main">
         <div class="card-header-row">
@@ -43,17 +38,13 @@ function renderSubmissionCards(data) {
               ${s.state}: ${row.status}
             </span>
         </div>
-        
         <div class="detail-item" style="margin-top: 10px;">
             <span class="detail-label">PART NUMBER</span>
-            <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">
-                ${row.partNumber}
-            </div>
+            <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">${row.partNumber}</div>
         </div>
-
         <div style="margin-top:15px; font-size:11px; background:var(--primary-light); padding:10px; border-radius:8px;">
-          <div class="detail-label" style="margin-bottom:4px;">REQUESTED LEVELS (${row.authority})</div>
-          <div class="detail-value" style="color:var(--primary-dark);">${row.levels || '—'}</div>
+          <div class="detail-label">REQUESTED LEVELS</div>
+          <div class="detail-value">${row.levels || '—'}</div>
         </div>
       </div>
 
@@ -61,14 +52,11 @@ function renderSubmissionCards(data) {
         <div class="detail-item"><span class="detail-label">PART NAME</span><span class="detail-value">${row.partName}</span></div>
         <div class="detail-item"><span class="detail-label">RATING</span><span class="detail-value">${row.rating}</span></div>
         <div class="detail-item"><span class="detail-label">SHOP</span><span class="detail-value">${row.shop}</span></div>
-        <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username} (${row.unit})</span></div>
-        <div class="detail-item"><span class="detail-label">DATE SUBMITTED</span><span class="detail-value">${row.date}</span></div>
-        
-        <div class="detail-item" style="grid-column: span 2; border-top: 1px solid var(--border); pt:10px;">
-          <span class="detail-label">DOCUMENTS / ATTACHMENTS</span>
-          <div class="detail-value" style="margin-top:5px;">
-            ${renderFileList(row.fileUrl)}
-          </div>
+        <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username}</span></div>
+        <div class="detail-item"><span class="detail-label">DATE</span><span class="detail-value">${row.date}</span></div>
+        <div class="detail-item" style="grid-column: span 2;">
+          <span class="detail-label">ATTACHMENTS</span>
+          <div class="detail-value">${renderFileList(row.fileUrl)}</div>
         </div>
       </div>
     `;
