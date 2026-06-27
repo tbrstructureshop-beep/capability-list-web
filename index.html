@@ -762,25 +762,42 @@
     let actionMode = false;
     let currentView = "database"; 
 
+    // Update State Tracker
     async function switchView(view) {
       currentView = view;
-      currentPage = 1; // Reset halaman setiap ganti view
+      currentPage = 1; // Reset ke halaman 1
       const container = document.getElementById("tableBody");
       const title = document.querySelector("h1");
       const searchInput = document.getElementById("globalSearch");
-    
+
       searchInput.value = "";
       document.getElementById("filterRow").style.display = "none";
       filtersVisible = false;
-    
+
       if (view === "submissions") {
         title.textContent = "Submission Tracking";
-        searchInput.placeholder = "Search by Part Number or ID...";
-        if (typeof loadSubmissions !== "function") await injectSubmissionModule();
-        loadSubmissions(); 
+        searchInput.placeholder = "Search by Part Number, Name, or ID...";
+        
+        // Tambahkan Tombol "New Application" jika belum ada
+        if (!document.getElementById("btnNewSub")) {
+          const searchWrapper = document.querySelector(".search-container");
+          const btn = document.createElement("button");
+          btn.id = "btnNewSub";
+          btn.className = "btn btn-primary";
+          btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> New Application`;
+          btn.style.marginLeft = "12px";
+          btn.onclick = openSubmissionForm;
+          searchWrapper.appendChild(btn);
+        }
+
+        if (typeof loadSubmissions !== "function") {
+          await injectSubmissionModule();
+        }
+        loadSubmissions(); // Memanggil fungsi di modul submission
       } else {
+        // Mode Database Utama
         title.textContent = "Enterprise Capability Web";
-        searchInput.placeholder = "Search components, part numbers...";
+        searchInput.placeholder = "Search components, part numbers, or descriptions...";
         const btnNewSub = document.getElementById("btnNewSub");
         if (btnNewSub) btnNewSub.remove();
         refreshData(true);
@@ -1246,18 +1263,20 @@
     
     // --- UPDATED updateDataStatus logic ---
     function updateDataStatus() {
-      const totalInSheet = rawData.length;
-      const filteredCount = viewData.length;
+      const totalInSheet = (currentView === "submissions") ? allSubmissions.length : rawData.length;
+      const filteredCount = (currentView === "submissions") ? filteredSubmissions.length : viewData.length;
       
-      // Hitung apakah ada filter dropdown yang aktif
-      const hasActiveDropdown = Object.values(activeFilters).some(set => set.size > 0);
+      const hasActiveFilters = (currentView === "submissions") 
+        ? document.getElementById("globalSearch").value !== "" 
+        : (globalKeyword || Object.values(activeFilters).some(set => set.size > 0));
 
-      if (globalKeyword || hasActiveDropdown) {
-        document.getElementById("dataStatus").textContent = 
-          `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total records)`;
+      const statusEl = document.getElementById("dataStatus");
+      const lastSync = new Date().toLocaleTimeString();
+
+      if (hasActiveFilters) {
+        statusEl.innerHTML = `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total) | <small>Sync: ${lastSync}</small>`;
       } else {
-        document.getElementById("dataStatus").textContent = 
-          `Total Database: ${totalInSheet.toLocaleString()} records`;
+        statusEl.innerHTML = `Total ${currentView === "submissions" ? "Submissions" : "Database"}: ${totalInSheet.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
       }
     }
     
