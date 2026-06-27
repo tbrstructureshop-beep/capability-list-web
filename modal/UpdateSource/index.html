@@ -124,25 +124,42 @@
 /**
  * Logika Internal Pro Modal UpdateSource
  */
-// 1. Fungsi "Penjaga" Mesin - Berjalan diam-diam (Silent Auto-Resume)
+
+// Global tracker untuk mencegah stealth trigger berulang di sesi yang sama
+let stealthActiveTracker = {};
+
 function runStealthEngineGuard(data) {
   data.forEach(s => {
     const isTimeout = (s.status && s.status.toUpperCase().includes("TIMEOUT"));
     const hasId = (s.sourceId && s.sourceId !== "-");
 
-    if (isTimeout && hasId) {
-      console.warn(`[Stealth Mode] Auto-Resume triggered for: ${s.authority}`);
+    // Hanya picu jika TIMEOUT, ada ID, dan belum dipicu di sesi ini
+    if (isTimeout && hasId && !stealthActiveTracker[s.authority]) {
       
-      // Kirim POST tanpa notifikasi UI (Silent Request)
+      console.warn(`[Stealth Mode] Auto-Resume triggered for: ${s.authority}`);
+      stealthActiveTracker[s.authority] = true; // Kunci otoritas ini
+      
+      // PERBAIKAN FETCH: Hapus no-cors agar JSON terbaca oleh GAS
       fetch(GAS_API_URL, {
         method: "POST",
-        mode: "no-cors",
         body: JSON.stringify({ 
           action: "triggerProcess", 
           auth: s.authority, 
           mode: "resume" 
         })
+      }).then(() => {
+        // Setelah memicu, tunggu 3 detik lalu refresh status kartu 
+        // agar status berubah dari TIMEOUT menjadi IN PROGRESS di UI
+        setTimeout(loadSourceCards, 3000);
+      }).catch(err => {
+        // Tetap abaikan error CORS karena script di GAS sudah pasti jalan
+        setTimeout(loadSourceCards, 3000);
       });
+    }
+    
+    // Jika status sudah berubah jadi IN PROGRESS atau COMPLETED, reset tracker jika perlu
+    if (!isTimeout) {
+      stealthActiveTracker[s.authority] = false;
     }
   });
 }
@@ -160,12 +177,9 @@ function loadSourceCards() {
   fetch(`${GAS_API_URL}?action=getSourceData&_=${new Date().getTime()}`)
     .then(res => res.json())
     .then(data => {
-      // JALANKAN PENJAGA DIAM-DIAM JIKA ADA TIMEOUT
-      runStealthEngineGuard(data);
-
-      // BERSIHKAN CONTAINER DAN RENDER ULANG UI
-      container.innerHTML = "";
+      runStealthEngineGuard(data); // <--- Stealth pemicu
       
+      container.innerHTML = "";
       data.forEach(s => {
           const card = document.createElement('div');
           card.className = "source-card";
