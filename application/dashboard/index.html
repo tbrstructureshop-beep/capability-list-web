@@ -1,22 +1,42 @@
 <script>
 /**
- * SUBMISSION MODULE - Professionally Styled
+ * SUBMISSION MODULE
  */
+let allSubmissions = [];
+let filteredSubmissions = [];
+let subCurrentPage = 1;
+let subRowsPerPage = 10;
 
 function loadSubmissions() {
   fetch(`${GAS_API_URL}?action=getSubmissions`)
     .then(res => res.json())
     .then(data => {
-      renderSubmissionCards(data);
-      document.getElementById("dataStatus").textContent = `Found ${data.length} submissions`;
+      allSubmissions = data;
+      filteredSubmissions = data;
+      renderSubmissionCards();
     });
 }
 
-function renderSubmissionCards(data) {
+function applySubmissionFilters() {
+  const keyword = document.getElementById("globalSearch").value.toLowerCase();
+  filteredSubmissions = allSubmissions.filter(s => 
+    s.partNumber.toLowerCase().includes(keyword) || 
+    s.id.toLowerCase().includes(keyword) ||
+    s.partName.toLowerCase().includes(keyword)
+  );
+  subCurrentPage = 1;
+  renderSubmissionCards();
+}
+
+function renderSubmissionCards() {
   const container = document.getElementById("tableBody");
   container.innerHTML = "";
 
-  data.forEach(row => {
+  const start = (subCurrentPage - 1) * subRowsPerPage;
+  const end = start + subRowsPerPage;
+  const pageData = filteredSubmissions.slice(start, end);
+
+  pageData.forEach(row => {
     const statusMap = {
       'SUBMITTED':    { bg: '#e0f2fe', color: '#0369a1', state: 'OPEN' },
       'UNDER REVIEW': { bg: '#fef3c7', color: '#d97706', state: 'PROGRESS' },
@@ -26,8 +46,8 @@ function renderSubmissionCards(data) {
     const s = statusMap[row.status] || { bg: '#f3f4f6', color: '#374151', state: 'UNKNOWN' };
 
     const card = document.createElement("div");
-    card.className = "data-card"; // SAMA DENGAN DATABASE UTAMA
-
+    card.className = "data-card";
+    
     card.innerHTML = `
       <div class="card-main">
         <div class="card-header-row">
@@ -38,14 +58,22 @@ function renderSubmissionCards(data) {
               ${s.state}: ${row.status}
             </span>
         </div>
+        
         <div class="detail-item" style="margin-top: 10px;">
             <span class="detail-label">PART NUMBER</span>
             <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">${row.partNumber}</div>
         </div>
+
         <div style="margin-top:15px; font-size:11px; background:var(--primary-light); padding:10px; border-radius:8px;">
           <div class="detail-label">REQUESTED LEVELS</div>
           <div class="detail-value">${row.levels || '—'}</div>
         </div>
+
+        <!-- TOMBOL EDIT UNTUK SUBMISSION -->
+        <button onclick='openEditForm(${JSON.stringify(row).replace(/'/g, "&apos;")})' class="btn" style="margin-top:15px; width:100%; border-color:var(--primary); color:var(--primary);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Edit / Manage Submission
+        </button>
       </div>
 
       <div class="data-details">
@@ -62,21 +90,6 @@ function renderSubmissionCards(data) {
     `;
     container.appendChild(card);
   });
-}
-
-function renderFileList(jsonFiles) {
-  try {
-    if(!jsonFiles || jsonFiles === "") return "<em>No files attached</em>";
-    const files = JSON.parse(jsonFiles);
-    return files.map(f => `
-      <a href="${f.url}" target="_blank" style="color:var(--primary); text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-right:15px; font-size:12px; font-weight:600;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-        ${f.name}
-      </a>
-    `).join("");
-  } catch(e) { 
-    // Fallback jika data lama masih berupa string URL tunggal
-    return `<a href="${jsonFiles}" target="_blank" class="btn">View Attachment</a>`; 
-  }
+  updatePaginationInfo(filteredSubmissions.length);
 }
 </script>
