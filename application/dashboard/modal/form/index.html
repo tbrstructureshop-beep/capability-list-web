@@ -9,23 +9,26 @@
   .section-divider { border-top: 1px solid var(--border); margin: 20px 0; padding-top: 15px; }
 
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; position: relative; } /* Added Relative for Advice */
+  .form-group { display: flex; flex-direction: column; gap: 6px; position: relative; } /* position relative untuk search advice */
   .form-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
   .form-group input, .form-group select, .form-group textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box; }
   
-  /* GOOGLE SEARCH STYLE ADVICE (Custom Dropdown) */
-  .advice-container {
-    position: absolute; top: 100%; left: 0; width: 100%; background: #fff;
-    border: 1px solid var(--border); border-radius: 0 0 12px 12px;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 9999;
-    max-height: 200px; overflow-y: auto; display: none; margin-top: -2px;
+  /* --- GOOGLE SEARCH ADVICE STYLE (INA) --- */
+  .search-advice-list {
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; box-shadow: var(--shadow-md);
+    z-index: 9999; max-height: 200px; overflow-y: auto;
+    margin-top: 4px; display: none;
   }
-  .advice-item { padding: 10px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f9fafb; }
-  .advice-item:hover { background: var(--primary-light); color: var(--primary); }
+  .advice-item { padding: 10px 14px; font-size: 13px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid #f9fafb; }
   .advice-item:last-child { border-bottom: none; }
+  .advice-item:hover { background: var(--primary-light); color: var(--primary-dark); font-weight: 600; }
 
   .level-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding: 15px; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); }
-  .level-chip { display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; }
+  .level-chip { display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; transition: 0.2s; }
+  .level-chip:hover { border-color: var(--primary); background: var(--primary-light); }
+
   .mgmt-section { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 14px; margin-bottom: 24px; }
   .file-dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; background: var(--primary-light); cursor: pointer; transition: 0.2s; }
 </style>
@@ -39,6 +42,7 @@
     <form id="newCapForm" autocomplete="off">
       <input type="hidden" id="editId">
 
+      <!-- STEP 0: MANAGEMENT CONTROL -->
       <div id="mgmtBox" class="mgmt-section" style="display:none;">
         <div class="section-title" style="color:#c2410c; margin-top:0;">Management Control</div>
         <div class="form-row">
@@ -51,71 +55,93 @@
                 <option value="REJECTED">CLOSED: REJECTED</option>
              </select>
            </div>
-           <div class="form-group"><label>Reviewer Name</label><input type="text" id="reviewerName"></div>
+           <div class="form-group">
+             <label>Reviewer Name</label>
+             <input type="text" id="reviewerName">
+           </div>
         </div>
-        <div class="form-group" style="margin-top:10px;"><label>Remarks</label><textarea id="statusReason" rows="2"></textarea></div>
+        <div class="form-group" style="margin-top:10px;">
+          <label>Remarks / Reason</label>
+          <textarea id="statusReason" rows="2"></textarea>
+        </div>
       </div>
 
+      <!-- STEP 1: REQUESTER INFO -->
       <div class="section-title">Requester Info</div>
       <div class="form-row">
         <div class="form-group"><label>Nama Pengaju</label><input type="text" id="username" required></div>
         <div class="form-group"><label>Unit Pengaju</label><input type="text" id="unit" required></div>
       </div>
-      <div class="form-group"><label>Tanggal Pengajuan</label><input type="date" id="submitDate" required></div>
+      <div class="form-group">
+        <label>Tanggal Pengajuan</label>
+        <input type="date" id="submitDate" required>
+      </div>
 
+      <!-- STEP 2: AUTHORITY & CATEGORY -->
       <div class="section-title">Certification & Authority</div>
       <div class="form-row">
         <div class="form-group">
           <label>Select Authority</label>
           <select id="authSelect" required onchange="handleAuthorityChange()" style="border:1.5px solid var(--primary);">
-            <option value="">-- Choose --</option>
-            <option value="DGCA">DGCA</option>
-            <option value="EASA">EASA</option>
-            <option value="FAA">FAA</option>
+            <option value="">-- Choose Authority --</option>
+            <option value="DGCA">DGCA (Indonesia)</option>
+            <option value="EASA">EASA (Europe)</option>
+            <option value="FAA">FAA (USA)</option>
           </select>
         </div>
         <div class="form-group">
           <label>Capability Category</label>
-          <select id="caplistItem" required><option value="">-- Select Authority First --</option></select>
+          <select id="caplistItem" required>
+            <option value="">-- Select Authority First --</option>
+          </select>
         </div>
       </div>
 
       <div class="section-divider"></div>
 
+      <!-- STEP 3: TECHNICAL DETAILS (With Custom Autocomplete) -->
       <div class="section-title">Technical Detail Component</div>
       <div class="form-row">
-        <div class="form-group"><label>Part Number</label><input type="text" id="partNumber" required placeholder="N/A"></div>
-        <div class="form-group"><label id="labelPartName">Part Name</label><input type="text" id="partName" required placeholder="N/A"></div>
+        <div class="form-group"><label>Part Number</label><input type="text" id="partNumber" required placeholder="PN..."></div>
+        <div class="form-group"><label id="labelPartName">Part Name</label><input type="text" id="partName" required placeholder="Description..."></div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label>Manufacturer</label>
-          <input type="text" id="manufacturer" oninput="showAdvice(this, 'MANUF')" placeholder="Search or type...">
-          <div id="advice-MANUF" class="advice-container"></div>
+          <input type="text" id="manufacturer" oninput="showAdvice(this, 7)" placeholder="Search or type new...">
+          <div class="search-advice-list" id="advice-manufacturer"></div>
         </div>
-        <div class="form-group"><label id="labelReference">ATA Chapter</label><input type="text" id="ataChapter" required placeholder="N/A"></div>
+        <div class="form-group">
+          <label id="labelReference">ATA Chapter</label>
+          <input type="text" id="ataChapter" required placeholder="ATA...">
+        </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
           <label>Shop / Work Center</label>
-          <input type="text" id="shop" oninput="showAdvice(this, 'SHOP')" placeholder="Search or type...">
-          <div id="advice-SHOP" class="advice-container"></div>
+          <input type="text" id="shop" oninput="showAdvice(this, 4)" placeholder="Search or type new...">
+          <div class="search-advice-list" id="advice-shop"></div>
         </div>
         <div class="form-group">
           <label id="labelAircraftType">A/C Type (Model)</label>
-          <input type="text" id="aircraftType" oninput="showAdvice(this, 'ACTYPE')" placeholder="Search or type...">
-          <div id="advice-ACTYPE" class="advice-container"></div>
+          <input type="text" id="aircraftType" oninput="showAdvice(this, 9)" placeholder="Search or type new...">
+          <div class="search-advice-list" id="advice-aircraftType"></div>
         </div>
       </div>
 
       <div class="section-divider"></div>
 
+      <!-- STEP 4: LEVELS -->
       <div class="section-title">Requested Levels</div>
       <div id="dynamicLevels" class="level-options"></div>
+
       <div class="section-title">Attachments</div>
-      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()"><div id="fileCountLabel">Click to upload PDF</div><input type="file" id="fileInput" multiple accept=".pdf" style="display:none;" onchange="handleMultiFile(this)" /></div>
+      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
+        <div id="fileCountLabel" style="font-weight:600;">Click to upload PDF</div>
+        <input type="file" id="fileInput" multiple accept=".pdf" style="display:none;" onchange="handleMultiFile(this)" />
+      </div>
       <div id="fileListPreview" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:10px;"></div>
     </form>
   </div>
@@ -126,81 +152,123 @@
 </div>
 
 <script>
-/** 
- * INA LOGIC - Mapping rawData (Index Sync)
+/**
+ * INA LOGIC: Premium Autocomplete & Data Cleaning
  */
-const MODAL_MAP = { AUTH: 1, SHOP: 4, NAME: 6, MANUF: 7, REF: 8, ACTYPE: 9, CAT: 11 };
+const MODAL_COL_MAP = { AUTH: 1, SHOP: 4, NAME: 6, MANUF: 7, REF: 8, ACTYPE: 9, CAT: 11 };
 
-// 1. GENERATOR ADVICE (Google Search Style)
-function showAdvice(el, type) {
-  const container = document.getElementById(`advice-${type}`);
-  const val = el.value.trim().toUpperCase();
+// Fungsi Search Advice ala Google
+function showAdvice(input, colIdx) {
+  const list = input.nextElementSibling;
+  const val = input.value.trim().toUpperCase();
   const auth = document.getElementById("authSelect").value;
   
-  if (!val || typeof rawData === 'undefined') { container.style.display = 'none'; return; }
+  if (!val || typeof rawData === 'undefined') { list.style.display = "none"; return; }
 
-  const colIdx = MODAL_MAP[type];
-  const suggestions = [...new Set(rawData
-    .filter(row => (!auth || String(row[MODAL_MAP.AUTH]).toUpperCase() === auth.toUpperCase()) && String(row[colIdx]).toUpperCase().includes(val))
+  const matches = [...new Set(rawData
+    .filter(row => (!auth || String(row[MODAL_COL_MAP.AUTH]).toUpperCase() === auth.toUpperCase()) && 
+                   String(row[colIdx]).toUpperCase().includes(val))
     .map(row => String(row[colIdx]).trim())
-    .filter(v => v && v !== "—")
-  )].sort().slice(0, 8); // Max 8 Advice
+    .filter(v => v && v !== "" && v !== "—")
+  )].sort().slice(0, 10); // Limit 10 advice
 
-  if (suggestions.length > 0) {
-    container.innerHTML = suggestions.map(s => `<div class="advice-item" onclick="selectAdvice('${el.id}', '${s.replace(/'/g, "\\'")}')">${s}</div>`).join("");
-    container.style.display = 'block';
+  if (matches.length > 0) {
+    list.innerHTML = matches.map(m => `<div class="advice-item" onclick="selectAdvice('${input.id}', '${m.replace(/'/g, "\\'")}')">${m}</div>`).join("");
+    list.style.display = "block";
   } else {
-    container.style.display = 'none';
+    list.style.display = "none";
   }
 }
 
-function selectAdvice(id, val) {
-  document.getElementById(id).value = val;
-  document.querySelectorAll('.advice-container').forEach(c => c.style.display = 'none');
+function selectAdvice(inputId, value) {
+  document.getElementById(inputId).value = value;
+  document.getElementById(`advice-${inputId}`).style.display = "none";
 }
 
 // Tutup advice jika klik di luar
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.form-group')) document.querySelectorAll('.advice-container').forEach(c => c.style.display = 'none');
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".form-group")) {
+    document.querySelectorAll(".search-advice-list").forEach(l => l.style.display = "none");
+  }
 });
+
+function updateCategoryDropdown(selectedAuth) {
+  const catSelect = document.getElementById("caplistItem");
+  if (!selectedAuth || typeof rawData === 'undefined') {
+    catSelect.innerHTML = '<option value="">-- Select Authority First --</option>';
+    return;
+  }
+  const categories = [...new Set(rawData
+    .filter(row => String(row[MODAL_COL_MAP.AUTH]).toUpperCase() === selectedAuth.toUpperCase())
+    .map(row => String(row[MODAL_COL_MAP.CAT]).trim())
+    .filter(val => val !== "" && val !== "—")
+  )].sort();
+  catSelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+}
+
+function handleAuthorityChange() {
+  const auth = document.getElementById("authSelect").value;
+  const labels = {
+    'EASA': { name: "Designation", ref: "Reference of the CMM", model: "Type (Model)" },
+    'FAA':  { name: "Part Name", ref: "ATA Chapter", model: "Model" },
+    'DGCA': { name: "Part Name", ref: "ATA Chapter", model: "A/C Type" }
+  };
+  const config = labels[auth] || labels['FAA'];
+  document.getElementById("labelPartName").textContent = config.name;
+  document.getElementById("labelReference").textContent = config.ref;
+  document.getElementById("labelAircraftType").textContent = config.model;
+
+  const container = document.getElementById("dynamicLevels");
+  container.innerHTML = "";
+  if(auth) {
+    const levels = (auth === 'EASA') ? 
+      ['Level 1 (Tested)', 'Level 2 (Repaired)', 'Level 3 (Modified)', 'Level 4 (Overhauled)'] :
+      ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)'];
+    levels.forEach(lvl => {
+      container.innerHTML += `<label class="level-chip"><input type="checkbox" name="authLevels" value="${lvl}"> ${lvl}</label>`;
+    });
+  }
+  updateCategoryDropdown(auth);
+}
 
 function initFormScript(editData) {
   const form = document.getElementById("newCapForm");
   form.reset();
   document.getElementById("fileListPreview").innerHTML = "";
 
+  // ANTI-UNDEFINED & AUTO-ID LOGIC (INA)
   if (editData) {
-    // FIX UNDEFINED: Gunakan Operator OR (||) untuk fallback ke string kosong
-    document.getElementById("formTitle").textContent = "Manage: " + (editData.id || "N/A");
+    document.getElementById("formTitle").textContent = "Manage: " + (editData.id || "NEW");
     document.getElementById("mgmtBox").style.display = "block";
     document.getElementById("editId").value = editData.id || "";
     document.getElementById("username").value = editData.username || "";
     document.getElementById("unit").value = editData.unit || "";
-    document.getElementById("submitDate").value = editData.date || "";
+    document.getElementById("submitDate").value = editData.date || new Date().toISOString().split('T')[0];
     document.getElementById("authSelect").value = editData.authority || "";
-    
     handleAuthorityChange();
     
     setTimeout(() => {
       document.getElementById("caplistItem").value = editData.caplistItem || "";
-      document.getElementById("manufacturer").value = editData.manufacturer || "N/A";
-      document.getElementById("shop").value = editData.shop || "N/A";
-      document.getElementById("aircraftType").value = editData.aircraftType || "N/A";
-    }, 200);
+      document.getElementById("manufacturer").value = editData.manufacturer || "";
+      document.getElementById("shop").value = editData.shop || "";
+      document.getElementById("aircraftType").value = editData.aircraftType || "";
+    }, 150);
 
-    document.getElementById("partNumber").value = editData.partNumber || "N/A";
-    document.getElementById("partName").value = editData.partName || "N/A";
-    document.getElementById("ataChapter").value = editData.ataChapter || "N/A";
+    document.getElementById("partNumber").value = editData.partNumber || "";
+    document.getElementById("partName").value = editData.partName || "";
+    document.getElementById("ataChapter").value = editData.ataChapter || "";
     document.getElementById("statusSelect").value = editData.status || "SUBMITTED";
+    
+    const currentLevels = (editData.levels || "").split(", ");
+    document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
+      if(currentLevels.includes(cb.value)) cb.checked = true;
+    });
   } else {
-    // PENGJUAN BARU: Auto Generate ID Sementara
-    const tempId = "CAP-" + Math.floor(100000 + Math.random() * 900000);
-    document.getElementById("formTitle").textContent = "New App: " + tempId;
+    // Generate Temporary Auto-ID for New Application
+    const tempId = "REQ-" + new Date().getTime().toString().slice(-6);
+    document.getElementById("formTitle").textContent = "New App (" + tempId + ")";
     document.getElementById("mgmtBox").style.display = "none";
     document.getElementById("submitDate").value = new Date().toISOString().split('T')[0];
   }
 }
-
-// Fungsi handleAuthorityChange & updateCategoryDropdown (Tetap Sama Seperti Sebelumnya)
-// ... (Sesuai Logic sebelumnya agar tidak Ruin)
 </script>
