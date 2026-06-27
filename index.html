@@ -1,196 +1,1403 @@
-<style>
-  /* Premium Modal Styling */
-  .modal-card { background: #fff; width: 100%; max-width: 800px; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
-  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .modal-body { padding: 24px; overflow-y: auto; flex: 1; max-height: 80vh; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enterprise Capability Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Premium Typography: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      /* Enterprise Color System */
+      --primary: #3c92a6;
+      --primary-dark: #2d6e7e;
+      --primary-light: #eef7f9;
+      --bg: #f9fafb;
+      --card-bg: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --text-light: #9ca3af;
+      --border: #e5e7eb;
+      --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --success: #22c55e; /* Green color for permitted levels */
+      --inactive: #e5e7eb; /* Grey for non-permitted */
+    }
+
+    * { 
+      box-sizing: border-box; 
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .swal2-container {
+      z-index: 15000 !important;
+    }
+    
+    /* --- LOADER STYLES --- */
+    .loader-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      gap: 15px;
+    }
+    
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--primary-light);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    /* --- UPDATED: Sticky Header Logic --- */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000; /* Di bawah sidebar tapi di atas kartu */
+      background-color: rgba(249, 250, 251, 0.9); /* Transparan dengan warna BG */
+      backdrop-filter: blur(10px); /* Efek kaca premium */
+      padding: 20px 0;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid transparent;
+      transition: var(--transition);
+    }
+    
+    /* Garis halus muncul saat di-scroll (Opsional: via JS jika ingin lebih detail) */
+    header.scrolled {
+      border-bottom: 1px solid var(--border);
+      padding: 15px 0;
+    }
+    
+    /* Penyesuaian container agar tidak terlalu mepet ke atas karena header sticky */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 40px 24px; /* Hilangkan padding top 40px karena sudah diambil header */
+    }
+    
+    /* Pastikan judul tidak terlalu besar saat sticky */
+    h1 {
+      font-size: 22px; /* Dikecilkan sedikit agar fit */
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    #dataStatus {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* --- Search & Controls --- */
+    .controls-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .search-container {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .search-input-box {
+      position: relative;
+      flex: 1;
+      display: flex;
+    }
+    
+    .search-input-box input {
+      width: 100%;
+      padding: 16px 20px 16px 48px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      font-size: 16px;
+      outline: none;
+      transition: var(--transition);
+      background: var(--card-bg);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .search-input-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .meta-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    #filterRow {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+      overflow: visible !important;
+    }
+
+    /* Styling Baru untuk Smart Filter */
+    .filter-field {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--primary-light);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    
+    .filter-trigger {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 8px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .filter-popover {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 250px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      padding: 12px;
+      margin-top: 5px;
+    }
+    
+    .filter-popover.active { display: flex !important; }
+    
+    .popover-search {
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    
+    .popover-sort-group {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    
+    .btn-sort {
+      flex: 1;
+      font-size: 10px;
+      padding: 4px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      background: var(--bg);
+    }
+    
+    .btn-sort:hover { background: var(--primary-light); }
+    
+    .popover-list {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+    
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    
+    .list-item:hover { background: var(--bg); }
+    
+    .list-item input { cursor: pointer; }
+    
+    .popover-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .filter-field label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .filter-field input {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    /* --- Card Data Grid --- */
+    #tableBody {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .data-card {
+      background: var(--card-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid var(--border);
+      transition: var(--transition);
+      display: grid;
+      grid-template-columns: 1.6fr 3fr; /* Slightly wider main column to fit horizontal steps */
+      gap: 24px;
+      position: relative;
+    }
+
+    .data-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .card-main {
+      border-right: 1px solid var(--border);
+      padding-right: 24px;
+    }
+
+    .data-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 11px;
+      color: var(--text-light);
+      margin-bottom: 2px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .detail-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .selection-area {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+    }
+
+    /* --- BUTTONS & MISC --- */
+    .btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      color: var(--text-main);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      border: none;
+    }
+
+    .agency- {
+      height: 22px;
+      width: auto;
+      display: block;
+    }
+
+    .card-header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .no-badge {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    
+    .vertical-divider {
+      width: 1px;
+      height: 20px;
+      background-color: var(--border);
+    }
+
+    .status-badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-avail { background: #dcfce7; color: #166534; }
+    .status-limited { background: #fef9c3; color: #854d0e; }
+    .status-default { background: #f3f4f6; color: #374151; }
+
+    /* --- REFINED HORIZONTAL CAPABILITY STEPPER --- */
+    .capability-container {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
+    }
+
+    .authority-tag {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 15px;
+    }
+
+    .stepper-wrapper {
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .step-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-width: 50px;
+    }
+
+    .step-label-top {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      white-space: nowrap;
+    }
+
+    .step-light {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background-color: var(--inactive);
+      transition: all 0.3s ease;
+      margin-bottom: 6px;
+    }
+
+    .step-item.active .step-light {
+      background-color: var(--success) !important;
+      box-shadow: 0 1px 4px rgba(34, 197, 94, 0.3);
+    }
+
+    .step-desc {
+      font-size: 9px;
+      font-weight: 600;
+      line-height: 1.1;
+      color: var(--text-light);
+      display: block;
+      height: 24px; /* Space for 2 lines */
+    }
+
+    .step-item.active .step-desc {
+      color: #15803d;
+    }
+    
+    .step-item.active .step-label-top {
+      color: var(--text-main);
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      position: fixed;
+      top: 0; right: -300px; /* Sembunyi di kanan */
+      width: 300px; height: 100%;
+      background: var(--card-bg);
+      box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+      z-index: 10000;
+      transition: var(--transition);
+      padding: 30px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .sidebar.active { right: 0; } /* Muncul ke arah kiri */
+
+    .sidebar-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(2px);
+      display: none; z-index: 9999;
+    }
+    .sidebar-overlay.active { display: block; }
+    
+    .burger-btn {
+      background: var(--primary-light); 
+      border: none; cursor: pointer;
+      padding: 10px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--primary);
+      transition: var(--transition);
+    }
+    .burger-btn:hover { background: var(--primary); color: white; }
+    
+    .menu-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px; border-radius: 12px;
+      text-decoration: none; color: var(--text-main);
+      font-weight: 600; font-size: 14px;
+      transition: var(--transition); border: none; background: none; width: 100%; text-align: left;
+      cursor: pointer;
+    }
+    .menu-item:hover { background: var(--primary-light); color: var(--primary); }
+    .menu-item svg { opacity: 0.7; }
+
+    /* --- MODAL UPDATE SOURCE SPECIFIC --- */
+    .source-card { 
+      border: 1px solid var(--border); 
+      border-radius: 14px; padding: 20px; 
+      background: #fff; transition: var(--transition);
+    }
+    .source-card:hover { border-color: var(--primary); }
+    .source-card h4 { margin: 0 0 15px 0; display: flex; align-items: center; gap: 10px; font-size: 16px;}
+    .source-meta { font-size: 11px; color: var(--text-muted); line-height: 1.6; margin-bottom: 15px; }
+    .btn-proc-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .btn-proc { 
+      padding: 8px; font-size: 11px; font-weight: 700; border-radius: 8px; 
+      cursor: pointer; border: 1px solid var(--border); background: white;
+    }
+    .btn-proc.primary { background: var(--primary); color: white; border: none; }
+
+    /* --- TAMBAHKAN CSS MODAL DASAR DI SINI --- */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(17, 24, 39, 0.6);
+      backdrop-filter: blur(4px);
+      display: none; /* Default sembunyi */
+      justify-content: center;
+      align-items: center;
+      z-index: 11000;
+      padding: 20px;
+    }
   
-  .section-title { font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin: 20px 0 12px 0; display: flex; align-items: center; gap: 10px; }
-  .section-title::after { content: ""; flex: 1; height: 1px; background: var(--border); }
-  .section-divider { border-top: 1px solid var(--border); margin: 20px 0; padding-top: 15px; }
-
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  .form-group label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-  .form-group input, .form-group select, .form-group textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box; }
+    .modal-card {
+      background: var(--card-bg);
+      width: 100%;
+      max-height: 90vh;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      animation: modalSlideUp 0.3s ease;
+    }
   
-  /* Levels Grid Styling */
-  .level-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; padding: 15px; background: var(--bg); border-radius: 12px; border: 1px solid var(--border); }
-  .level-chip { display: flex; align-items: center; gap: 10px; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; cursor: pointer; transition: 0.2s; }
-  .level-chip:hover { border-color: var(--primary); background: var(--primary-light); }
+    @keyframes modalSlideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+  
+    .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+  
+    .close-x { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-light); }
+  
+    /* Style tambahan untuk cards di dalam modal */
+    .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: #fff; }
+    .source-card h4 { margin: 0 0 10px 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
 
-  .mgmt-section { background: #fff7ed; border: 1px solid #fed7aa; padding: 20px; border-radius: 14px; margin-bottom: 24px; }
-  .file-dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; background: var(--primary-light); cursor: pointer; transition: 0.2s; }
-</style>
+    @media (max-width: 768px) {
+      .data-card { grid-template-columns: 1fr; }
+      .card-main { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+      .data-details { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
 
-<div class="modal-card">
-  <div class="modal-header">
-    <h3 class="modal-title" id="formTitle">New Capability Application</h3>
-    <button class="close-x" onclick="closeModal()">&times;</button>
+<!-- SIDEBAR NAVIGATION & OVERLAY -->
+<!-- SIDEBAR NAVIGATION & OVERLAY -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+<nav id="sidebar" class="sidebar">
+  <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 30px;">
+    <h2 style="font-size: 18px; margin:0;">Control Panel</h2>
+    <button onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
   </div>
-  <div class="modal-body">
-    <form id="newCapForm">
-      <input type="hidden" id="editId">
+  
+  <!-- Menu yang sudah ada -->
+  <button onclick="switchView('database'); toggleSidebar();" class="menu-item">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+    Main Database
+  </button>
 
-      <!-- STEP 0: MANAGEMENT CONTROL (Internal Only) -->
-      <div id="mgmtBox" class="mgmt-section" style="display:none;">
-        <div class="section-title" style="color:#c2410c; margin-top:0;">Management Control</div>
-        <div class="form-row">
-           <div class="form-group">
-             <label>Status</label>
-             <select id="statusSelect">
-                <option value="SUBMITTED">OPEN: SUBMITTED</option>
-                <option value="UNDER REVIEW">PROGRESS: UNDER REVIEW</option>
-                <option value="APPROVED">CLOSED: APPROVED</option>
-                <option value="REJECTED">CLOSED: REJECTED</option>
-             </select>
-           </div>
-           <div class="form-group">
-             <label>Reviewer Name</label>
-             <input type="text" id="reviewerName">
-           </div>
+  <button onclick="switchView('submissions'); toggleSidebar();" class="menu-item">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+    Dashboard Pengajuan
+  </button>
+
+  <button onclick="toggleFilters(); toggleSidebar();" class="menu-item">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+    Advanced Filters
+  </button>
+
+  <!-- PINDAHKAN TOMBOL AKSI KE SINI -->
+  <div style="border-top: 1px solid var(--border); margin: 10px 0; padding-top: 10px;">
+    <div class="authority-tag" style="padding-left: 18px; margin-bottom: 8px;">Bulk Actions</div>
+    
+    <button id="actionBtn" class="menu-item">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M9 12l2 2 4-4"></path></svg>
+      Toggle Selection
+    </button>
+
+    <button id="exportBtn" class="menu-item" style="display:none; color: var(--primary);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export Selection
+    </button>
+  </div>
+
+  <button onclick="openUpdateSourceModal(); toggleSidebar();" class="menu-item">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+    Update Source Data
+  </button>
+</nav>
+
+<div class="container">
+  <header>
+    <div class="header-left">
+      <h1>Enterprise Capability Web</h1>
+      <div id="dataStatus">Total Database: 0 records</div>
+    </div>
+    
+    <div class="header-right">
+      <button class="burger-btn" onclick="toggleSidebar()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </header>
+  
+  <div id="dashboard">
+    <div class="controls-wrapper">
+      <!-- Premium Search Bar -->
+      <div class="search-container">
+        <div class="search-input-box">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input id="globalSearch" type="text" placeholder="Search components, part numbers, or descriptions..." />
         </div>
-        <div class="form-group" style="margin-top:10px;">
-          <label>Remarks / Reason</label>
-          <textarea id="statusReason" rows="2"></textarea>
-        </div>
+        <button id="searchBtn" class="btn btn-primary">Search Data</button>
       </div>
 
-      <!-- STEP 1: DYNAMIC AUTHORITY & CATEGORY -->
-      <div class="section-title">Certification & Authority</div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Authority</label>
-          <select id="authSelect" required onchange="handleAuthorityChange()" style="border:1.5px solid var(--primary);">
-            <option value="">-- Select Authority --</option>
-            <option value="DGCA">DGCA (Indonesia)</option>
-            <option value="EASA">EASA (Europe)</option>
-            <option value="FAA">FAA (USA)</option>
+      <div class="meta-bar">
+        <!-- Sisi Kiri: Rows Per Page -->
+        <div class="pagination-left">
+          <select id="rowsPerPage" class="btn" style="padding: 8px 12px;">
+            <option value="10">10 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+            <option value="all">Show All</option>
           </select>
         </div>
-        <div class="form-group">
-          <label>Capability Category</label>
-          <select id="caplistItem" required>
-            <option value="">-- Select Authority First --</option>
-          </select>
+      
+        <!-- Sisi Kanan: Page Movement -->
+        <div class="pagination-right" style="display: flex; align-items: center; gap: 8px;">
+          <!-- Prev Button -->
+          <button id="prevPage" class="btn" style="padding: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+      
+          <!-- Page Info & Go To -->
+          <div class="btn" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 38px;">
+            <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Page</span>
+            <input id="gotoPage" type="number" value="1" min="1" 
+                   style="width: 45px; border: 1px solid var(--border); border-radius: 4px; text-align: center; font-weight: 700; color: var(--primary); outline: none; height: 24px;">
+            <span id="pageInfo" style="font-size: 13px; color: var(--text-muted); font-weight: 500;">of 1</span>
+          </div>
+      
+          <!-- Next Button -->
+          <button id="nextPage" class="btn" style="padding: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
         </div>
       </div>
+    </div>
 
-      <div class="section-divider"></div>
+    <!-- Filter Panel (Populated by JS) -->
+    <div id="filterRow" style="display:none;"></div>
 
-      <!-- STEP 2: TECHNICAL DETAILS -->
-      <div class="section-title">Component Detail</div>
-      <div class="form-row">
-        <div class="form-group"><label>Part Number</label><input type="text" id="partNumber" required></div>
-        <div class="form-group"><label>Part Name</label><input type="text" id="partName" required></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Manufacturer</label><input type="text" id="manufacturer" required></div>
-        <div class="form-group"><label>ATA Chapter</label><input type="text" id="ataChapter" required></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Shop</label><input type="text" id="shop" required></div>
-        <div class="form-group"><label>Aircraft Type</label><input type="text" id="aircraftType"></div>
-      </div>
-
-      <div class="section-title">Requested Levels</div>
-      <div id="dynamicLevels" class="level-options">
-        <p style="grid-column: 1/-1; text-align:center; font-size:12px; color:var(--text-light);">Authority not selected.</p>
-      </div>
-
-      <div class="section-title">Supporting Documents</div>
-      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
-        <div id="fileCountLabel" style="font-weight:600;">Click to upload PDF</div>
-        <input type="file" id="fileInput" multiple accept=".pdf" style="display:none;" onchange="handleMultiFile(this)" />
-      </div>
-      <div id="fileListPreview" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:10px;"></div>
-    </form>
-  </div>
-  <div class="modal-footer">
-    <button class="btn" onclick="closeModal()">Cancel</button>
-    <button id="btnSubmitForm" class="btn btn-primary" onclick="submitForm()">Save Changes</button>
+    <!-- Data Container (Cards rendered here) -->
+    <div id="tableBody"></div>
+    
   </div>
 </div>
 
-<script>
-const AUTH_LEVELS = {
-  'EASA': ['Level 1 (Tested)', 'Level 2 (Repaired)', 'Level 3 (Modified)', 'Level 4 (Overhauled)'],
-  'FAA': ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)'],
-  'DGCA': ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)']
-};
+<!-- Placeholder for JS Compatibility -->
+<table id="dataTable" style="display:none;"><thead id="headerRow"></thead></table>
+<div id="actionHeader" style="display:none;"></div>
 
-/**
- * INA LOGIC: Menarik Kategori Unik dari Database Utama berdasarkan Otoritas
- */
-function updateCategoryDropdown(selectedAuth) {
-  const catSelect = document.getElementById("caplistItem");
-  catSelect.innerHTML = '<option value="">-- Loading Categories --</option>';
+<!-- LOADER -->
+<div id="loader" class="loader-overlay">
+  <div class="spinner"></div>
+  <div style="font-size:15px; color: var(--text-main); font-weight: 600;">Processing Capability List...</div>
+</div>
 
-  // Akses rawData dari index.html (Index 1 = Authority, Index 11 = Category/Status)
-  if (typeof rawData !== 'undefined' && selectedAuth) {
-    const categories = [...new Set(rawData
-      .filter(row => String(row[1]).trim().toUpperCase() === selectedAuth.toUpperCase())
-      .map(row => String(row[11]).trim())
-      .filter(val => val !== "" && val !== "—")
-    )].sort();
-
-    if (categories.length > 0) {
-      catSelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join("");
-    } else {
-      catSelect.innerHTML = '<option value="GENERAL">GENERAL</option>';
-    }
-  } else {
-    catSelect.innerHTML = '<option value="">-- Select Authority First --</option>';
-  }
-}
-
-function handleAuthorityChange() {
-  const auth = document.getElementById("authSelect").value;
+<div id="modalUpdateSourceContainer"></div>
   
-  // 1. Update Levels
-  const container = document.getElementById("dynamicLevels");
-  container.innerHTML = "";
-  if(auth) {
-    AUTH_LEVELS[auth].forEach(lvl => {
-      container.innerHTML += `<label class="level-chip"><input type="checkbox" name="authLevels" value="${lvl}"> ${lvl}</label>`;
+<script src="../auth/script.js"></script>
+  <script>
+    /** 
+     * ENTERPRISE CAPABILITY LOGIC - FIXED FOR MULTILINE SUMMARY & GREEN INDICATORS
+     */
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby-YyRvtKboo5h5S2HqIJkRlhL9yX0v2pjkT6JeBmd18YIH6MY9J-gEcLgjhwo5F0VaVg/exec";
+    
+    // Mapping: 0:NO, 1:AUTH, 2:RATING, 3:ATA, 4:SHOP, 5:PN, 6:NAME, 7:MANUF, 8:REF, 14:A/C TYPE, 15:SUMMARY, 16:STATUS
+    const DISPLAY_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16];
+    
+    let rawData = [];
+    let viewData = [];
+    let colNames = [];
+    let currentPage = 1;
+    let rowsPerPage = 10;
+    let filtersVisible = false;
+    let globalKeyword = "";
+    let activeFilters = {};    // <--- TAMBAHKAN INI (State untuk Multi-Select)
+    let actionMode = false;
+    let currentView = "database"; 
+
+    // Update State Tracker
+    async function switchView(view) {
+      currentView = view;
+      currentPage = 1; // Reset ke halaman 1
+      const container = document.getElementById("tableBody");
+      const title = document.querySelector("h1");
+      const searchInput = document.getElementById("globalSearch");
+
+      searchInput.value = "";
+      document.getElementById("filterRow").style.display = "none";
+      filtersVisible = false;
+
+      if (view === "submissions") {
+        title.textContent = "Submission Tracking";
+        searchInput.placeholder = "Search by Part Number, Name, or ID...";
+        
+        // Tambahkan Tombol "New Application" jika belum ada
+        if (!document.getElementById("btnNewSub")) {
+          const searchWrapper = document.querySelector(".search-container");
+          const btn = document.createElement("button");
+          btn.id = "btnNewSub";
+          btn.className = "btn btn-primary";
+          btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> New Application`;
+          btn.style.marginLeft = "12px";
+          btn.onclick = openSubmissionForm;
+          searchWrapper.appendChild(btn);
+        }
+
+        if (typeof loadSubmissions !== "function") {
+          await injectSubmissionModule();
+        }
+        loadSubmissions(); // Memanggil fungsi di modul submission
+      } else {
+        // Mode Database Utama
+        title.textContent = "Enterprise Capability Web";
+        searchInput.placeholder = "Search components, part numbers, or descriptions...";
+        const btnNewSub = document.getElementById("btnNewSub");
+        if (btnNewSub) btnNewSub.remove();
+        refreshData(true);
+      }
+    }
+    
+    async function injectSubmissionModule() {
+      // Gunakan relative path yang benar untuk Vercel
+      const targetPath = "application/dashboard/index.html"; 
+      try {
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("Module Submission tidak ditemukan");
+        const html = await response.text();
+        
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html;
+        
+        const scripts = tempDiv.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+        console.log("Submission Module Injected.");
+      } catch (err) {
+        console.error("Injection Error:", err);
+      }
+    }
+
+    // 1. Tambahkan Bridge Function agar tombol Manage di kartu bisa memanggil modal
+    function openEditForm(data) {
+      openSubmissionForm(data); 
+    }
+    
+    // 2. Gabungkan Logic openSubmissionForm (Mendukung New & Edit)
+    async function openSubmissionForm(editData = null) {
+      // Tetap pertahankan baris ini dari script asli Anda
+      const container = document.getElementById("modalUpdateSourceContainer"); 
+      const targetPath = "application/dashboard/modal/form/index.html";
+    
+      try {
+        const response = await fetch(targetPath);
+        const html = await response.text();
+        
+        // Buat/Gunakan overlay modal agar tidak bentrok
+        let subModal = document.getElementById("submissionModalOverlay");
+        if (!subModal) {
+          subModal = document.createElement("div");
+          subModal.id = "submissionModalOverlay";
+          subModal.className = "modal-overlay";
+          document.body.appendChild(subModal);
+        }
+        
+        subModal.innerHTML = html;
+        subModal.style.display = "flex";
+    
+        // Jalankan script internal modal (Penting untuk interaktivitas form)
+        const scripts = subModal.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+        
+        // REPAIR: Inisialisasi Form dengan mengirimkan parameter editData
+        // Jika editData null, maka form akan menjadi form kosong (New Application)
+        // Jika editData berisi objek, maka form akan terisi data (Manage Submission)
+        if (typeof initFormScript === "function") {
+          initFormScript(editData); 
+        }
+    
+      } catch (err) {
+        console.error("Form Load Error:", err);
+      }
+    }
+    
+    // 3. Fungsi Close Modal tetap dipertahankan
+    function closeModal() {
+      const subModal = document.getElementById("submissionModalOverlay");
+      if (subModal) subModal.style.display = "none";
+    }
+    
+    // 1. Format Logo
+    function formatLogoValue(val) {
+      if (!val) return '—';
+      const cleanVal = String(val).trim().toUpperCase();
+      const logos = {
+        'DGCA': '../pricing/assets/DGCA_Logo.png',
+        'EASA': '../pricing/assets/EASA_Logo.png',
+        'FAA': '../pricing/assets/FAA_Logo.png'
+      };
+      if (logos[cleanVal]) {
+        return `<img src="${logos[cleanVal]}" alt="${cleanVal}" class="agency-" title="${cleanVal}">`;
+      }
+      return val; 
+    }
+    
+    // 2. Stepper Logic: Searches for "Level X" in the multiline string
+    function renderCapabilityStepper(authName, summaryText) {
+      const cleanAuth = String(authName || "").trim().toUpperCase();
+      const textContent = String(summaryText || "");
+      
+      const AUTHORITY_CONFIG = {
+        'EASA': ["Tested", "Repaired", "Modified", "Overhauled"],
+        'FAA': ["Inspection", "Testing", "Repair", "Modification", "Overhaul"],
+        'DGCA': ["Inspection", "Testing", "Repair", "Modification", "Overhaul"]
+      };
+
+      const levels = AUTHORITY_CONFIG[cleanAuth] || AUTHORITY_CONFIG['FAA'];
+
+      let html = `
+        <div class="capability-container">
+          <div class="authority-tag">MAINTENANCE LEVEL (${cleanAuth})</div>
+          <div class="stepper-wrapper">
+      `;
+
+      levels.forEach((label, index) => {
+        const stepIdx = index + 1;
+        // Parsing: Checks if "Level X" exists anywhere in the multiline cell
+        const isActive = textContent.includes(`Level ${stepIdx}`); 
+        
+        html += `
+          <div class="step-item ${isActive ? 'active' : ''}">
+            <span class="step-label-top">Level ${stepIdx}</span>
+            <div class="step-light"></div>
+            <span class="step-desc">${label}</span>
+          </div>
+        `;
+      });
+
+      return html + `</div></div>`;
+    }
+    
+    // 3. Loader & General UI
+    function showLoader() { document.getElementById("loader").style.display = "flex"; }
+    function hideLoader() { document.getElementById("loader").style.display = "none"; }
+    function toggleFilters() {
+      filtersVisible = !filtersVisible;
+      document.getElementById("filterRow").style.display = filtersVisible ? "grid" : "none";
+    }
+    
+    // 4. Fetch Data Function
+    function refreshData(isInitial = false) {
+      if (isInitial) showLoader();
+      
+      // Menambahkan timestamp cache-buster agar browser selalu mengambil data terbaru
+      const url = `${GAS_API_URL}?action=getCapabilityList&_=${new Date().getTime()}`;
+      
+      fetch(url)
+        .then(res => res.json())
+        .then(rows => {
+          if (!rows || rows.length < 3) throw new Error("Data empty");
+
+          // 1. Ambil Header (Hanya dilakukan saat pertama kali atau jika header bisa berubah)
+          colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+          
+          // 2. Isi data ke memori (Update rawData)
+          rawData = rows.slice(3)
+            .filter(r => r[1] && String(r[1]).trim() !== "") 
+            .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+          
+          // 3. Jika ini loading pertama, bangun input filter
+          if (isInitial) {
+            buildFilterInputs(colNames);
+          }
+          
+          // 4. Terapkan filter yang sedang aktif ke data baru
+          // Ini memastikan jika user sedang memfilter, tampilannya tidak tiba-tiba reset ke "Show All"
+          applyAllFilters();
+          
+          // 5. Update Status Terakhir
+          const now = new Date();
+          const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+          console.log(`Data auto-refreshed at: ${timeStr}`);
+          
+          if (isInitial) hideLoader(); 
+        })
+        .catch(err => { 
+          console.error("Fetch Error:", err); 
+          document.getElementById("dataStatus").textContent = "Connection Error. Retrying in 5 mins...";
+          if (isInitial) hideLoader();
+        });
+    }
+
+    // Jalankan pertama kali saat halaman dibuka
+    refreshData(true);
+
+    // SETUP AUTO REFRESH SETIAP 5 MENIT (300,000 ms)
+    setInterval(() => {
+      refreshData(false); // Refresh tabel dashboard utama
+      
+      // Logika Penjaga: Pastikan fungsi loadSourceCards tersedia
+      if (typeof loadSourceCards === "function") {
+        console.log("Background check: Source statuses...");
+        loadSourceCards(); 
+      } else {
+        // Jika modal belum pernah dibuka, kita panggil loadExternalModal secara diam-diam
+        // agar script stealth guard tersedia di memori dan bisa berjalan
+        loadExternalModal().then(() => {
+           if (typeof loadSourceCards === "function") loadSourceCards();
+        });
+      }
+    }, 5 * 60 * 1000);
+    
+    
+    // 5. Render Card Display
+    function renderCards(data) {
+      const container = document.getElementById("tableBody");
+      container.innerHTML = "";
+      
+      if (data.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-light);"><p>No matching records found.</p></div>`;
+        return;
+      }
+    
+      let start = 0, end = data.length;
+      if (rowsPerPage !== "all") {
+        start = (currentPage - 1) * rowsPerPage;
+        end = start + rowsPerPage;
+      }
+    
+      data.slice(start, end).forEach((row, rIdx) => {
+        const card = document.createElement("div");
+        card.className = "data-card";
+        const authName = row[1];
+        const summaryText = row[10]; // Multi-line text block
+    
+        const checkHtml = actionMode ? `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
+    
+        let detailsHtml = "";
+        row.forEach((cell, idx) => {
+          // Map columns: Rating(2), ATA(3), Shop(4), Part Name(6), Manufacturer(7), AC Type(9), Status(11)
+          if ([2,3,4,6,7,9,11].includes(idx)) { 
+            const displayValue = (idx === 11) ? formatStatus(cell) : cell;
+            detailsHtml += `
+              <div class="detail-item">
+                <span class="detail-label">${colNames[idx]}</span>
+                <span class="detail-value">${displayValue || '—'}</span>
+              </div>`;
+          }
+        });
+    
+        card.innerHTML = `
+          ${checkHtml}
+          <div class="card-main">
+            <div class="card-header-row">
+                <span class="no-badge">${row[0]}</span>
+                <div class="vertical-divider"></div>
+                ${formatLogoValue(row[1])}
+            </div>
+            
+            <div class="detail-item" style="margin-top: 10px;">
+                <span class="detail-label">PART NUMBER</span>
+                <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">
+                    ${row[5]}
+                </div>
+            </div>
+    
+            ${renderCapabilityStepper(authName, summaryText)}
+          </div>
+    
+          <div class="data-details">
+            ${detailsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      updatePaginationInfo(data.length);
+    }
+    
+    // 1. Fungsi Filter Utama (Logic Cascading)
+    function applyAllFilters() {
+      showLoader();
+      setTimeout(() => {
+        try {
+          currentPage = 1;
+          globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
+
+          viewData = rawData.filter(row => {
+            const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+            if (!matchesGlobal) return false;
+
+            return Object.keys(activeFilters).every(colIdx => {
+              const selected = activeFilters[colIdx];
+              if (!selected || selected.size === 0) return true;
+              return selected.has(String(row[colIdx]).trim() || "(Blanks)");
+            });
+          });
+
+          renderCards(viewData);
+          updateDataStatus();
+          refreshAllDropdowns();
+        } catch (e) {
+          console.error("Filter Error:", e);
+        } finally {
+          hideLoader();
+        }
+      }, 50);
+    }
+    
+    // 2. Membangun Struktur UI Dropdown (Dipanggil setelah Fetch Data)
+    function buildFilterInputs(headers) {
+      const fRow = document.getElementById("filterRow");
+      fRow.innerHTML = "";
+      
+      headers.forEach((h, idx) => {
+        activeFilters[idx] = new Set(); 
+        
+        const field = document.createElement("div");
+        field.className = "filter-field";
+        field.innerHTML = `
+          <label>${h}</label>
+          <div class="filter-trigger" id="trigger-${idx}">
+            <span id="label-col-${idx}">All Values</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </div>
+          <div class="filter-popover" id="popover-${idx}">
+            <input type="text" class="popover-search" placeholder="Search values..." oninput="filterListItems(${idx}, this.value)">
+            <div class="popover-sort-group">
+              <div class="btn-sort" onclick="sortFilterList(${idx}, 'AZ')">A-Z</div>
+              <div class="btn-sort" onclick="sortFilterList(${idx}, 'ZA')">Z-A</div>
+              <div class="btn-sort" onclick="sortFilterList(${idx}, 'FREQ')">Freq</div>
+            </div>
+            <div class="popover-list" id="list-${idx}"></div>
+            <div class="popover-footer">
+              <button class="btn-sort" onclick="setAllChecks(${idx}, true)">Select All</button>
+              <button class="btn-sort" onclick="setAllChecks(${idx}, false)">Clear</button>
+              <button class="btn-sort" style="background:var(--primary); color:white; border:none;" onclick="closeAllPopovers()">Done</button>
+            </div>
+          </div>
+        `;
+
+        // Event Listener khusus agar klik tidak "bocor" (Propagation)
+        field.querySelector('.filter-trigger').onclick = (e) => {
+          e.stopPropagation();
+          const popover = document.getElementById(`popover-${idx}`);
+          const isCurrentlyActive = popover.classList.contains('active');
+          closeAllPopovers();
+          if (!isCurrentlyActive) popover.classList.add('active');
+        };
+
+        field.querySelector('.filter-popover').onclick = (e) => e.stopPropagation();
+
+        fRow.appendChild(field);
+      });
+      refreshAllDropdowns(); 
+    }
+    
+    // 3. Mengisi List Item di dalam Dropdown (Cascading)
+    function refreshAllDropdowns() {
+      colNames.forEach((name, displayIdx) => {
+        const listContainer = document.getElementById(`list-${displayIdx}`);
+        if (!listContainer) return;
+
+        // Ambil data yang tersedia berdasarkan filter kolom LAIN
+        const tempFilteredData = rawData.filter(row => {
+          const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+          if (!matchesGlobal) return false;
+          
+          return Object.keys(activeFilters).every(cIdx => {
+            if (parseInt(cIdx) === displayIdx) return true; // Abaikan filter dirinya sendiri
+            const selected = activeFilters[cIdx];
+            return !selected || selected.size === 0 || selected.has(String(row[cIdx]).trim() || "(Blanks)");
+          });
+        });
+
+        // Hitung Unique Values
+        const counts = {};
+        tempFilteredData.forEach(row => {
+          const val = String(row[displayIdx]).trim() || "(Blanks)";
+          counts[val] = (counts[val] || 0) + 1;
+        });
+
+        const uniqueValues = Object.keys(counts).sort();
+        listContainer.innerHTML = uniqueValues.map(val => `
+          <label class="list-item">
+            <input type="checkbox" 
+                   ${activeFilters[displayIdx].has(val) ? 'checked' : ''} 
+                   onchange="updateFilterState(${displayIdx}, '${val.replace(/'/g, "\\'")}', this.checked)">
+            <span>${val} <small style="color:var(--text-light)">(${counts[val]})</small></span>
+          </label>
+        `).join('');
+        
+        // Update Label Button (All vs X Selected)
+        const labelEl = document.getElementById(`label-col-${displayIdx}`);
+        const countSelected = activeFilters[displayIdx].size;
+        labelEl.textContent = countSelected === 0 ? "All Values" : `${countSelected} selected`;
+      });
+    }
+
+    function updateFilterState(colIdx, value, isChecked) {
+      if (isChecked) activeFilters[colIdx].add(value);
+      else activeFilters[colIdx].delete(value);
+      applyAllFilters();
+    }
+    
+    function setAllChecks(colIdx, status) {
+      const list = document.getElementById(`list-${colIdx}`);
+      const checks = list.querySelectorAll('input');
+      if (status) {
+        checks.forEach(c => {
+          const val = c.parentElement.textContent.split(' (')[0].trim();
+          activeFilters[colIdx].add(val);
+        });
+      } else {
+        activeFilters[colIdx].clear();
+      }
+      applyAllFilters();
+    }
+    
+    function filterListItems(colIdx, query) {
+      const list = document.getElementById(`list-${colIdx}`);
+      const items = list.querySelectorAll('.list-item');
+      items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(query.toLowerCase()) ? 'flex' : 'none';
+      });
+    }
+    
+    function sortFilterList(colIdx, mode) {
+      const list = document.getElementById(`list-${colIdx}`);
+      const items = Array.from(list.querySelectorAll('.list-item'));
+      
+      items.sort((a, b) => {
+        const valA = a.textContent.trim();
+        const valB = b.textContent.trim();
+        if (mode === 'AZ') return valA.localeCompare(valB);
+        if (mode === 'ZA') return valB.localeCompare(valA);
+        if (mode === 'FREQ') {
+          const smallA = a.querySelector('small');
+          const smallB = b.querySelector('small');
+          const freqA = smallA ? parseInt(smallA.textContent.replace(/[()]/g, '')) : 0;
+          const freqB = smallB ? parseInt(smallB.textContent.replace(/[()]/g, '')) : 0;
+          return freqB - freqA;
+        }
+      });
+      list.innerHTML = "";
+      items.forEach(i => list.appendChild(i));
+    }
+
+    function closeAllPopovers() {
+      document.querySelectorAll('.filter-popover').forEach(p => p.classList.remove('active'));
+    }
+    
+    window.onclick = () => closeAllPopovers();
+    
+    // Tambahkan event listener untuk Input GoTo Page
+    document.getElementById("gotoPage").onchange = (e) => {
+      let page = parseInt(e.target.value);
+      const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(viewData.length / rowsPerPage);
+      
+      if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        renderCards(viewData);
+      } else {
+        // Reset ke halaman sekarang jika input ngawur
+        e.target.value = currentPage;
+      }
+    };
+    
+    // Update fungsi updatePaginationInfo agar input sinkron
+    function updatePaginationInfo(total) {
+      const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(total / rowsPerPage) || 1;
+      
+      // Update teks "of X"
+      document.getElementById("pageInfo").textContent = `of ${totalPages}`;
+      
+      // Sinkronkan angka di dalam box input
+      document.getElementById("gotoPage").value = currentPage;
+      document.getElementById("gotoPage").max = totalPages;
+    
+      document.getElementById("prevPage").disabled = currentPage <= 1;
+      document.getElementById("nextPage").disabled = currentPage >= totalPages;
+    }
+    
+    // --- UPDATED updateDataStatus logic ---
+    function updateDataStatus() {
+      const totalInSheet = (currentView === "submissions") ? allSubmissions.length : rawData.length;
+      const filteredCount = (currentView === "submissions") ? filteredSubmissions.length : viewData.length;
+      
+      const hasActiveFilters = (currentView === "submissions") 
+        ? document.getElementById("globalSearch").value !== "" 
+        : (globalKeyword || Object.values(activeFilters).some(set => set.size > 0));
+
+      const statusEl = document.getElementById("dataStatus");
+      const lastSync = new Date().toLocaleTimeString();
+
+      if (hasActiveFilters) {
+        statusEl.innerHTML = `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total) | <small>Sync: ${lastSync}</small>`;
+      } else {
+        statusEl.innerHTML = `Total ${currentView === "submissions" ? "Submissions" : "Database"}: ${totalInSheet.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
+      }
+    }
+    
+    function formatStatus(val) {
+      if (!val) return '';
+      const status = String(val).trim().toUpperCase();
+      let className = 'status-default';
+      if (status === 'AVAIL') className = 'status-avail';
+      if (status === 'LIMITED') className = 'status-limited';
+      return `<span class="status-badge ${className}">${status}</span>`;
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    // --- LOGIKA PEMANGGILAN MODAL (PATH BARU) ---
+
+     async function loadExternalModal() {
+      const container = document.getElementById("modalUpdateSourceContainer");
+      const targetPath = "/modal/UpdateSource/index.html"; // Tambahkan '/' di awal untuk Vercel
+      
+      try {
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("File modal tidak ditemukan di server");
+        const html = await response.text();
+        container.innerHTML = html;
+        
+        const scripts = container.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+          newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+          oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+        return true;
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+    }
+  
+    function openUpdateSourceModal() {
+      const modal = document.getElementById("sourceModal");
+      if (modal) {
+        modal.style.display = "flex";
+        if (typeof loadSourceCards === "function") loadSourceCards();
+      } else {
+        loadExternalModal().then(success => {
+          if (success) {
+            setTimeout(() => {
+              const newModal = document.getElementById("sourceModal");
+              if (newModal) {
+                newModal.style.display = "flex";
+                if (typeof loadSourceCards === "function") loadSourceCards();
+              }
+            }, 200);
+          } else {
+            alert("Gagal load modal. Cek Console!");
+          }
+        });
+      }
+    }
+  
+    function closeUpdateSourceModal() {
+      const modal = document.getElementById("sourceModal");
+      if (modal) modal.style.display = "none";
+    }
+    
+    // Opsional: Muat modal di awal (Background load) agar saat klik tombol terasa instan
+    window.addEventListener('DOMContentLoaded', loadExternalModal);
+    
+    // 7. Events
+    document.getElementById("searchBtn").onclick = () => {
+      if (currentView === "submissions") {
+        applySubmissionFilters(); // Fungsi ini ada di modul dashboard
+      } else {
+        applyAllFilters(); // Fungsi database utama
+      }
+    };
+    
+    document.getElementById("globalSearch").onkeyup = (e) => { if (e.key === "Enter") document.getElementById("searchBtn").click(); };
+    document.getElementById("rowsPerPage").onchange = (e) => {
+      rowsPerPage = e.target.value === "all" ? "all" : Number(e.target.value);
+      currentPage = 1;
+      renderCards(viewData);
+    };
+    document.getElementById("prevPage").onclick = () => { if (currentPage > 1) { currentPage--; renderCards(viewData); } };
+    document.getElementById("nextPage").onclick = () => { 
+      const totalPages = rowsPerPage === "all" ? 1 : Math.ceil(viewData.length / rowsPerPage);
+      if (currentPage < totalPages) { currentPage++; renderCards(viewData); } 
+    };
+    document.getElementById("actionBtn").onclick = () => {
+      actionMode = !actionMode;
+      document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
+      renderCards(viewData);
+    };
+
+    // Tambahkan efek border pada header saat scroll
+    window.addEventListener('scroll', () => {
+      const header = document.querySelector('header');
+      if (window.scrollY > 10) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
     });
-  }
-
-  // 2. Update Categories Unik (Dinamis dari index.html)
-  updateCategoryDropdown(auth);
-}
-
-function initFormScript(editData) {
-  const form = document.getElementById("newCapForm");
-  form.reset();
-  document.getElementById("fileListPreview").innerHTML = "";
-
-  if (editData) {
-    document.getElementById("formTitle").textContent = "Manage: " + editData.id;
-    document.getElementById("mgmtBox").style.display = "block";
-    document.getElementById("editId").value = editData.id;
     
-    document.getElementById("authSelect").value = editData.authority;
-    handleAuthorityChange(); // Trigger Category & Levels
-    
-    // Tunggu sebentar agar dropdown kategori terisi sebelum set value
-    setTimeout(() => {
-      document.getElementById("caplistItem").value = editData.caplistItem || "";
-    }, 100);
-
-    document.getElementById("partNumber").value = editData.partNumber;
-    document.getElementById("partName").value = editData.partName;
-    document.getElementById("shop").value = editData.shop;
-    document.getElementById("statusSelect").value = editData.status;
-    
-    const currentLevels = (editData.levels || "").split(", ");
-    document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
-      if(currentLevels.includes(cb.value)) cb.checked = true;
-    });
-  } else {
-    document.getElementById("formTitle").textContent = "New Application";
-    document.getElementById("mgmtBox").style.display = "none";
-    document.getElementById("editId").value = "";
-    document.getElementById("caplistItem").innerHTML = '<option value="">-- Select Authority First --</option>';
-  }
-}
-</script>
+  </script>
+</body>
+</html>
