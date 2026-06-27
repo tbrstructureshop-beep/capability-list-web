@@ -863,12 +863,18 @@
 
     // SETUP AUTO REFRESH SETIAP 5 MENIT (300,000 ms)
     setInterval(() => {
-      refreshData(false); // Refresh tabel utama
+      refreshData(false); // Refresh tabel dashboard utama
       
-      // Jika modal Update Source sudah ter-load di DOM, panggil loadSourceCards
-      // agar stealth guard bekerja di background
+      // Logika Penjaga: Pastikan fungsi loadSourceCards tersedia
       if (typeof loadSourceCards === "function") {
+        console.log("Background check: Source statuses...");
         loadSourceCards(); 
+      } else {
+        // Jika modal belum pernah dibuka, kita panggil loadExternalModal secara diam-diam
+        // agar script stealth guard tersedia di memori dan bisa berjalan
+        loadExternalModal().then(() => {
+           if (typeof loadSourceCards === "function") loadSourceCards();
+        });
       }
     }, 5 * 60 * 1000);
     
