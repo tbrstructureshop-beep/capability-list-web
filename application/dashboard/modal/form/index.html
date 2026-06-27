@@ -1,85 +1,97 @@
-<div class="modal-card">
-  <div class="modal-header">
-    <h3 class="modal-title">New Capability Application</h3>
+<div class="modal-card" style="max-width: 800px;">
+  <div class="modal-header" style="background:var(--primary-light);">
+    <h3 class="modal-title" style="color:var(--primary-dark);">New Capability Application</h3>
     <button class="close-x" onclick="closeModal()">&times;</button>
   </div>
   <div class="modal-body">
     <form id="newCapForm">
-      <div class="section-title">Step 1: Select Authority</div>
-      <div class="form-group">
-        <select id="authSelect" required onchange="updateLevelOptions()" style="border: 2px solid var(--primary);">
-          <option value="">-- Choose Authority --</option>
-          <option value="EASA">EASA (European Union Aviation Safety Agency)</option>
-          <option value="FAA">FAA (Federal Aviation Administration)</option>
-          <option value="DGCA">DGCA (Directorate General of Civil Aviation)</option>
-        </select>
-      </div>
-
-      <div class="section-divider"></div>
-      <div class="section-title">Step 2: Component Details</div>
-      <!-- Row PN & Name -->
+      
+      <!-- STEP 1: AUTHORITY & CATEGORY -->
+      <div class="section-title">Certification & Category</div>
       <div class="form-row">
-        <div class="form-group"><label>Part Number</label><input type="text" id="partNumber" required /></div>
-        <div class="form-group"><label>Part Name</label><input type="text" id="partName" required /></div>
+        <div class="form-group">
+          <label>Select Authority</label>
+          <select id="authSelect" required onchange="updateLevelOptions()" style="border:1.5px solid var(--primary);">
+            <option value="">-- Choose Authority --</option>
+            <option value="EASA">EASA</option>
+            <option value="FAA">FAA</option>
+            <option value="DGCA">DGCA</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Capability Category</label>
+          <select id="caplistItem" required>
+            <option value="Accessories">Accessories</option>
+            <option value="Emergency">Emergency Equipment</option>
+            <option value="Engine & APU">Engine & APU</option>
+            <option value="Instrument">Instrument</option>
+            <option value="Limited Airframe">Limited Airframe</option>
+            <option value="Radio">Radio</option>
+            <option value="Landing Gear">Landing Gear, Wheel, and Brake</option>
+          </select>
+        </div>
       </div>
-      <!-- Tambahkan field Cat, Manuf, ATA, Shop, AC seperti form sebelumnya... -->
 
       <div class="section-divider"></div>
-      <div class="section-title">Step 3: Certification Levels</div>
-      <div id="dynamicLevels" class="level-options">
-        <p style="font-size:12px; color:var(--text-muted);">Please select authority first.</p>
+
+      <!-- STEP 2: TECHNICAL DETAILS -->
+      <div class="section-title">Technical Details</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Part Number</label>
+          <input type="text" id="partNumber" required placeholder="e.g. 12345-SERIES" />
+        </div>
+        <div class="form-group">
+          <label>Part Name</label>
+          <input type="text" id="partName" required placeholder="e.g. Pilot Seat" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Manufacturer</label>
+          <input type="text" id="manufacturer" required placeholder="e.g. Boeing / Airbus" />
+        </div>
+        <div class="form-group">
+          <label>ATA Chapter</label>
+          <input type="text" id="ataChapter" required placeholder="e.g. 25" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Shop / Work Center</label>
+          <input type="text" id="shop" required placeholder="e.g. SEAT SHOP" />
+        </div>
+        <div class="form-group">
+          <label>Aircraft Type</label>
+          <input type="text" id="aircraftType" placeholder="e.g. B737-800" />
+        </div>
       </div>
 
       <div class="section-divider"></div>
-      <div class="section-title">Step 4: Supporting Documents</div>
-      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
-        <span id="fileCountLabel">Click to upload files (PDF only)</span>
+
+      <!-- STEP 3: LEVELS -->
+      <div class="section-title">Certification Levels</div>
+      <div id="dynamicLevels" class="level-options" style="background:var(--bg); padding:15px; border-radius:10px; border:1px solid var(--border);">
+        <p style="font-size:12px; color:var(--text-muted); text-align:center;">Please select authority to see available levels.</p>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <!-- STEP 4: ATTACHMENTS -->
+      <div class="section-title">Attachments (PDF Only)</div>
+      <div class="file-dropzone" onclick="document.getElementById('fileInput').click()" style="background:var(--primary-light); padding:30px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-bottom:10px; color:var(--primary);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <div id="fileCountLabel" style="font-weight:600;">Click to upload supporting documents</div>
         <input type="file" id="fileInput" multiple accept=".pdf" style="display:none;" onchange="handleMultiFile(this)" />
       </div>
-      <div id="fileListPreview" style="margin-top:10px;"></div>
+      <div id="fileListPreview" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:10px;"></div>
+
     </form>
   </div>
   <div class="modal-footer">
-    <button class="btn btn-primary" onclick="submitForm()">Submit Application</button>
+    <button class="btn" onclick="closeModal()">Cancel</button>
+    <button id="btnSubmitForm" class="btn btn-primary" onclick="submitForm()" style="padding:10px 30px;">Submit Application</button>
   </div>
 </div>
-
-<script>
-const AUTH_LEVELS = {
-  'EASA': ['Level 1 (Tested)', 'Level 2 (Repaired)', 'Level 3 (Modified)', 'Level 4 (Overhauled)'],
-  'FAA': ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)'],
-  'DGCA': ['Level 1 (Inspection)', 'Level 2 (Testing)', 'Level 3 (Repair)', 'Level 4 (Modification)', 'Level 5 (Overhaul)']
-};
-
-function updateLevelOptions() {
-  const auth = document.getElementById("authSelect").value;
-  const container = document.getElementById("dynamicLevels");
-  container.innerHTML = "";
-  
-  if(!auth) return;
-
-  AUTH_LEVELS[auth].forEach(lvl => {
-    container.innerHTML += `
-      <label class="level-chip">
-        <input type="checkbox" name="authLevels" value="${lvl}"> ${lvl}
-      </label>
-    `;
-  });
-}
-
-let uploadedFiles = [];
-function handleMultiFile(input) {
-  const preview = document.getElementById("fileListPreview");
-  preview.innerHTML = "";
-  uploadedFiles = [];
-
-  Array.from(input.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      uploadedFiles.push({ name: file.name, data: e.target.result.split(',')[1] });
-      preview.innerHTML += `<div style="font-size:11px; color:var(--success);">✅ ${file.name}</div>`;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-</script>
