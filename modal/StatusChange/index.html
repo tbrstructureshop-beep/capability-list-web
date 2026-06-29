@@ -24,16 +24,21 @@
 </div>
 
 <style>
-/* ... (Style tetap sama seperti sebelumnya) ... */
+/* PRESERVED CSS - NO RUIN */
 .timeline-container { position: relative; padding-left: 30px; border-left: 2px solid var(--border); margin-left: 10px; }
 .timeline-item { position: relative; margin-bottom: 25px; animation: slideUp 0.3s ease-out forwards; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.timeline-item::before { content: ""; position: absolute; left: -37px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid var(--primary); z-index: 2; }
+
+.timeline-item::before { 
+    content: ""; position: absolute; left: -37px; top: 4px; 
+    width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid var(--primary); 
+    z-index: 2;
+}
 .timeline-status { font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: block; }
-.timeline-date { font-size: 10px; color: var(--text-light); font-weight: 700; }
+.timeline-date { font-size: 10px; color: var(--text-light); font-weight: 700; letter-spacing: 0.05em; }
 .timeline-activity { font-size: 14px; font-weight: 700; color: var(--text-main); margin: 4px 0; }
 .timeline-note { font-size: 13px; color: var(--text-muted); line-height: 1.5; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #f1f5f9; font-style: italic; }
-.timeline-user { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 8px; display: block; }
+.timeline-user { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 8px; display: block; text-transform: uppercase; }
 </style>
 
 <script>
@@ -64,22 +69,28 @@ async function loadHistory(auth, pn) {
   if (subTitleEl) subTitleEl.textContent = `${auth} | PN: ${pn}`;
 
   try {
-    // Gunakan encodeURIComponent untuk menangani karakter khusus pada Part Number
+    // URL Request dengan cache buster dan encoding safe
     const url = `${GAS_API_URL}?action=getStatusHistory&auth=${encodeURIComponent(auth)}&pn=${encodeURIComponent(pn)}&_=${Date.now()}`;
     const response = await fetch(url);
     const logs = await response.json();
 
-    // Sembunyikan Spinner, Tampilkan List
+    // Transisi UI dari Spinner ke List
     spinnerEl.style.display = "none";
     listEl.style.display = "block";
 
     if (!logs || logs.length === 0) {
-      listEl.innerHTML = `<p style="text-align:center; padding:30px; color:var(--text-light); font-size:13px;">No history found for this item.</p>`;
+      listEl.innerHTML = `
+        <div style="text-align:center; padding:30px; color:var(--text-light);">
+          <p style="font-size:13px;">No history records found for this item.</p>
+        </div>`;
       return;
     }
 
     listEl.innerHTML = logs.map(log => {
-      const statusMap = { 'ACTIVE': '#10b981', 'INACTIVE': '#f59e0b', 'DELETED': '#ef4444', 'REVISED': '#3b82f6', 'ARCHIVED': '#94a3b8' };
+      const statusMap = { 
+        'ACTIVE': '#10b981', 'INACTIVE': '#f59e0b', 
+        'DELETED': '#ef4444', 'REVISED': '#3b82f6', 'ARCHIVED': '#94a3b8' 
+      };
       const dotColor = statusMap[log.status] || '#10b981';
       
       return `
@@ -98,7 +109,7 @@ async function loadHistory(auth, pn) {
 
   } catch (err) {
     console.error("Fetch History Error:", err);
-    spinnerEl.innerHTML = `<p style="color:red; font-size:12px; padding:20px;">Connection Error. Failed to retrieve data.</p>`;
+    spinnerEl.innerHTML = `<p style="color:red; font-size:12px; padding:20px;">Connection Error. Please check your internet.</p>`;
   }
 }
 </script>
