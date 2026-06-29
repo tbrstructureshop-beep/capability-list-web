@@ -12,56 +12,69 @@
       <!-- Internal Spinner -->
       <div id="historySpinner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0;">
         <div class="spinner" style="width:30px; height:30px; border-width:3px;"></div>
-        <p id="spinnerText" style="font-size:12px; color:var(--text-muted); margin-top:10px;">Searching logs...</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">Searching logs...</p>
       </div>
 
       <!-- Timeline Container -->
-      <div id="historyList" class="timeline-container" style="display:none;"></div>
+      <div id="historyList" class="timeline-container" style="display:none;">
+        <!-- Data loaded here -->
+      </div>
     </div>
   </div>
 </div>
 
+<style>
+/* ... (Style tetap sama seperti sebelumnya) ... */
+.timeline-container { position: relative; padding-left: 30px; border-left: 2px solid var(--border); margin-left: 10px; }
+.timeline-item { position: relative; margin-bottom: 25px; animation: slideUp 0.3s ease-out forwards; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.timeline-item::before { content: ""; position: absolute; left: -37px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid var(--primary); z-index: 2; }
+.timeline-status { font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: block; }
+.timeline-date { font-size: 10px; color: var(--text-light); font-weight: 700; }
+.timeline-activity { font-size: 14px; font-weight: 700; color: var(--text-main); margin: 4px 0; }
+.timeline-note { font-size: 13px; color: var(--text-muted); line-height: 1.5; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #f1f5f9; font-style: italic; }
+.timeline-user { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 8px; display: block; }
+</style>
+
 <script>
 /**
- * Premium Date Formatter: DD MMM YYYY HH:mm:ss
+ * Helper Format Tanggal: DD MMM YYYY HH:mm:ss
  */
 function formatPremiumDate(timestamp) {
   if (!timestamp) return "—";
   const d = new Date(timestamp);
+  if (isNaN(d.getTime())) return "Invalid Date";
+  
   const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = months[d.getMonth()];
+  const year = d.getFullYear();
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const s = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${day} ${month} ${year} ${h}:${m}:${s}`;
 }
 
 async function loadHistory(auth, pn) {
   const listEl = document.getElementById('historyList');
   const spinnerEl = document.getElementById('historySpinner');
-  const spinnerText = document.getElementById('spinnerText');
   const subTitleEl = document.getElementById('historyPnSub');
   
   if (subTitleEl) subTitleEl.textContent = `${auth} | PN: ${pn}`;
 
-  // Log untuk debugging (Cek di F12 Console)
-  console.log("Fetching History for:", { auth, pn });
-
   try {
-    const url = `${GAS_API_URL}?action=getStatusHistory&auth=${encodeURIComponent(auth)}&pn=${encodeURIComponent(pn)}`;
-    
+    // Gunakan encodeURIComponent untuk menangani karakter khusus pada Part Number
+    const url = `${GAS_API_URL}?action=getStatusHistory&auth=${encodeURIComponent(auth)}&pn=${encodeURIComponent(pn)}&_=${Date.now()}`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error("Network response was not ok");
-    
     const logs = await response.json();
-    console.log("History Data Received:", logs);
 
-    // Pastikan spinner hilang
+    // Sembunyikan Spinner, Tampilkan List
     spinnerEl.style.display = "none";
     listEl.style.display = "block";
 
     if (!logs || logs.length === 0) {
-      listEl.innerHTML = `
-        <div style="text-align:center; padding:20px; color:var(--text-light);">
-          <p style="font-size:13px;">No history records found for this part number.</p>
-          <small>Checking for: ${auth} / ${pn}</small>
-        </div>`;
+      listEl.innerHTML = `<p style="text-align:center; padding:30px; color:var(--text-light); font-size:13px;">No history found for this item.</p>`;
       return;
     }
 
@@ -85,7 +98,7 @@ async function loadHistory(auth, pn) {
 
   } catch (err) {
     console.error("Fetch History Error:", err);
-    spinnerEl.innerHTML = `<p style="color:red; font-size:12px; padding:20px;">Connection Error or API Timeout.<br>Please try again.</p>`;
+    spinnerEl.innerHTML = `<p style="color:red; font-size:12px; padding:20px;">Connection Error. Failed to retrieve data.</p>`;
   }
 }
 </script>
