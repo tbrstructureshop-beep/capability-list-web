@@ -1,10 +1,17 @@
 <div id="statusFormModal" class="modal-overlay" style="display:flex">
   <div class="modal-card" style="max-width: 480px; border-radius: 20px;">
     <div class="modal-header" style="border-bottom: 1px solid #f1f5f9;">
-      <h3 id="formPnTitle" style="font-size:16px; font-weight:800; color:var(--text-main);">Update Status</h3>
+      <h3 style="font-size:16px; font-weight:800; color:var(--text-main); margin:0;">Status Management</h3>
       <button class="close-x" onclick="this.closest('.modal-overlay').remove()">&times;</button>
     </div>
+    
     <div class="modal-body" style="padding:24px;">
+      
+      <!-- NEW: Context Header Area (Logo & PN) -->
+      <div id="formItemContext" style="margin-bottom: 25px;">
+          <!-- Injected by JS -->
+      </div>
+
       <form id="statusUpdateForm" onsubmit="event.preventDefault(); submitStatusChange();">
         <div class="form-group" style="margin-bottom:20px;">
           <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Target Status</label>
