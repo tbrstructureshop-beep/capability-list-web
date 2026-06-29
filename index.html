@@ -620,17 +620,45 @@
     .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: #fff; }
     .source-card h4 { margin: 0 0 10px 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
 
-    @media (max-width: 768px) {
-      .data-card { grid-template-columns: 1fr; }
-      .card-main { border-right: none; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-      .data-details { grid-template-columns: 1fr 1fr; }
+    /* --- REPAIRED: Keep Desktop Layout on Smaller Screens --- */
+    
+    @media (max-width: 1024px) {
+      .data-card { 
+        grid-template-columns: 300px 1fr; /* Perkecil kolom kiri */
+        gap: 20px; 
+        padding: 20px;
+      }
+      .card-main { 
+        padding-right: 15px; 
+      }
+      .container {
+        padding: 20px 16px;
+      }
     }
 
-    @media (max-width: 1024px) {
-      .data-card { grid-template-columns: 1fr; }
-      .card-main { border-right: none; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; }
-      header .container, .container { padding: 0 20px; }
+    @media (max-width: 768px) {
+      .data-card { 
+        grid-template-columns: 240px 1fr; /* Makin kecil buat HP */
+        gap: 12px; 
+        padding: 16px;
+        margin-bottom: 12px; /* Rpetin jarak antar kartu */
+      }
+      .card-main { 
+        padding-right: 12px; 
+      }
+      .data-details {
+        grid-template-columns: 1fr 1fr; /* Paksa tetep 2 kolom detail di HP */
+        gap: 10px;
+      }
+      .container {
+        padding: 15px 10px;
+      }
+      /* Sesuaikan teks biar nggak tumpuk */
+      .detail-value { font-size: 11px; }
+      .detail-label { font-size: 9px; }
+      h1 { font-size: 18px; }
     }
+    
     /* Premium Status Badge & Dot */
     .status-badge {
       display: inline-flex;
