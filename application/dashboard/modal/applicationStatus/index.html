@@ -1,49 +1,78 @@
-<div class="modal-card" style="max-width: 550px;">
-  <div class="modal-header" style="background:var(--primary-light)">
+<div class="modal-card" style="max-width: 550px; border-radius: 20px; position: relative;">
+  <div class="modal-header" style="background: var(--primary-light); border-bottom: 1px solid rgba(60,146,166,0.1);">
     <div>
-       <h3 style="margin:0; font-size:16px;">Submission Timeline</h3>
+       <h3 style="margin:0; font-size:16px; color:var(--primary-dark);">Submission Timeline</h3>
        <span id="timelineIdSub" style="font-size:12px; color:var(--text-muted); font-weight:700;"></span>
     </div>
-    <button class="close-x" onclick="closeModal()">&times;</button>
+    <!-- REPAIR: Specific Close Function -->
+    <button class="close-x" onclick="closeTimelineModal()">&times;</button>
   </div>
-  <div class="modal-body">
-    <div id="timelineContainer" style="position:relative; padding-left:30px; border-left:2px solid var(--border); margin-left:10px;">
+  
+  <div class="modal-body" style="padding: 24px; min-height: 200px;">
+    <!-- INTERNAL LOADER -->
+    <div id="timelineLoader" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 40px 0;">
+       <div class="spinner" style="width:30px; height:30px; border-width:3px;"></div>
+       <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">Generating journey...</p>
+    </div>
+
+    <!-- TIMELINE CONTAINER -->
+    <div id="timelineContainer" style="display:none; position:relative; padding-left:30px; border-left:2px solid var(--border); margin-left:10px;">
       <!-- Timeline Items Injected -->
     </div>
   </div>
 </div>
 
 <style>
-  .t-item { position: relative; margin-bottom: 24px; }
+  .t-item { position: relative; margin-bottom: 24px; animation: modalSlideUp 0.3s ease forwards; }
   .t-dot { position: absolute; left: -41px; top: 0; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--primary); display: flex; align-items: center; justify-content: center; }
   .t-date { font-size: 10px; font-weight: 800; color: var(--text-light); text-transform: uppercase; }
   .t-user { font-size: 11px; font-weight: 700; color: var(--primary); }
   .t-action { font-size: 14px; font-weight: 700; margin: 5px 0; color: var(--text-main); }
   .t-reason { font-size: 13px; color: var(--text-muted); background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #eee; font-style: italic; }
-  .t-status { font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 10px; margin-left: 10px; }
+  .t-status { font-size: 9px; font-weight: 800; padding: 2px 8px; border-radius: 10px; }
 </style>
 
 <script>
+/**
+ * REPAIR: Function name unified with Bridge Logic
+ */
 function initTimeline(data) {
-  document.getElementById('timelineIdSub').textContent = data.id + " | " + data.partNumber;
+  const loader = document.getElementById('timelineLoader');
   const container = document.getElementById('timelineContainer');
+  const titleEl = document.getElementById('timelineIdSub');
+
+  if (titleEl) titleEl.textContent = `${data.id} | PN: ${data.partNumber}`;
   
-  // Sort history: Newest (Last) to Oldest
-  const history = [...data.history].reverse();
-  
-  container.innerHTML = history.map((h, i) => `
-    <div class="t-item">
-      <div class="t-dot" style="border-color: ${i===0 ? 'var(--primary)' : '#cbd5e1'}">
-        <div style="width:6px; height:6px; background:${i===0 ? 'var(--primary)' : '#cbd5e1'}; border-radius:50%;"></div>
-      </div>
-      <div style="display:flex; justify-content:space-between;">
-        <span class="t-date">${h.date}</span>
-        <span class="t-status" style="background:var(--primary-light); color:var(--primary)">${h.status}</span>
-      </div>
-      <div class="t-user">${h.user}</div>
-      <div class="t-action">${h.action}</div>
-      ${h.reason ? `<div class="t-reason">"${h.reason}"</div>` : ''}
-    </div>
-  `).join('');
+  // Simulasi render delay sedikit agar spinner terlihat smooth
+  setTimeout(() => {
+    if (!data.history || data.history.length === 0) {
+      container.innerHTML = `<p style="text-align:center; color:gray;">No history available.</p>`;
+    } else {
+      const history = [...data.history].reverse();
+      container.innerHTML = history.map((h, i) => `
+        <div class="t-item">
+          <div class="t-dot" style="border-color: ${i===0 ? 'var(--primary)' : '#cbd5e1'}">
+            <div style="width:6px; height:6px; background:${i===0 ? 'var(--primary)' : '#cbd5e1'}; border-radius:50%;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="t-date">${h.date}</span>
+            <span class="t-status" style="background:var(--primary-light); color:var(--primary)">${h.status}</span>
+          </div>
+          <div class="t-user">${h.user}</div>
+          <div class="t-action">${h.action}</div>
+          ${h.reason ? `<div class="t-reason">"${h.reason}"</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // Switch display
+    if(loader) loader.style.display = 'none';
+    if(container) container.style.display = 'block';
+  }, 400);
+}
+
+function closeTimelineModal() {
+  const modal = document.getElementById("timelineModalOverlay");
+  if (modal) modal.style.display = "none";
 }
 </script>
