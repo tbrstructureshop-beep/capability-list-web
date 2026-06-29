@@ -51,38 +51,37 @@ function applySubmissionFilters() {
 }
 
 /**
- * 3. Render Kartu Submission (Classic Layout, Dropdown Menu & Timeline Icon)
+ * 3. Render Kartu Submission (Classic Layout - No Attachments in Card)
+ * Info lampiran dipindahkan sepenuhnya ke dalam Timeline Modal.
  */
 function renderSubmissionCards() {
   const container = document.getElementById("tableBody");
   container.innerHTML = "";
-
+  
   if (filteredSubmissions.length === 0) {
     container.innerHTML = `<div style="text-align:center; padding: 60px; color:var(--text-light);"><p>No matching submissions found.</p></div>`;
     updatePaginationInfo(0);
     return;
   }
 
-  let start = 0, end = filteredSubmissions.length;
-  if (rowsPerPage !== "all") {
-    start = (currentPage - 1) * rowsPerPage;
-    end = start + rowsPerPage;
-  }
-
+  // Gunakan variabel paginasi global
+  let start = (currentPage - 1) * rowsPerPage;
+  let end = start + (rowsPerPage === "all" ? filteredSubmissions.length : rowsPerPage);
+  
   const fragment = document.createDocumentFragment();
   const pageData = filteredSubmissions.slice(start, end);
 
   pageData.forEach((row, rIdx) => {
     const statusMap = {
-      'SUBMITTED':    { bg: '#e0f2fe', color: '#0369a1', state: 'OPEN' },
-      'UNDER REVIEW': { bg: '#fef3c7', color: '#d97706', state: 'PROGRESS' },
-      'APPROVED':     { bg: '#dcfce7', color: '#15803d', state: 'CLOSED' },
-      'REJECTED':     { bg: '#fee2e2', color: '#b91c1c', state: 'CLOSED' }
+      'SUBMITTED':    { bg: '#e0f2fe', color: '#0369a1' },
+      'UNDER REVIEW': { bg: '#fef3c7', color: '#d97706' },
+      'APPROVED':     { bg: '#dcfce7', color: '#15803d' },
+      'REJECTED':     { bg: '#fee2e2', color: '#b91c1c' }
     };
-    const s = statusMap[row.status] || { bg: '#f3f4f6', color: '#374151', state: 'UNKNOWN' };
+    const s = statusMap[row.status] || { bg: '#f3f4f6', color: '#374151' };
 
     const card = document.createElement("div");
-    card.className = "data-card"; // Menggunakan layout 1.6fr 3fr dari index.css
+    card.className = "data-card"; // Otomatis 1.6fr 3fr dari CSS
 
     card.innerHTML = `
       <!-- HORIZONTAL ACTION MENU (Top Right) -->
@@ -97,7 +96,7 @@ function renderSubmissionCards() {
           </button>
           <button class="menu-btn-item delete" onclick="cancelSubmission('${row.id}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            Cancel Submission
+            Cancel Application
           </button>
         </div>
       </div>
@@ -108,14 +107,10 @@ function renderSubmissionCards() {
             <div class="vertical-divider"></div>
             ${formatLogoValue(row.authority)}
         </div>
-        
         <div class="detail-item" style="margin-top: 10px;">
             <span class="detail-label">PART NUMBER</span>
-            <div class="pn-display" style="font-size: 22px; font-weight: 800; color: var(--primary); margin: 8px 0;">
-                ${row.partNumber}
-            </div>
+            <div class="pn-display" style="font-size: 22px; font-weight: 800; color: var(--primary); margin: 8px 0;">${row.partNumber}</div>
         </div>
-
         ${renderCapabilityStepper(row.authority, row.levels)}
       </div>
 
@@ -127,25 +122,16 @@ function renderSubmissionCards() {
         <div class="detail-item"><span class="detail-label">A/C TYPE</span><span class="detail-value">${row.aircraftType}</span></div>
         <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username}</span></div>
         
-        <!-- FOOTER: STATUS, ATTACHMENTS & TIMELINE -->
-        <div class="detail-item" style="grid-column: span 3; border-top: 1px solid var(--border); padding-top:12px; margin-top:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-            <div style="display:flex; align-items:center; gap:16px;">
-               <div class="detail-item">
-                 <span class="detail-label">STATUS</span>
-                 <span class="status-badge" style="background:${s.bg}; color:${s.color}; font-size:10px; font-weight:800;">
-                    ${row.status}
-                 </span>
-               </div>
-               <div class="vertical-divider" style="height:25px; background:#eee;"></div>
-               <div class="detail-item">
-                 <span class="detail-label">ATTACHMENTS</span>
-                 <div class="detail-value">${renderFileList(row.fileUrl)}</div>
-               </div>
-            </div>
+        <!-- FOOTER: ONLY STATUS & TIMELINE TRIGGER (NO ATTACHMENTS HERE) -->
+        <div class="detail-item" style="grid-column: span 3; border-top: 1px solid var(--border); padding-top:12px; margin-top:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+             <div class="detail-item">
+               <span class="detail-label">CURRENT STATUS</span>
+               <span class="status-badge" style="background:${s.bg}; color:${s.color}; font-size:10px; font-weight:800;">${row.status}</span>
+             </div>
 
-            <!-- TIMELINE PROGRESS ICON (Bottom Right) -->
-            <button class="timeline-btn" title="View Progress Details" onclick='openSubmissionTimeline(${JSON.stringify(row).replace(/'/g, "&apos;")})'>
+             <!-- TIMELINE PROGRESS ICON (Calls applicationStatus modal) -->
+            <button class="timeline-btn" title="View Journey & Attachments" onclick='openSubmissionTimeline(${JSON.stringify(row).replace(/'/g, "&apos;")})'>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             </button>
           </div>
@@ -154,7 +140,7 @@ function renderSubmissionCards() {
     `;
     fragment.appendChild(card);
   });
-
+  
   container.appendChild(fragment);
   updatePaginationInfo(filteredSubmissions.length);
 }
