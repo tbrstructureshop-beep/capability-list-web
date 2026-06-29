@@ -85,30 +85,29 @@
       line-height: 1.5;
     }
 
-    /* --- REPAIRED: Full-Width Header with Better Breathing Space --- */
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background-color: var(--header-bg); /* Putih mentok kiri kanan */
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-      width: 100%; 
-      padding: 0; 
-      margin-bottom: 35px; /* Ditingkatkan dari 20px agar tidak terlalu mepet dengan Search Bar */
-      transition: var(--transition);
-    }
     
     header.scrolled {
       padding: 0;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Shadow sedikit lebih tegas saat scroll */
     }
 
-    /* Isi konten header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background-color: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      width: 100%; 
+      padding: 0; 
+      margin-bottom: 45px; /* Ditingkatkan biar gak mepet ke Search Bar */
+      transition: var(--transition);
+    }
+
     header .header-content {
       max-width: var(--max-width);
       margin: 0 auto;
-      padding: 18px 24px; /* Padding vertikal sedikit ditambah agar lebih elegan */
+      padding: 20px 24px; /* Lebih gemuk dikit biar premium */
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -127,7 +126,7 @@
     .container {
       max-width: var(--max-width);
       margin: 0 auto;
-      padding: 32px 24px 40px 24px;
+      padding: 0 24px 40px 24px; /* Padding top di-nol-kan karena sudah ada margin header */
     }
     
     /* Pastikan judul tidak terlalu besar saat sticky */
@@ -343,11 +342,12 @@
       border: 1px solid var(--border);
       transition: var(--transition);
       display: grid;
-      /* Pake px buat kolom kiri biar stabil, sisanya baru fr */
-      grid-template-columns: 360px 1fr; 
-      gap: 32px;
+      /* Pake % biar fleksibel nyesuain layar, min-width 0 itu kunci biar gak nembus */
+      grid-template-columns: 32% 1fr; 
+      gap: 24px;
       position: relative;
       margin-bottom: 16px;
+      overflow: hidden; /* Guard biar gak ada bocor visual */
     }
 
     .data-card:hover {
@@ -358,18 +358,23 @@
 
     .card-main {
       border-right: 1px solid var(--border);
-      padding-right: 24px;
+      padding-right: 20px;
+      min-width: 0; /* CRITICAL: Biar grid item gak maksa lebar aslinya */
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
     }
 
     .data-details {
       display: grid;
-      /* Column details otomatis nyesuain lebar layar */
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 16px;
-      align-content: start;
+      min-width: 0; /* CRITICAL */
+    }
+
+    /* Fix Part Number biar kalo kepanjangan gak ngerusak kartu */
+    .detail-value {
+      word-break: break-all;
+      overflow-wrap: break-word;
     }
 
     .detail-item {
@@ -383,12 +388,6 @@
       margin-bottom: 2px;
       font-weight: 600;
       text-transform: uppercase;
-    }
-
-    .detail-value {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-main);
     }
 
     .selection-area {
@@ -620,42 +619,26 @@
     .source-card { border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: #fff; }
     .source-card h4 { margin: 0 0 10px 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
 
-    /* --- REPAIRED: Keep Desktop Layout on Smaller Screens --- */
-    
+     /* --- MEDIA QUERIES: Tetap Horizontal tapi Skala Mengecil --- */
     @media (max-width: 1024px) {
-      .data-card { 
-        grid-template-columns: 300px 1fr; /* Perkecil kolom kiri */
-        gap: 20px; 
-        padding: 20px;
-      }
-      .card-main { 
-        padding-right: 15px; 
-      }
-      .container {
-        padding: 20px 16px;
-      }
+      .data-card { grid-template-columns: 35% 1fr; gap: 15px; }
+      .step-item { min-width: 40px; } /* Perkecil min-width stepper */
+      .step-label-top, .step-desc { font-size: 8px; }
     }
 
     @media (max-width: 768px) {
       .data-card { 
-        grid-template-columns: 240px 1fr; /* Makin kecil buat HP */
-        gap: 12px; 
+        grid-template-columns: 40% 1fr; /* Masih horizontal cok */
         padding: 16px;
-        margin-bottom: 12px; /* Rpetin jarak antar kartu */
+        gap: 12px;
       }
-      .card-main { 
-        padding-right: 12px; 
-      }
-      .data-details {
-        grid-template-columns: 1fr 1fr; /* Paksa tetep 2 kolom detail di HP */
-        gap: 10px;
-      }
-      .container {
-        padding: 15px 10px;
-      }
-      /* Sesuaikan teks biar nggak tumpuk */
+      .card-main { padding-right: 12px; }
+      .step-item { min-width: 30px; } 
+      .step-label-top, .step-desc { display: none; } /* Sembunyiin teks stepper di HP biar gak sempit */
+      .step-light { height: 4px; margin-bottom: 0; } /* Cuma sisa garis indikator di HP */
+      
+      .detail-label { font-size: 8px; }
       .detail-value { font-size: 11px; }
-      .detail-label { font-size: 9px; }
       h1 { font-size: 18px; }
     }
     
