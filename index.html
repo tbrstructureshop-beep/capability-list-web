@@ -1473,22 +1473,36 @@
       document.getElementById("nextPage").disabled = currentPage >= totalPages;
     }
     
-    // --- UPDATED updateDataStatus logic ---
+    /**
+     * REPAIRED: updateDataStatus
+     * Menampilkan status data yang sinkron untuk Database Utama dan Tracking Pengajuan.
+     */
     function updateDataStatus() {
-      const totalInSheet = (currentView === "submissions") ? allSubmissions.length : rawData.length;
-      const filteredCount = (currentView === "submissions") ? filteredSubmissions.length : viewData.length;
+      // 1. Tentukan total data dan data terfilter berdasarkan View yang aktif
+      const totalInSheet = (currentView === "submissions") ? (allSubmissions ? allSubmissions.length : 0) : rawData.length;
+      const filteredCount = (currentView === "submissions") ? (filteredSubmissions ? filteredSubmissions.length : 0) : viewData.length;
       
+      // 2. Cek apakah ada filter atau pencarian yang aktif
       const hasActiveFilters = (currentView === "submissions") 
-        ? document.getElementById("globalSearch").value !== "" 
+        ? document.getElementById("globalSearch").value.trim() !== "" 
         : (globalKeyword || Object.values(activeFilters).some(set => set.size > 0));
 
       const statusEl = document.getElementById("dataStatus");
+      if (!statusEl) return; // Guard clause
+      
       const lastSync = new Date().toLocaleTimeString();
 
-      if (hasActiveFilters) {
-        statusEl.innerHTML = `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total) | <small>Sync: ${lastSync}</small>`;
+      // 3. Render Teks Status
+      if (currentView === "submissions") {
+        // Tampilan khusus untuk Dashboard Pengajuan
+        statusEl.innerHTML = `Total Submissions: ${totalInSheet.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
       } else {
-        statusEl.innerHTML = `Total ${currentView === "submissions" ? "Submissions" : "Database"}: ${totalInSheet.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
+        // Tampilan untuk Main Database
+        if (hasActiveFilters) {
+          statusEl.innerHTML = `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total) | <small>Sync: ${lastSync}</small>`;
+        } else {
+          statusEl.innerHTML = `Total Database: ${totalInSheet.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
+        }
       }
     }
     
