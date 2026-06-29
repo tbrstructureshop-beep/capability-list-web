@@ -85,7 +85,7 @@
       line-height: 1.5;
     }
 
-    /* --- REPAIRED: Full-Width Header cok --- */
+    /* --- REPAIRED: Full-Width Header with Better Breathing Space --- */
     header {
       position: sticky;
       top: 0;
@@ -93,20 +93,22 @@
       background-color: var(--header-bg); /* Putih mentok kiri kanan */
       border-bottom: 1px solid var(--border);
       box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-      width: 100%; /* Pastiin menu narik full page */
-      padding: 0; /* Padding pindah ke container di dalemnya */
+      width: 100%; 
+      padding: 0; 
+      margin-bottom: 35px; /* Ditingkatkan dari 20px agar tidak terlalu mepet dengan Search Bar */
       transition: var(--transition);
     }
     
     header.scrolled {
       padding: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Shadow sedikit lebih tegas saat scroll */
     }
 
-    /* Bungkus daleman header biar sejajar sama konten body */
+    /* Isi konten header */
     header .header-content {
       max-width: var(--max-width);
       margin: 0 auto;
-      padding: 15px 24px;
+      padding: 18px 24px; /* Padding vertikal sedikit ditambah agar lebih elegan */
       display: flex;
       justify-content: space-between;
       align-items: center;
