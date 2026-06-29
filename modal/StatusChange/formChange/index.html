@@ -7,15 +7,15 @@
     
     <div class="modal-body" style="padding:24px;">
       
-      <!-- NEW: Context Header Area (Logo & PN) -->
+      <!-- Context Header Area (Logo & PN) -->
       <div id="formItemContext" style="margin-bottom: 25px;">
-          <!-- Injected by JS -->
+          <!-- Injected by Bridge Logic -->
       </div>
 
       <form id="statusUpdateForm" onsubmit="event.preventDefault(); submitStatusChange();">
         <div class="form-group" style="margin-bottom:20px;">
           <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Target Status</label>
-          <select id="newStatus" required style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-weight:600; cursor:pointer; background:#fff;">
+          <select id="newStatus" required style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-weight:600; cursor:pointer; background:#fff; outline:none;">
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
             <option value="DELETED">DELETED</option>
@@ -27,19 +27,19 @@
         <div class="form-group" style="margin-bottom:20px;">
           <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Change Justification</label>
           <textarea id="actNote" rows="3" required placeholder="Describe the reason for this change..." 
-                    style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-family:inherit; resize:none;"></textarea>
+                    style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-family:inherit; resize:none; outline:none;"></textarea>
         </div>
 
         <div class="form-group" style="margin-bottom:24px;">
           <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Performed By</label>
           <input type="text" id="actUser" value="Technical Dept" required 
-                 style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; background:#f9fafb;">
+                 style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; background:#f9fafb; outline:none;">
         </div>
 
         <input type="hidden" id="actAuth">
         <input type="hidden" id="actPn">
         
-        <button type="submit" class="btn btn-primary" style="width:100%; padding:14px; border-radius:12px; font-weight:700; font-size:14px; letter-spacing:0.02em;">
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:14px; border-radius:12px; font-weight:700; font-size:14px; letter-spacing:0.02em; display:flex; justify-content:center; align-items:center;">
           Confirm & Update Status
         </button>
       </form>
