@@ -30,6 +30,8 @@
       --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       --success: #22c55e; /* Green color for permitted levels */
       --inactive: #e5e7eb; /* Grey for non-permitted */
+      --header-bg: #ffffff; /* Putih bersih untuk header */
+      --body-bg: #f3f4f6;   /* Abu-abu sangat muda untuk body agar kartu terlihat 'pop' */
     }
 
     * { 
@@ -75,7 +77,7 @@
       margin: 0;
       padding: 0;
       font-family: 'Inter', -apple-system, sans-serif;
-      background-color: var(--bg);
+      background-color: var(--body-bg); /* Berubah dari #f9fafb */
       color: var(--text-main);
       line-height: 1.5;
     }
@@ -93,6 +95,7 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid transparent;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03); /* Shadow halus agar header terlihat mengambang */
       transition: var(--transition);
     }
     
@@ -100,6 +103,11 @@
     header.scrolled {
       border-bottom: 1px solid var(--border);
       padding: 15px 0;
+    }
+
+    header .container {
+      padding: 0 24px;
+      margin-bottom: 0;
     }
     
     /* Penyesuaian container agar tidak terlalu mepet ke atas karena header sticky */
@@ -1011,7 +1019,11 @@
       document.getElementById("filterRow").style.display = filtersVisible ? "grid" : "none";
     }
     
-    // 4. Fetch Data Function
+    /**
+     * OPTIMIZED FETCH: refreshData
+     * Mempercepat parsing data besar (21k+) dengan efisiensi memori.
+     * Menggunakan For-Loop tradisional untuk performa maksimal.
+     */
     function refreshData(isInitial = false) {
       if (isInitial) showLoader();
       
@@ -1021,36 +1033,55 @@
       fetch(url)
         .then(res => res.json())
         .then(rows => {
+          // Cek jika ada error dari GAS
+          if (rows.success === false) throw new Error(rows.error);
           if (!rows || rows.length < 3) throw new Error("Data empty");
 
-          // 1. Ambil Header (Hanya dilakukan saat pertama kali atau jika header bisa berubah)
+          // 1. Ekstraksi Header (Sangat Cepat)
           colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
           
-          // 2. Isi data ke memori (Update rawData)
-          rawData = rows.slice(3)
-            .filter(r => r[1] && String(r[1]).trim() !== "") 
-            .map(r => DISPLAY_COLS.map(i => r[i] ?? ""));
+          // 2. Pre-filter data (Gunakan for loop tradisional: 5-10x lebih cepat untuk data masif)
+          const tempRaw = [];
+          const dataLength = rows.length;
+          const displayColsLen = DISPLAY_COLS.length;
           
-          // 3. Jika ini loading pertama, bangun input filter
-          if (isInitial) {
-            buildFilterInputs(colNames);
+          for (let i = 3; i < dataLength; i++) {
+            const r = rows[i];
+            // Cek index 1 (Authority) untuk membuang baris kosong
+            if (r[1] && String(r[1]).trim() !== "") {
+              const mappedRow = new Array(displayColsLen);
+              for (let j = 0; j < displayColsLen; j++) {
+                mappedRow[j] = r[DISPLAY_COLS[j]] ?? "";
+              }
+              tempRaw.push(mappedRow);
+            }
           }
-          
-          // 4. Terapkan filter yang sedang aktif ke data baru
-          // Ini memastikan jika user sedang memfilter, tampilannya tidak tiba-tiba reset ke "Show All"
-          applyAllFilters();
-          
-          // 5. Update Status Terakhir
-          const now = new Date();
-          const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-          console.log(`Data auto-refreshed at: ${timeStr}`);
-          
-          if (isInitial) hideLoader(); 
+          rawData = tempRaw;
+
+          // 3. Gunakan requestAnimationFrame agar UI tidak freeze (spinner tetap berputar lancar)
+          requestAnimationFrame(() => {
+            if (isInitial) {
+              buildFilterInputs(colNames);
+            }
+            
+            // Terapkan filter yang sedang aktif ke data baru
+            applyAllFilters();
+            
+            if (isInitial) hideLoader();
+            
+            // Update Status Terakhir
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            console.log(`Data auto-refreshed at: ${timeStr} | ${rawData.length} records processed.`);
+          });
         })
         .catch(err => { 
           console.error("Fetch Error:", err); 
-          document.getElementById("dataStatus").textContent = "Connection Error. Retrying in 5 mins...";
-          if (isInitial) hideLoader();
+          hideLoader();
+          const statusEl = document.getElementById("dataStatus");
+          if (statusEl) {
+            statusEl.innerHTML = `<span style="color:red">Sync Error. Retrying in 5 mins...</span>`;
+          }
         });
     }
 
@@ -1059,7 +1090,7 @@
 
     // SETUP AUTO REFRESH SETIAP 5 MENIT (300,000 ms)
     setInterval(() => {
-      refreshData(false); // Refresh tabel dashboard utama
+      refreshData(false); // Refresh tabel dashboard utama (Background)
       
       // Logika Penjaga: Pastikan fungsi loadSourceCards tersedia
       if (typeof loadSourceCards === "function") {
@@ -1067,10 +1098,11 @@
         loadSourceCards(); 
       } else {
         // Jika modal belum pernah dibuka, kita panggil loadExternalModal secara diam-diam
-        // agar script stealth guard tersedia di memori dan bisa berjalan
-        loadExternalModal().then(() => {
-           if (typeof loadSourceCards === "function") loadSourceCards();
-        });
+        if (typeof loadExternalModal === "function") {
+          loadExternalModal().then(() => {
+             if (typeof loadSourceCards === "function") loadSourceCards();
+          });
+        }
       }
     }, 5 * 60 * 1000);
     
@@ -1174,34 +1206,48 @@
       updatePaginationInfo(data.length);
     }
     
-    // 1. Fungsi Filter Utama (Logic Cascading)
+    /**
+     * OPTIMIZED FILTER: applyAllFilters
+     * Melakukan filter cascading pada data masif tanpa membuat UI membeku.
+     * Menggunakan logika short-circuit untuk mempercepat pencarian.
+     */
     function applyAllFilters() {
-      showLoader();
+      // 1. Tampilkan loader hanya jika data besar (>5000) agar dataset kecil terasa instan
+      if (rawData.length > 5000) showLoader();
+
       setTimeout(() => {
         try {
-          currentPage = 1;
-          globalKeyword = document.getElementById("globalSearch").value.trim().toLowerCase();
+          currentPage = 1; // Reset ke halaman pertama setiap kali filter berubah
+          const searchInput = document.getElementById("globalSearch");
+          globalKeyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
+          // 2. OPTIMASI: Gunakan filtering yang lebih cerdas
           viewData = rawData.filter(row => {
-            const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
-            if (!matchesGlobal) return false;
+            // A. Global Search (Hanya jalan jika ada keyword untuk menghemat CPU)
+            if (globalKeyword) {
+              const matchesGlobal = row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+              if (!matchesGlobal) return false;
+            }
 
+            // B. Multi-Select Filters (Cascading)
             return Object.keys(activeFilters).every(colIdx => {
               const selected = activeFilters[colIdx];
-              if (!selected || selected.size === 0) return true;
+              if (!selected || selected.size === 0) return true; // Lewati jika filter kolom ini kosong
               return selected.has(String(row[colIdx]).trim() || "(Blanks)");
             });
           });
 
+          // 3. Update UI dan Dropdown
           renderCards(viewData);
           updateDataStatus();
           refreshAllDropdowns();
+          
         } catch (e) {
-          console.error("Filter Error:", e);
+          console.error("Filter Logic Error:", e);
         } finally {
           hideLoader();
         }
-      }, 50);
+      }, 10); // Timeout 10ms memberikan kesempatan browser untuk me-render loader sebelum heavy task
     }
     
     // 2. Membangun Struktur UI Dropdown (Dipanggil setelah Fetch Data)
