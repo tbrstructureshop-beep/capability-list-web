@@ -698,6 +698,31 @@
       color: white;
     }
 
+    /* Card Menu Dropdown Styles */
+    .card-actions-wrapper { position: absolute; top: 20px; right: 20px; }
+    .menu-dropdown {
+      position: absolute; right: 0; top: 40px; background: white;
+      border-radius: 12px; border: 1px solid var(--border);
+      box-shadow: var(--shadow-md); display: none; flex-direction: column;
+      width: 180px; z-index: 100; overflow: hidden;
+    }
+    .menu-dropdown.active { display: flex; }
+    .menu-btn-item {
+      padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--text-main);
+      display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .menu-btn-item:hover { background: var(--primary-light); color: var(--primary); }
+    .menu-btn-item.delete { color: #ef4444; }
+    .menu-btn-item.delete:hover { background: #fef2f2; }
+    
+    /* Timeline Trigger icon */
+    .timeline-btn {
+      background: var(--bg); border-radius: 8px; padding: 6px;
+      cursor: pointer; color: var(--primary); transition: 0.2s;
+    }
+    .timeline-btn:hover { background: var(--primary-light); transform: scale(1.1); }
+
     /* --- 4. RESPONSIVE: Safe for Mobile --- */
     @media (max-width: 900px) {
       .data-card { grid-template-columns: 1fr; }
