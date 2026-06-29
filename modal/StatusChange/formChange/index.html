@@ -1,1 +1,47 @@
+<div id="statusFormModal" class="modal-overlay" style="display:flex">
+  <div class="modal-card" style="max-width: 480px; border-radius: 20px;">
+    <div class="modal-header" style="border-bottom: 1px solid #f1f5f9;">
+      <h3 id="formPnTitle" style="font-size:16px; font-weight:800; color:var(--text-main);">Update Status</h3>
+      <button class="close-x" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:24px;">
+      <form id="statusUpdateForm" onsubmit="event.preventDefault(); submitStatusChange();">
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Target Status</label>
+          <select id="newStatus" required style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-weight:600; cursor:pointer; background:#fff;">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+            <option value="DELETED">DELETED</option>
+            <option value="REVISED">REVISED</option>
+            <option value="ARCHIVED">ARCHIVED</option>
+          </select>
+        </div>
 
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Activity Type</label>
+          <input type="text" id="actType" placeholder="e.g. Technical Evaluation, Manual Update" required 
+                 style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px;">
+        </div>
+
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Change Justification</label>
+          <textarea id="actNote" rows="3" required placeholder="Describe the reason for this change..." 
+                    style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-family:inherit; resize:none;"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom:24px;">
+          <label style="font-size:11px; font-weight:800; color:var(--text-light); text-transform:uppercase; margin-bottom:8px; display:block;">Performed By</label>
+          <input type="text" id="actUser" value="Technical Dept" required 
+                 style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; background:#f9fafb;">
+        </div>
+
+        <input type="hidden" id="actAuth">
+        <input type="hidden" id="actPn">
+        
+        <button type="submit" class="btn btn-primary" style="width:100%; padding:14px; border-radius:12px; font-weight:700; font-size:14px; letter-spacing:0.02em;">
+          Confirm & Update Status
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
