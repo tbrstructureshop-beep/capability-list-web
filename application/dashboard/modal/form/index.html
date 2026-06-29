@@ -77,8 +77,9 @@
         <input type="date" id="submitDate" required>
       </div>
 
-      <!-- STEP 2: AUTHORITY & CATEGORY -->
+      <!-- STEP 2: AUTHORITY & CATEGORY (REPAIRED) -->
       <div class="section-title">Certification & Authority</div>
+      
       <div class="form-row">
         <div class="form-group">
           <label>Select Authority</label>
@@ -89,6 +90,16 @@
             <option value="FAA">FAA (USA)</option>
           </select>
         </div>
+
+        <!-- NEW: Rating Field with Autocomplete (Paired with Authority) -->
+        <div class="form-group" id="ratingGroup" style="display:none;">
+          <label>Rating</label>
+          <input type="text" id="rating" oninput="showAdvice(this, 2)" placeholder="Search or type Rating (e.g. C1)..." autocomplete="off">
+          <div class="search-advice-list" id="advice-rating"></div>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top: 12px;">
         <div class="form-group">
           <label>Capability Category</label>
           <select id="caplistItem" required>
@@ -275,32 +286,80 @@ async function submitForm() {
   }
 }
 
-// Fungsi Search Advice ala Google
+/**
+ * REPAIRED: showAdvice (Autocomplete Logic)
+ * Mendukung pencarian cerdas untuk Rating (Code + Deskripsi) 
+ * dan pencarian standar untuk Manufacturer, Shop, dan AC Type.
+ */
 function showAdvice(input, colIdx) {
   const list = input.nextElementSibling;
   const val = input.value.trim().toUpperCase();
   const auth = document.getElementById("authSelect").value;
   
-  if (!val || typeof rawData === 'undefined') { list.style.display = "none"; return; }
+  if (!val || typeof rawData === 'undefined') { 
+    if (list) list.style.display = "none"; 
+    return; 
+  }
 
-  const matches = [...new Set(rawData
-    .filter(row => (!auth || String(row[MODAL_COL_MAP.AUTH]).toUpperCase() === auth.toUpperCase()) && 
-                   String(row[colIdx]).toUpperCase().includes(val))
-    .map(row => String(row[colIdx]).trim())
-    .filter(v => v && v !== "" && v !== "—")
-  )].sort().slice(0, 10); // Limit 10 advice
+  let matches = [];
+  
+  // LOGIKA KHUSUS RATING (Index 2)
+  if (colIdx === 2) {
+    // Cari data yang sesuai otoritas & mengandung kata kunci di Rating (idx 2) atau Category (idx 11)
+    matches = [...new Set(rawData
+      .filter(row => 
+        String(row[MODAL_COL_MAP.AUTH]).toUpperCase() === auth.toUpperCase() && 
+        (String(row[2]).toUpperCase().includes(val) || String(row[11]).toUpperCase().includes(val))
+      )
+      .map(row => `${String(row[2]).trim()} - ${String(row[11]).trim()}`) // Format: "C1 - Air Cond"
+      .filter(v => v && !v.startsWith("—")) // Buang baris kosong/strip
+    )].sort().slice(0, 10);
+  } else {
+    // LOGIKA DEFAULT UNTUK LAINNYA (Manuf, Shop, AC Type)
+    matches = [...new Set(rawData
+      .filter(row => 
+        (!auth || String(row[MODAL_COL_MAP.AUTH]).toUpperCase() === auth.toUpperCase()) && 
+        String(row[colIdx]).toUpperCase().includes(val)
+      )
+      .map(row => String(row[colIdx]).trim())
+      .filter(v => v && v !== "" && v !== "—")
+    )].sort().slice(0, 10);
+  }
 
+  // Render List Saran
   if (matches.length > 0) {
-    list.innerHTML = matches.map(m => `<div class="advice-item" onclick="selectAdvice('${input.id}', '${m.replace(/'/g, "\\'")}')">${m}</div>`).join("");
+    list.innerHTML = matches.map(m => `
+      <div class="advice-item" onclick="selectAdvice('${input.id}', '${m.replace(/'/g, "\\'")}')">
+        ${m}
+      </div>`).join("");
     list.style.display = "block";
   } else {
     list.style.display = "none";
   }
 }
 
+/**
+ * REPAIRED: selectAdvice (Selection Logic)
+ * Memasukkan data pilihan ke input dan menangani pemotongan string khusus Rating.
+ */
 function selectAdvice(inputId, value) {
-  document.getElementById(inputId).value = value;
-  document.getElementById(`advice-${inputId}`).style.display = "none";
+  let finalValue = value;
+  
+  // Jika ini input rating dan mengandung pemisah " - ", ambil kodenya saja (C1)
+  if (inputId === "rating" && value.includes(" - ")) {
+    finalValue = value.split(" - ")[0].trim();
+  }
+  
+  const targetInput = document.getElementById(inputId);
+  if (targetInput) {
+    targetInput.value = finalValue;
+  }
+
+  // Sembunyikan popover advice setelah dipilih
+  const adviceList = document.getElementById(`advice-${inputId}`);
+  if (adviceList) {
+    adviceList.style.display = "none";
+  }
 }
 
 // Tutup advice jika klik di luar
@@ -326,16 +385,29 @@ function updateCategoryDropdown(selectedAuth) {
 
 function handleAuthorityChange() {
   const auth = document.getElementById("authSelect").value;
-  const labels = {
-    'EASA': { name: "Designation", ref: "Reference of the CMM", model: "Type (Model)" },
-    'FAA':  { name: "Part Name", ref: "ATA Chapter", model: "Model" },
-    'DGCA': { name: "Part Name", ref: "ATA Chapter", model: "A/C Type" }
-  };
-  const config = labels[auth] || labels['FAA'];
+  const ratingGroup = document.getElementById("ratingGroup");
+  
+  // Konfigurasi Label berdasarkan Otoritas (INA - Mapping)
+  const config = {
+    'EASA': { pn: "P/N", name: "Designation", mfr: "Manufacture", ref: "Reference of the CMM", shop: "Work Shop", model: "Type (Model)", showRating: true },
+    'FAA': { pn: "Part Number", name: "Part Name", mfr: "Manufacturer", ref: "ATA Chapter", shop: "Shop", model: "Model", showRating: true }, // FAA sekarang diizinkan input rating jika perlu
+    'DGCA': { pn: "Part Number", name: "Part Name", mfr: "Manufacturer", ref: "ATA", shop: "Shop", model: "A/C Type", showRating: true }
+  }[auth] || { pn: "Part Number", name: "Part Name", mfr: "Manufacturer", ref: "ATA Chapter", shop: "Shop", model: "A/C Type", showRating: false };
+
+  // Update Label secara dinamis
+  const pnLabel = document.getElementById("partNumber").previousElementSibling;
+  if (pnLabel) pnLabel.textContent = config.pn;
+  
   document.getElementById("labelPartName").textContent = config.name;
+  document.getElementById("manufacturer").previousElementSibling.textContent = config.mfr;
   document.getElementById("labelReference").textContent = config.ref;
+  document.getElementById("shop").previousElementSibling.textContent = config.shop;
   document.getElementById("labelAircraftType").textContent = config.model;
 
+  // Kontrol Visibility Rating (Hanya aktifkan jika otoritas dipilih)
+  ratingGroup.style.display = auth ? "flex" : "none";
+
+  // Update Dynamic Levels (INA - Chip Generation)
   const container = document.getElementById("dynamicLevels");
   container.innerHTML = "";
   if(auth) {
