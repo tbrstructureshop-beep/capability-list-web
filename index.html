@@ -1723,6 +1723,50 @@
         Swal.fire('Error', 'Failed to update status: ' + err.message, 'error');
       }
     }
+
+    async function openSubmissionTimeline(data) {
+      const targetPath = "application/dashboard/modal/applicationStatus/index.html";
+      try {
+        const response = await fetch(targetPath);
+        const html = await response.text();
+        let modal = document.getElementById("timelineModalOverlay");
+        if (!modal) {
+          modal = document.createElement("div");
+          modal.id = "timelineModalOverlay";
+          modal.className = "modal-overlay";
+          document.body.appendChild(modal);
+        }
+        modal.innerHTML = html;
+        modal.style.display = "flex";
+        
+        // Jalankan init
+        initTimeline(data);
+      } catch (e) { console.error(e); }
+    }
+    
+    async function cancelSubmission(id) {
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "This will permanently delete this application and its files!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, Delete it!'
+      });
+    
+      if (result.isConfirmed) {
+        showLoader();
+        const res = await fetch(GAS_API_URL, {
+          method: "POST",
+          body: JSON.stringify({ action: "deleteSubmission", id: id })
+        });
+        const final = await res.json();
+        if(final.success) {
+          Swal.fire('Deleted!', 'Submission removed.', 'success');
+          loadSubmissions();
+        }
+      }
+    }
     
     // Opsional: Muat modal di awal (Background load) agar saat klik tombol terasa instan
     window.addEventListener('DOMContentLoaded', loadExternalModal);
