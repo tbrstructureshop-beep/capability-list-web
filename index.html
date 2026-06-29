@@ -1472,13 +1472,33 @@
     }
 
     function openStatusHistory(auth, pn) {
+      // 1. Tampilkan Loader Global dulu
+      showLoader(); 
+    
       fetch('modal/StatusChange/index.html')
-        .then(r => r.text())
+        .then(r => {
+          if (!r.ok) throw new Error("File modal tidak ditemukan");
+          return r.text();
+        })
         .then(html => {
+          hideLoader();
           const div = document.createElement('div');
+          div.id = "statusHistoryContainer";
           div.innerHTML = html;
           document.body.appendChild(div);
-          loadHistory(auth, pn); // Fungsi di dalam modal/StatusChange/index.html
+          
+          // Berikan jeda mikroskopis agar browser me-render HTML sebelum memanggil loadHistory
+          setTimeout(() => {
+            if (typeof loadHistory === "function") {
+              loadHistory(auth, pn);
+            } else {
+              console.error("Fungsi loadHistory belum terdefinisi di modal.");
+            }
+          }, 50);
+        })
+        .catch(err => {
+          hideLoader();
+          Swal.fire("Error", "Gagal memuat komponen history: " + err.message, "error");
         });
     }
     
