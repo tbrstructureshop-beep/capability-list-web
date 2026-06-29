@@ -1503,16 +1503,41 @@
     
     function openStatusForm(auth, pn, currentStatus) {
       fetch('modal/StatusChange/formChange/index.html')
-        .then(r => r.text())
+        .then(r => {
+          if (!r.ok) throw new Error("Form file not found");
+          return r.text();
+        })
         .then(html => {
           const div = document.createElement('div');
+          div.id = "statusFormContainer";
           div.innerHTML = html;
           document.body.appendChild(div);
           
-          document.getElementById('formPnTitle').textContent = `Update Status: ${pn}`;
+          // 1. Injeksi Logo dan Context Info
+          const contextEl = document.getElementById('formItemContext');
+          if (contextEl) {
+            contextEl.innerHTML = `
+              <div style="display:flex; align-items:center; gap:16px; background:var(--primary-light); padding:16px; border-radius:14px; border:1px solid rgba(60,146,166,0.15);">
+                <div style="background:white; padding:8px; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-sm); width:50px; height:50px;">
+                    ${formatLogoValue(auth)}
+                </div>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-size:10px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:0.05em;">Updating Component</span>
+                  <span style="font-size:18px; font-weight:800; color:var(--text-main); line-height:1.2;">${pn}</span>
+                  <span style="font-size:11px; font-weight:600; color:var(--text-muted);">${auth} Authority</span>
+                </div>
+              </div>
+            `;
+          }
+    
+          // 2. Isi Hidden Fields & Dropdown
           document.getElementById('actAuth').value = auth;
           document.getElementById('actPn').value = pn;
           document.getElementById('newStatus').value = currentStatus;
+        })
+        .catch(err => {
+          console.error(err);
+          Swal.fire("Error", "Could not load status form", "error");
         });
     }
     
