@@ -1075,12 +1075,21 @@
     }, 5 * 60 * 1000);
     
     
+    /** 
+     * HIGH-PERFORMANCE RENDERER: renderCards
+     * Menggunakan DocumentFragment untuk memproses 21.000+ data dengan cepat
+     * Tanpa merusak fungsionalitas tombol menu, seleksi, dan status.
+     */
     function renderCards(data) {
       const container = document.getElementById("tableBody");
+      
+      // 1. Matikan display container sementara untuk mencegah "Layout Thrashing" (Sangat Cepat)
+      container.style.display = "none"; 
       container.innerHTML = "";
       
-      if (data.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-light);"><p>No matching records found.</p></div>`;
+      if (!data || data.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 60px; color: var(--text-muted);"><p>No matching records found.</p></div>`;
+        container.style.display = "flex";
         return;
       }
     
@@ -1090,37 +1099,40 @@
         end = start + rowsPerPage;
       }
     
-      data.slice(start, end).forEach((row, rIdx) => {
+      // 2. Gunakan DocumentFragment (Memproses HTML di memori, bukan di DOM pohon langsung)
+      const fragment = document.createDocumentFragment();
+      const pageData = data.slice(start, end);
+
+      pageData.forEach((row, rIdx) => {
         const card = document.createElement("div");
         card.className = "data-card";
+        
+        // Konstanta baris
         const authName = row[1];
         const pn = row[5];
-        const summaryText = row[10]; // Multi-line text block
-        const currentStatusValue = String(row[12] || "ACTIVE").toUpperCase(); // Ambil status dari index 12
+        const summaryText = row[10];
+        const currentStatusValue = String(row[12] || "ACTIVE").toUpperCase();
     
-        // 1. Tombol Seleksi (Hanya muncul jika actionMode aktif)
+        // 3. Logic Tombol (Seleksi vs Menu Tiga Titik)
         const checkHtml = actionMode ? `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
-    
-        // 2. Tombol Tiga Titik (Dipindah ke pojok kanan atas badan kartu)
         const menuBtnHtml = !actionMode ? `
           <button class="card-menu-btn" title="Update Status" onclick="event.stopPropagation(); openStatusForm('${authName}', '${pn}', '${currentStatusValue}')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
           </button>
         ` : '';
     
+        // 4. Optimasi Loop Detail (Hanya loop index yang dibutuhkan)
         let detailsHtml = "";
-        row.forEach((cell, idx) => {
-          // Index 11 (Category) dan 12 (Status)
-          if ([2,3,4,6,7,9,11,12].includes(idx)) { 
+        [2, 3, 4, 6, 7, 9, 11, 12].forEach(idx => {
+            const cell = row[idx];
             let displayValue;
             let labelName = colNames[idx];
             let specialStyle = "";
             
             if (idx === 12) {
-              labelName = "STATUS"; // Override label menjadi STATUS saja
-              // Render Status Premium (Badge + History Icon)
+              labelName = "STATUS"; // Override label
               displayValue = formatStatus(cell, authName, pn);
-              // Layout Status dibuat melebar di bawah
+              // Style melebar untuk Status di bagian bawah
               specialStyle = 'style="grid-column: span 3; border-top: 1px solid var(--border); padding-top:12px; margin-top:4px;"';
             } else {
               displayValue = cell || '—';
@@ -1131,9 +1143,9 @@
                 <span class="detail-label">${labelName}</span>
                 <span class="detail-value">${displayValue}</span>
               </div>`;
-          }
         });
     
+        // 5. Rakit kartu
         card.innerHTML = `
           ${checkHtml}
           ${menuBtnHtml}
@@ -1143,23 +1155,22 @@
                 <div class="vertical-divider"></div>
                 ${formatLogoValue(row[1])}
             </div>
-            
             <div class="detail-item" style="margin-top: 10px;">
                 <span class="detail-label">PART NUMBER</span>
-                <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">
-                    ${pn}
-                </div>
+                <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">${pn}</div>
             </div>
-    
             ${renderCapabilityStepper(authName, summaryText)}
           </div>
-    
-          <div class="data-details">
-            ${detailsHtml}
-          </div>
+          <div class="data-details">${detailsHtml}</div>
         `;
-        container.appendChild(card);
+        
+        fragment.appendChild(card);
       });
+      
+      // 6. Masukkan seluruh fragment sekaligus dan hidupkan kembali display
+      container.appendChild(fragment);
+      container.style.display = "flex"; 
+      
       updatePaginationInfo(data.length);
     }
     
@@ -1241,45 +1252,54 @@
       refreshAllDropdowns(); 
     }
     
-    // 3. Mengisi List Item di dalam Dropdown (Cascading)
+/** 
+     * HIGH-PERFORMANCE DROPDOWN: refreshAllDropdowns
+     * Mengoptimalkan cascading filter untuk 21.000+ data.
+     * Mencegah lag dengan limitasi render dan pengecekan visibility.
+     */
     function refreshAllDropdowns() {
+      // 1. Guard: Hanya proses jika panel filter sedang terbuka
+      if (!filtersVisible) return; 
+
       colNames.forEach((name, displayIdx) => {
         const listContainer = document.getElementById(`list-${displayIdx}`);
         if (!listContainer) return;
 
-        // Ambil data yang tersedia berdasarkan filter kolom LAIN
-        const tempFilteredData = rawData.filter(row => {
-          const matchesGlobal = !globalKeyword || row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
-          if (!matchesGlobal) return false;
-          
-          return Object.keys(activeFilters).every(cIdx => {
-            if (parseInt(cIdx) === displayIdx) return true; // Abaikan filter dirinya sendiri
-            const selected = activeFilters[cIdx];
-            return !selected || selected.size === 0 || selected.has(String(row[cIdx]).trim() || "(Blanks)");
-          });
-        });
+        // 2. Optimasi Sumber Data: 
+        // Menggunakan viewData (data yang sudah terfilter global) jauh lebih cepat 
+        // daripada melakukan kalkulasi cascading mendalam di setiap kolom.
+        const sourceForDropdown = viewData.length > 0 ? viewData : rawData;
 
-        // Hitung Unique Values
         const counts = {};
-        tempFilteredData.forEach(row => {
+        sourceForDropdown.forEach(row => {
           const val = String(row[displayIdx]).trim() || "(Blanks)";
           counts[val] = (counts[val] || 0) + 1;
         });
 
-        const uniqueValues = Object.keys(counts).sort();
-        listContainer.innerHTML = uniqueValues.map(val => `
-          <label class="list-item">
-            <input type="checkbox" 
-                   ${activeFilters[displayIdx].has(val) ? 'checked' : ''} 
-                   onchange="updateFilterState(${displayIdx}, '${val.replace(/'/g, "\\'")}', this.checked)">
-            <span>${val} <small style="color:var(--text-light)">(${counts[val]})</small></span>
-          </label>
-        `).join('');
+        // 3. Performance Limit: 
+        // Batasi maksimal 500 unique values yang di-render di DOM per dropdown.
+        // Menampilkan 21.000 checkbox di dalam satu dropdown akan membuat browser crash.
+        const uniqueValues = Object.keys(counts).sort().slice(0, 500); 
         
-        // Update Label Button (All vs X Selected)
+        // 4. Render Item
+        listContainer.innerHTML = uniqueValues.map(val => {
+          // Escape single quote untuk keamanan string JS
+          const safeVal = val.replace(/'/g, "\\'");
+          return `
+            <label class="list-item">
+              <input type="checkbox" ${activeFilters[displayIdx].has(val) ? 'checked' : ''} 
+                     onchange="updateFilterState(${displayIdx}, '${safeVal}', this.checked)">
+              <span>${val} <small style="color:var(--text-light)">(${counts[val]})</small></span>
+            </label>
+          `;
+        }).join('');
+        
+        // 5. Update Label Button (Indikator jumlah yang terpilih)
         const labelEl = document.getElementById(`label-col-${displayIdx}`);
-        const countSelected = activeFilters[displayIdx].size;
-        labelEl.textContent = countSelected === 0 ? "All Values" : `${countSelected} selected`;
+        const countSelected = activeFilters[displayIdx] ? activeFilters[displayIdx].size : 0;
+        if (labelEl) {
+          labelEl.textContent = countSelected === 0 ? "All Values" : `${countSelected} selected`;
+        }
       });
     }
 
