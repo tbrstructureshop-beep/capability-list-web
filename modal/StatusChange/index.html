@@ -1,5 +1,5 @@
 <div id="historyModal" class="modal-overlay" style="display:flex">
-  <div class="modal-card" style="max-width: 550px; border-radius: 20px; position: relative;">
+  <div class="modal-card" style="max-width: 550px; border-radius: 20px;">
     <div class="modal-header" style="background: var(--primary-light); padding: 18px 24px;">
       <div style="display:flex; flex-direction:column;">
         <h3 style="margin:0; font-size:16px; color:var(--primary-dark);">Status Change Logs</h3>
@@ -8,73 +8,73 @@
       <button class="close-x" onclick="this.closest('.modal-overlay').remove()">&times;</button>
     </div>
     
-    <div class="modal-body" style="padding: 30px 24px; min-height: 250px;">
-      <!-- Spinner Internal -->
+    <div class="modal-body" style="padding: 30px 24px; min-height: 250px; position: relative;">
+      <!-- Internal Spinner -->
       <div id="historySpinner" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0;">
         <div class="spinner" style="width:30px; height:30px; border-width:3px;"></div>
-        <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">Fetching logs...</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">Searching logs...</p>
       </div>
 
-      <!-- Timeline Items Container -->
+      <!-- Timeline Container -->
       <div id="historyList" class="timeline-container" style="display:none;">
-        <!-- Dynamic Content -->
+        <!-- Data loaded here -->
       </div>
     </div>
   </div>
 </div>
 
 <style>
+/* ... (Style tetap sama seperti sebelumnya) ... */
 .timeline-container { position: relative; padding-left: 30px; border-left: 2px solid var(--border); margin-left: 10px; }
 .timeline-item { position: relative; margin-bottom: 25px; animation: slideUp 0.3s ease-out forwards; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-.timeline-item::before { 
-    content: ""; position: absolute; left: -37px; top: 4px; 
-    width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid var(--primary); 
-    z-index: 2;
-}
+.timeline-item::before { content: ""; position: absolute; left: -37px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid var(--primary); z-index: 2; }
 .timeline-status { font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 4px; display: block; }
-.timeline-date { font-size: 10px; color: var(--text-light); font-weight: 700; letter-spacing: 0.05em; }
+.timeline-date { font-size: 10px; color: var(--text-light); font-weight: 700; }
 .timeline-activity { font-size: 14px; font-weight: 700; color: var(--text-main); margin: 4px 0; }
 .timeline-note { font-size: 13px; color: var(--text-muted); line-height: 1.5; background: #f9fafb; padding: 10px; border-radius: 8px; border: 1px solid #f1f5f9; font-style: italic; }
-.timeline-user { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 8px; display: block; text-transform: uppercase; }
+.timeline-user { font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 8px; display: block; }
 </style>
 
 <script>
 /**
- * Premium Date Formatter: DD MMM YYYY HH:mm:ss
+ * Helper Format Tanggal: DD MMM YYYY HH:mm:ss
  */
-function formatHistoryDate(ts) {
-  const d = new Date(ts);
+function formatPremiumDate(timestamp) {
+  if (!timestamp) return "—";
+  const d = new Date(timestamp);
+  if (isNaN(d.getTime())) return "Invalid Date";
+  
   const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
   const day = String(d.getDate()).padStart(2, '0');
   const month = months[d.getMonth()];
   const year = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-  return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const s = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${day} ${month} ${year} ${h}:${m}:${s}`;
 }
 
 async function loadHistory(auth, pn) {
-  const titleEl = document.getElementById('historyPnSub');
   const listEl = document.getElementById('historyList');
   const spinnerEl = document.getElementById('historySpinner');
+  const subTitleEl = document.getElementById('historyPnSub');
   
-  if(titleEl) titleEl.textContent = `${auth} | PN: ${pn}`;
+  if (subTitleEl) subTitleEl.textContent = `${auth} | PN: ${pn}`;
 
   try {
-    const response = await fetch(`${GAS_API_URL}?action=getStatusHistory&auth=${encodeURIComponent(auth)}&pn=${encodeURIComponent(pn)}`);
+    // Gunakan encodeURIComponent untuk menangani karakter khusus pada Part Number
+    const url = `${GAS_API_URL}?action=getStatusHistory&auth=${encodeURIComponent(auth)}&pn=${encodeURIComponent(pn)}&_=${Date.now()}`;
+    const response = await fetch(url);
     const logs = await response.json();
-    
+
+    // Sembunyikan Spinner, Tampilkan List
     spinnerEl.style.display = "none";
     listEl.style.display = "block";
 
-    if(!logs || logs.length === 0) {
-      listEl.innerHTML = `
-        <div style="text-align:center; padding:20px; color:var(--text-light);">
-          <p style="font-size:13px;">No history records found for this part number.</p>
-        </div>`;
+    if (!logs || logs.length === 0) {
+      listEl.innerHTML = `<p style="text-align:center; padding:30px; color:var(--text-light); font-size:13px;">No history found for this item.</p>`;
       return;
     }
 
@@ -87,7 +87,7 @@ async function loadHistory(auth, pn) {
           <span style="position:absolute; left:-37px; top:4px; width:12px; height:12px; border-radius:50%; background:#fff; border:3px solid ${dotColor}; z-index:3;"></span>
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span class="timeline-status" style="color:${dotColor}">${log.status}</span>
-            <span class="timeline-date">${formatHistoryDate(log.time)}</span>
+            <span class="timeline-date">${formatPremiumDate(log.time)}</span>
           </div>
           <div class="timeline-activity">${log.activity}</div>
           <div class="timeline-note">"${log.note}"</div>
@@ -97,8 +97,8 @@ async function loadHistory(auth, pn) {
     }).join('');
 
   } catch (err) {
-    console.error("Load History Failed:", err);
-    spinnerEl.innerHTML = `<p style="color:red; font-size:12px;">Failed to load data. Please try again.</p>`;
+    console.error("Fetch History Error:", err);
+    spinnerEl.innerHTML = `<p style="color:red; font-size:12px; padding:20px;">Connection Error. Failed to retrieve data.</p>`;
   }
 }
 </script>
