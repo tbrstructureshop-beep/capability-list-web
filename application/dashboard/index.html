@@ -6,25 +6,29 @@ let allSubmissions = [];
 let filteredSubmissions = [];
 
 /**
- * 1. Load data dari Server
+ * 1. Load data dari Server (Updated with Loader Logic)
  */
 function loadSubmissions() {
-  // Tambahkan timestamp agar data tidak sangkut di cache browser
+  // Pastikan loader menyala saat fetch dimulai
+  showLoader(); 
+
   fetch(`${GAS_API_URL}?action=getSubmissions&_=${new Date().getTime()}`)
     .then(res => res.json())
     .then(data => {
       allSubmissions = data;
       filteredSubmissions = data;
-      
-      // Reset ke halaman 1 saat pertama load
       currentPage = 1; 
       
       renderSubmissionCards();
-      updateDataStatus(); // Pastikan teks "Total Records" di header sinkron
+      updateDataStatus(); // Ini akan mengupdate teks di header
     })
     .catch(err => {
       console.error("Load Submissions Error:", err);
       document.getElementById("tableBody").innerHTML = `<div style="text-align:center; padding:60px; color:red;">Failed to load submissions.</div>`;
+    })
+    .finally(() => {
+      // 2. MATIKAN LOADER hanya setelah data selesai di-render
+      setTimeout(() => hideLoader(), 300); 
     });
 }
 
