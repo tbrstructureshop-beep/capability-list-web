@@ -51,25 +51,25 @@ function applySubmissionFilters() {
 }
 
 /**
- * 3. Render Kartu Submission ke tableBody
+ * 3. Render Kartu Submission (Classic Layout & Premium Stepper)
  */
 function renderSubmissionCards() {
   const container = document.getElementById("tableBody");
   container.innerHTML = "";
 
   if (filteredSubmissions.length === 0) {
-    container.innerHTML = `<div style="text-align:center; padding:60px; color:var(--text-light);"><p>No matching submissions found.</p></div>`;
+    container.innerHTML = `<div style="text-align:center; padding: 60px; color:var(--text-light);"><p>No matching submissions found.</p></div>`;
     updatePaginationInfo(0);
     return;
   }
 
-  // Gunakan variabel paginasi global (currentPage & rowsPerPage dari index.html)
   let start = 0, end = filteredSubmissions.length;
   if (rowsPerPage !== "all") {
     start = (currentPage - 1) * rowsPerPage;
     end = start + rowsPerPage;
   }
 
+  const fragment = document.createDocumentFragment();
   const pageData = filteredSubmissions.slice(start, end);
 
   pageData.forEach(row => {
@@ -82,52 +82,59 @@ function renderSubmissionCards() {
     const s = statusMap[row.status] || { bg: '#f3f4f6', color: '#374151', state: 'UNKNOWN' };
 
     const card = document.createElement("div");
-    card.className = "data-card"; // Mengikuti style Main DB agar lebar konsisten
-    
+    card.className = "data-card"; // Otomatis pake 1.6fr 3fr dari CSS index.html
+
     card.innerHTML = `
       <div class="card-main">
         <div class="card-header-row">
             <span class="no-badge">${row.id}</span>
             <div class="vertical-divider"></div>
             ${formatLogoValue(row.authority)}
-            <span class="status-badge" style="background:${s.bg}; color:${s.color}; margin-left:auto;">
-              ${s.state}: ${row.status}
-            </span>
         </div>
         
         <div class="detail-item" style="margin-top: 10px;">
             <span class="detail-label">PART NUMBER</span>
-            <div class="detail-value" style="font-size: 18px; font-weight: 700; color: var(--primary);">${row.partNumber}</div>
+            <div class="pn-display" style="font-size: 22px; font-weight: 800; color: var(--primary); margin: 8px 0;">
+                ${row.partNumber}
+            </div>
         </div>
 
-        <div style="margin-top:15px; font-size:11px; background:var(--primary-light); padding:10px; border-radius:8px;">
-          <div class="detail-label">REQUESTED LEVELS</div>
-          <div class="detail-value" style="font-weight:700; color:var(--primary-dark);">${row.levels || '—'}</div>
-        </div>
-
-        <!-- TOMBOL EDIT / MANAGE (INA - FEATURE) -->
-        <button onclick='openEditForm(${JSON.stringify(row).replace(/'/g, "&apos;")})' class="btn" style="margin-top:15px; width:100%; border-color:var(--primary); color:var(--primary); font-size:12px; font-weight:700;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-          Manage Submission
-        </button>
+        <!-- STEPPER HIJAU (Sama kayak Main DB) -->
+        ${renderCapabilityStepper(row.authority, row.levels)}
       </div>
 
       <div class="data-details">
         <div class="detail-item"><span class="detail-label">PART NAME</span><span class="detail-value">${row.partName}</span></div>
-        <div class="detail-item"><span class="detail-label">RATING</span><span class="detail-value">${row.rating}</span></div>
-        <div class="detail-item"><span class="detail-label">SHOP</span><span class="detail-value">${row.shop}</span></div>
-        <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username}</span></div>
-        <div class="detail-item"><span class="detail-label">DATE</span><span class="detail-value">${row.date}</span></div>
-        <div class="detail-item" style="grid-column: span 2; border-top: 1px solid var(--border); padding-top:8px;">
-          <span class="detail-label">ATTACHMENTS</span>
-          <div class="detail-value">${renderFileList(row.fileUrl)}</div>
+        <div class="detail-item"><span class="detail-label">MANUFACTURER</span><span class="detail-value">${row.manufacturer || '—'}</span></div>
+        <div class="detail-item"><span class="detail-label">SHOP / WC</span><span class="detail-value">${row.shop}</span></div>
+        <div class="detail-item"><span class="detail-label">ATA</span><span class="detail-value">${row.ataChapter}</span></div>
+        <div class="detail-item"><span class="detail-label">A/C TYPE</span><span class="detail-value">${row.aircraftType}</span></div>
+        <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username} <small>(${row.unit})</small></span></div>
+        
+        <div class="detail-item" style="grid-column: span 3; border-top: 1px solid var(--border); padding-top:12px; margin-top:8px;">
+          <span class="detail-label">STATUS & ATTACHMENTS</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+               <span class="status-badge" style="background:${s.bg}; color:${s.color}; font-size:10px; font-weight:800;">
+                  ${row.status}
+               </span>
+               <div class="vertical-divider"></div>
+               <div class="detail-value">${renderFileList(row.fileUrl)}</div>
+            </div>
+
+            <!-- TOMBOL MANAGE DI POJOK KANAN BAWAH -->
+            <button onclick='openEditForm(${JSON.stringify(row).replace(/'/g, "&apos;")})' class="btn btn-primary" style="padding: 6px 14px; font-size:11px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              MANAGE SUBMISSION
+            </button>
+          </div>
         </div>
       </div>
     `;
-    container.appendChild(card);
+    fragment.appendChild(card);
   });
 
-  // SINKRONISASI PAGINASI: Update info halaman di footer index.html
+  container.appendChild(fragment);
   updatePaginationInfo(filteredSubmissions.length);
 }
 
