@@ -626,20 +626,12 @@
       .step-label-top, .step-desc { font-size: 8px; }
     }
 
-    @media (max-width: 768px) {
-      .data-card { 
-        grid-template-columns: 40% 1fr; /* Masih horizontal cok */
-        padding: 16px;
-        gap: 12px;
-      }
-      .card-main { padding-right: 12px; }
-      .step-item { min-width: 30px; } 
-      .step-label-top, .step-desc { display: none; } /* Sembunyiin teks stepper di HP biar gak sempit */
-      .step-light { height: 4px; margin-bottom: 0; } /* Cuma sisa garis indikator di HP */
-      
-      .detail-label { font-size: 8px; }
-      .detail-value { font-size: 11px; }
-      h1 { font-size: 18px; }
+     @media (max-width: 768px) {
+      .data-card { grid-template-columns: 1fr; gap: 20px; }
+      .card-main { border-right: none; border-bottom: 1px solid var(--border); padding-right: 0; padding-bottom: 20px; }
+      .header-content { padding: 10px 16px; }
+      .container { padding: 16px; }
+      .step-label-top, .step-desc { font-size: 8px; }
     }
     
     /* Premium Status Badge & Dot */
