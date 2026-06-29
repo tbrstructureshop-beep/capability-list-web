@@ -735,10 +735,19 @@
     Main Database
   </button>
 
+  <!-- Di dalam index.html pada bagian Sidebar -->
   <button onclick="switchView('submissions'); toggleSidebar();" class="menu-item">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
     Dashboard Pengajuan
   </button>
+  
+  <!-- NEW: Submission Specific Actions (Hidden by default) -->
+  <div id="submissionSidebarActions" style="display:none; margin: 5px 0 10px 20px; padding-left: 10px; border-left: 2px solid var(--primary-light);">
+    <button onclick="openSubmissionForm(); toggleSidebar();" class="menu-item" style="color: var(--primary); padding: 8px 12px; font-size: 13px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      New Application
+    </button>
+  </div>
 
   <button onclick="toggleFilters(); toggleSidebar();" class="menu-item">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
@@ -866,13 +875,20 @@
     let currentView = "database"; 
 
     // Update State Tracker
+    // Update State Tracker di index.html
     async function switchView(view) {
       currentView = view;
-      currentPage = 1; // Reset ke halaman 1
-      const container = document.getElementById("tableBody");
+      currentPage = 1; 
+      
+      // 1. Tampilkan Loader Global
+      showLoader(); 
+
       const title = document.querySelector("h1");
       const searchInput = document.getElementById("globalSearch");
+      const subSidebar = document.getElementById("submissionSidebarActions");
+      const bulkSidebar = document.querySelector(".authority-tag").parentElement; // Kontainer Bulk Actions
 
+      // Reset UI state
       searchInput.value = "";
       document.getElementById("filterRow").style.display = "none";
       filtersVisible = false;
@@ -881,28 +897,28 @@
         title.textContent = "Submission Tracking";
         searchInput.placeholder = "Search by Part Number, Name, or ID...";
         
-        // Tambahkan Tombol "New Application" jika belum ada
-        if (!document.getElementById("btnNewSub")) {
-          const searchWrapper = document.querySelector(".search-container");
-          const btn = document.createElement("button");
-          btn.id = "btnNewSub";
-          btn.className = "btn btn-primary";
-          btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> New Application`;
-          btn.style.marginLeft = "12px";
-          btn.onclick = openSubmissionForm;
-          searchWrapper.appendChild(btn);
-        }
+        // Tampilkan menu New Application, Sembunyikan Bulk Action Database
+        if(subSidebar) subSidebar.style.display = "block";
+        if(bulkSidebar) bulkSidebar.style.display = "none";
 
+        // Inject module jika belum ada
         if (typeof loadSubmissions !== "function") {
           await injectSubmissionModule();
         }
-        loadSubmissions(); // Memanggil fungsi di modul submission
+        
+        // Panggil load data (Loader akan ditutup di dalam loadSubmissions)
+        loadSubmissions(); 
+        
       } else {
         // Mode Database Utama
         title.textContent = "Enterprise Capability Web";
         searchInput.placeholder = "Search components, part numbers, or descriptions...";
-        const btnNewSub = document.getElementById("btnNewSub");
-        if (btnNewSub) btnNewSub.remove();
+        
+        // Sembunyikan menu New App, Tampilkan kembali Bulk Action
+        if(subSidebar) subSidebar.style.display = "none";
+        if(bulkSidebar) bulkSidebar.style.display = "block";
+        
+        // Refresh data utama (Loader akan ditutup di dalam refreshData)
         refreshData(true);
       }
     }
