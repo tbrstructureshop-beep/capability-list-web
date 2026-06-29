@@ -1520,22 +1520,30 @@
       const payload = {
         action: "updateItemStatus",
         user: document.getElementById('actUser').value,
-        activity: document.getElementById('actType').value,
+        // activity: "" (Dihapus, karena akan diisi otomatis oleh GAS)
         auth: document.getElementById('actAuth').value,
         pn: document.getElementById('actPn').value,
         status: document.getElementById('newStatus').value,
         note: document.getElementById('actNote').value
       };
     
-      Swal.fire({ title: 'Saving Status...', didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Saving Status...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     
-      const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-      const result = await res.json();
+      try {
+        const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const result = await res.json();
     
-      if(result.success) {
-        Swal.fire('Success', 'Status updated and logged.', 'success');
-        document.querySelector('.modal-overlay').remove(); // Tutup modal
-        refreshData(false); // Refresh dashboard utama
+        if(result.success) {
+          Swal.fire({ icon: 'success', title: 'Status Updated', text: 'Activity has been logged automatically.', timer: 2000, showConfirmButton: false });
+          
+          // Hapus overlay modal
+          const modal = document.getElementById('statusFormModal');
+          if (modal) modal.closest('.modal-overlay').remove();
+          
+          refreshData(false); // Refresh dashboard utama
+        }
+      } catch (err) {
+        Swal.fire('Error', 'Failed to update status: ' + err.message, 'error');
       }
     }
     
