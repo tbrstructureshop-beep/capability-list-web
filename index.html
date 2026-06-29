@@ -1724,11 +1724,17 @@
       }
     }
 
+    /**
+     * REPAIR: openSubmissionTimeline (Force Script Execution)
+     */
     async function openSubmissionTimeline(data) {
       const targetPath = "application/dashboard/modal/applicationStatus/index.html";
+      
       try {
         const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("Timeline modal file not found");
         const html = await response.text();
+        
         let modal = document.getElementById("timelineModalOverlay");
         if (!modal) {
           modal = document.createElement("div");
@@ -1736,12 +1742,28 @@
           modal.className = "modal-overlay";
           document.body.appendChild(modal);
         }
+        
         modal.innerHTML = html;
         modal.style.display = "flex";
         
-        // Jalankan init
-        initTimeline(data);
-      } catch (e) { console.error(e); }
+        // CRITICAL: Inject & Execute Scripts inside the fetched HTML
+        const scripts = modal.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+    
+        // Jalankan inisialisasi data
+        if (typeof initTimeline === "function") {
+          initTimeline(data);
+        } else {
+          console.error("initTimeline function not found in modal script.");
+        }
+      } catch (e) {
+        console.error("Timeline Load Error:", e);
+        Swal.fire("Error", "Gagal memuat timeline.", "error");
+      }
     }
     
     async function cancelSubmission(id) {
