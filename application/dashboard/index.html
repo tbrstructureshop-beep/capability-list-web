@@ -51,7 +51,7 @@ function applySubmissionFilters() {
 }
 
 /**
- * 3. Render Kartu Submission (Classic Layout & Premium Stepper)
+ * 3. Render Kartu Submission (Classic Layout, Dropdown Menu & Timeline Icon)
  */
 function renderSubmissionCards() {
   const container = document.getElementById("tableBody");
@@ -72,7 +72,7 @@ function renderSubmissionCards() {
   const fragment = document.createDocumentFragment();
   const pageData = filteredSubmissions.slice(start, end);
 
-  pageData.forEach(row => {
+  pageData.forEach((row, rIdx) => {
     const statusMap = {
       'SUBMITTED':    { bg: '#e0f2fe', color: '#0369a1', state: 'OPEN' },
       'UNDER REVIEW': { bg: '#fef3c7', color: '#d97706', state: 'PROGRESS' },
@@ -82,9 +82,26 @@ function renderSubmissionCards() {
     const s = statusMap[row.status] || { bg: '#f3f4f6', color: '#374151', state: 'UNKNOWN' };
 
     const card = document.createElement("div");
-    card.className = "data-card"; // Otomatis pake 1.6fr 3fr dari CSS index.html
+    card.className = "data-card"; // Menggunakan layout 1.6fr 3fr dari index.css
 
     card.innerHTML = `
+      <!-- HORIZONTAL ACTION MENU (Top Right) -->
+      <div class="card-actions-wrapper">
+        <button class="btn" style="padding:8px; border:none; background:var(--primary-light); color:var(--primary);" onclick="toggleCardMenu(${rIdx})">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+        </button>
+        <div id="dropdown-${rIdx}" class="menu-dropdown">
+          <button class="menu-btn-item" onclick='openEditForm(${JSON.stringify(row).replace(/'/g, "&apos;")})'>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Manage Submission
+          </button>
+          <button class="menu-btn-item delete" onclick="cancelSubmission('${row.id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            Cancel Submission
+          </button>
+        </div>
+      </div>
+
       <div class="card-main">
         <div class="card-header-row">
             <span class="no-badge">${row.id}</span>
@@ -99,7 +116,6 @@ function renderSubmissionCards() {
             </div>
         </div>
 
-        <!-- STEPPER HIJAU (Sama kayak Main DB) -->
         ${renderCapabilityStepper(row.authority, row.levels)}
       </div>
 
@@ -109,23 +125,28 @@ function renderSubmissionCards() {
         <div class="detail-item"><span class="detail-label">SHOP / WC</span><span class="detail-value">${row.shop}</span></div>
         <div class="detail-item"><span class="detail-label">ATA</span><span class="detail-value">${row.ataChapter}</span></div>
         <div class="detail-item"><span class="detail-label">A/C TYPE</span><span class="detail-value">${row.aircraftType}</span></div>
-        <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username} <small>(${row.unit})</small></span></div>
+        <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username}</span></div>
         
+        <!-- FOOTER: STATUS, ATTACHMENTS & TIMELINE -->
         <div class="detail-item" style="grid-column: span 3; border-top: 1px solid var(--border); padding-top:12px; margin-top:8px;">
-          <span class="detail-label">STATUS & ATTACHMENTS</span>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-               <span class="status-badge" style="background:${s.bg}; color:${s.color}; font-size:10px; font-weight:800;">
-                  ${row.status}
-               </span>
-               <div class="vertical-divider"></div>
-               <div class="detail-value">${renderFileList(row.fileUrl)}</div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <div style="display:flex; align-items:center; gap:16px;">
+               <div class="detail-item">
+                 <span class="detail-label">STATUS</span>
+                 <span class="status-badge" style="background:${s.bg}; color:${s.color}; font-size:10px; font-weight:800;">
+                    ${row.status}
+                 </span>
+               </div>
+               <div class="vertical-divider" style="height:25px; background:#eee;"></div>
+               <div class="detail-item">
+                 <span class="detail-label">ATTACHMENTS</span>
+                 <div class="detail-value">${renderFileList(row.fileUrl)}</div>
+               </div>
             </div>
 
-            <!-- TOMBOL MANAGE DI POJOK KANAN BAWAH -->
-            <button onclick='openEditForm(${JSON.stringify(row).replace(/'/g, "&apos;")})' class="btn btn-primary" style="padding: 6px 14px; font-size:11px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              MANAGE SUBMISSION
+            <!-- TIMELINE PROGRESS ICON (Bottom Right) -->
+            <button class="timeline-btn" title="View Progress Details" onclick='openSubmissionTimeline(${JSON.stringify(row).replace(/'/g, "&apos;")})'>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
             </button>
           </div>
         </div>
@@ -137,6 +158,24 @@ function renderSubmissionCards() {
   container.appendChild(fragment);
   updatePaginationInfo(filteredSubmissions.length);
 }
+
+/**
+ * TOGGLE DROPDOWN LOGIC
+ */
+function toggleCardMenu(idx) {
+  const allDropdowns = document.querySelectorAll('.menu-dropdown');
+  allDropdowns.forEach((m, i) => {
+    if(i !== idx) m.classList.remove('active');
+  });
+  document.getElementById(`dropdown-${idx}`).classList.toggle('active');
+}
+
+// Menutup dropdown saat klik di mana saja
+window.addEventListener('click', (e) => {
+  if (!e.target.closest('.card-actions-wrapper')) {
+    document.querySelectorAll('.menu-dropdown').forEach(m => m.classList.remove('active'));
+  }
+});
 
 /**
  * 4. Helper Render List File
