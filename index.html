@@ -28,13 +28,13 @@
       --radius-lg: 14px;
       --radius-md: 10px;
       --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      --success: #22c55e;   /* Green color for permitted levels */
-      --inactive: #e5e7eb;  /* Grey for non-permitted */
-      
-      /* Layout & Harmonization */
-      --header-bg: #ffffff; /* Putih bersih untuk header */
-      --body-bg: #f3f4f6;   /* Abu-abu sangat muda untuk body agar kartu terlihat 'pop' */
-      --max-width: 1440px;  /* Lebar luas untuk standar monitor enterprise */
+      --success: #22c55e;
+      --inactive: #e5e7eb;
+
+      /* Layout & Harmonization - REPAIRED */
+      --header-bg: #ffffff; 
+      --body-bg: #f3f4f6;   
+      --max-width: 1280px; /* Kembali ke standar biar nggak kemelaran */
     }
 
     * { 
@@ -82,29 +82,34 @@
       font-family: 'Inter', sans-serif;
       background-color: var(--body-bg);
       color: var(--text-main);
+      line-height: 1.5;
     }
 
-    /* --- UPDATED: Sticky Header Logic --- */
+    /* --- REPAIRED: Full-Width Header cok --- */
     header {
       position: sticky;
       top: 0;
-      z-index: 1000; /* Di bawah sidebar tapi di atas kartu */
-      background-color: rgba(249, 250, 251, 0.9); /* Transparan dengan warna BG */
-      backdrop-filter: blur(10px); /* Efek kaca premium */
-      padding: 20px 0;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid transparent;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.03); /* Shadow halus agar header terlihat mengambang */
+      z-index: 1000;
+      background-color: var(--header-bg); /* Putih mentok kiri kanan */
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      width: 100%; /* Pastiin menu narik full page */
+      padding: 0; /* Padding pindah ke container di dalemnya */
       transition: var(--transition);
     }
     
-    /* Garis halus muncul saat di-scroll (Opsional: via JS jika ingin lebih detail) */
     header.scrolled {
-      border-bottom: 1px solid var(--border);
-      padding: 15px 0;
+      padding: 0;
+    }
+
+    /* Bungkus daleman header biar sejajar sama konten body */
+    header .header-content {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 15px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     header .container {
@@ -116,11 +121,11 @@
       max-width: var(--max-width);
     }
     
-    /* Penyesuaian container agar tidak terlalu mepet ke atas karena header sticky */
+    /* --- REPAIRED: Body Container --- */
     .container {
       max-width: var(--max-width);
       margin: 0 auto;
-      padding: 30px 40px; /* Konsistensi padding samping */
+      padding: 32px 24px 40px 24px;
     }
     
     /* Pastikan judul tidak terlalu besar saat sticky */
@@ -332,14 +337,15 @@
     .data-card {
       background: var(--card-bg);
       border-radius: 16px;
-      padding: 28px;
+      padding: 24px;
       border: 1px solid var(--border);
       transition: var(--transition);
       display: grid;
-      grid-template-columns: 320px 1fr; /* Fixed width untuk sidebar kartu agar stabil */
+      /* Pake px buat kolom kiri biar stabil, sisanya baru fr */
+      grid-template-columns: 360px 1fr; 
       gap: 32px;
       position: relative;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .data-card:hover {
@@ -349,16 +355,18 @@
     }
 
     .card-main {
-      border-right: 1px solid #f1f5f9;
-      padding-right: 10px;
+      border-right: 1px solid var(--border);
+      padding-right: 24px;
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
     }
 
     .data-details {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Adaptive columns */
-      gap: 20px;
+      /* Column details otomatis nyesuain lebar layar */
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
       align-content: start;
     }
 
@@ -702,6 +710,7 @@
     
   </style>
 </head>
+
 <body>
 
 <!-- SIDEBAR NAVIGATION & OVERLAY -->
@@ -712,7 +721,7 @@
     <button onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
   </div>
   
-  <!-- Menu yang sudah ada -->
+  <!-- Menu Utama -->
   <button onclick="switchView('database'); toggleSidebar();" class="menu-item">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
     Main Database
@@ -728,7 +737,7 @@
     Advanced Filters
   </button>
 
-  <!-- PINDAHKAN TOMBOL AKSI KE SINI -->
+  <!-- Bagian Bulk Actions -->
   <div style="border-top: 1px solid var(--border); margin: 10px 0; padding-top: 10px;">
     <div class="authority-tag" style="padding-left: 18px; margin-bottom: 8px;">Bulk Actions</div>
     
@@ -749,8 +758,9 @@
   </button>
 </nav>
 
-<div class="container">
-  <header>
+<!-- HEADER DI LUAR CONTAINER AGAR FULL-WIDTH BACKGROUND -->
+<header>
+  <div class="header-content"> 
     <div class="header-left">
       <h1>Enterprise Capability Web</h1>
       <div id="dataStatus">Total Database: 0 records</div>
@@ -761,8 +771,11 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
     </div>
-  </header>
-  
+  </div>
+</header>
+
+<!-- PEMBUNGKUS BODY DENGAN MAX-WIDTH -->
+<div class="container">
   <div id="dashboard">
     <div class="controls-wrapper">
       <!-- Premium Search Bar -->
@@ -778,7 +791,6 @@
       </div>
 
       <div class="meta-bar">
-        <!-- Sisi Kiri: Rows Per Page -->
         <div class="pagination-left">
           <select id="rowsPerPage" class="btn" style="padding: 8px 12px;">
             <option value="10">10 per page</option>
@@ -788,14 +800,11 @@
           </select>
         </div>
       
-        <!-- Sisi Kanan: Page Movement -->
         <div class="pagination-right" style="display: flex; align-items: center; gap: 8px;">
-          <!-- Prev Button -->
           <button id="prevPage" class="btn" style="padding: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
       
-          <!-- Page Info & Go To -->
           <div class="btn" style="display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 38px;">
             <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Page</span>
             <input id="gotoPage" type="number" value="1" min="1" 
@@ -803,7 +812,6 @@
             <span id="pageInfo" style="font-size: 13px; color: var(--text-muted); font-weight: 500;">of 1</span>
           </div>
       
-          <!-- Next Button -->
           <button id="nextPage" class="btn" style="padding: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
@@ -811,20 +819,16 @@
       </div>
     </div>
 
-    <!-- Filter Panel (Populated by JS) -->
     <div id="filterRow" style="display:none;"></div>
-
-    <!-- Data Container (Cards rendered here) -->
     <div id="tableBody"></div>
     
   </div>
 </div>
 
-<!-- Placeholder for JS Compatibility -->
+<!-- Placeholder & Utility -->
 <table id="dataTable" style="display:none;"><thead id="headerRow"></thead></table>
 <div id="actionHeader" style="display:none;"></div>
 
-<!-- LOADER -->
 <div id="loader" class="loader-overlay">
   <div class="spinner"></div>
   <div style="font-size:15px; color: var(--text-main); font-weight: 600;">Processing Capability List...</div>
