@@ -749,6 +749,17 @@
 <!-- SIDEBAR NAVIGATION & OVERLAY -->
 <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
 <nav id="sidebar" class="sidebar">
+
+  <div id="userProfile" style="padding: 0 0 20px 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); display: none;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 45px; height: 45px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 18px;" id="userInitial">U</div>
+      <div style="overflow: hidden;">
+        <div id="sideUserName" style="font-weight: 700; font-size: 14px; color: var(--text-main); white-space: nowrap; text-overflow: ellipsis;">Guest User</div>
+        <div id="sideUserMeta" style="font-size: 11px; color: var(--text-muted);">Emp ID: - | Unit: -</div>
+      </div>
+    </div>
+  </div>
+  
   <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 30px;">
     <h2 style="font-size: 18px; margin:0;">Control Panel</h2>
     <button onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
@@ -798,6 +809,14 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
     Update Source Data
   </button>
+
+  <div style="margin-top: auto; padding-top: 20px;">
+     <button id="logoutBtn" onclick="handleLogout()" class="menu-item" style="color: #ef4444; display: none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        Sign Out
+     </button>
+  </div>
+  
 </nav>
 
 <!-- HEADER DI LUAR CONTAINER AGAR FULL-WIDTH BACKGROUND -->
@@ -1920,6 +1939,38 @@
           loadSubmissions();
         }
       }
+    }
+
+    function updateAuthUI() {
+      if (currentUser) {
+        document.getElementById('userProfile').style.display = 'block';
+        document.getElementById('logoutBtn').style.display = 'flex';
+        document.getElementById('sideUserName').textContent = currentUser.name;
+        document.getElementById('sideUserMeta').textContent = `ID: ${currentUser.empId || 'N/A'} | Unit: ${currentUser.unit}`;
+        document.getElementById('userInitial').textContent = currentUser.name.charAt(0).toUpperCase();
+      } else {
+        document.getElementById('userProfile').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'none';
+      }
+    }
+
+    function handleLogout() {
+      Swal.fire({
+        title: 'Sign Out?',
+        text: "You will need to login again to manage applications.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, Sign Out'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          currentUser = null;
+          updateAuthUI();
+          toggleSidebar();
+          switchView('database');
+          Swal.fire('Logged Out', 'You have been safely signed out.', 'success');
+        }
+      });
     }
     
     // Opsional: Muat modal di awal (Background load) agar saat klik tombol terasa instan
