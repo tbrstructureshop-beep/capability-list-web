@@ -232,6 +232,10 @@ window.processLogin = async function() {
     if (data.success) {
       // Set Global User State
       currentUser = data.user; 
+      currentUser.empId = idVal; // Capture Emp ID reference
+
+      // Trigger sidebar refresh
+      if (typeof updateAuthUI === "function") updateAuthUI();
       
       Swal.fire({
         icon: "success",
