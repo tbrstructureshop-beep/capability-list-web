@@ -53,6 +53,7 @@ function applySubmissionFilters() {
 /**
  * 3. Render Kartu Submission (Classic Layout - No Attachments in Card)
  * Info lampiran dipindahkan sepenuhnya ke dalam Timeline Modal.
+ * UPDATED: Rating item added to data-details.
  */
 function renderSubmissionCards() {
   const container = document.getElementById("tableBody");
@@ -119,6 +120,7 @@ function renderSubmissionCards() {
         <div class="detail-item"><span class="detail-label">MANUFACTURER</span><span class="detail-value">${row.manufacturer || '—'}</span></div>
         <div class="detail-item"><span class="detail-label">SHOP / WC</span><span class="detail-value">${row.shop}</span></div>
         <div class="detail-item"><span class="detail-label">ATA</span><span class="detail-value">${row.ataChapter}</span></div>
+        <div class="detail-item"><span class="detail-label">RATING</span><span class="detail-value">${row.rating || '—'}</span></div>
         <div class="detail-item"><span class="detail-label">A/C TYPE</span><span class="detail-value">${row.aircraftType}</span></div>
         <div class="detail-item"><span class="detail-label">REQUESTER</span><span class="detail-value">${row.username}</span></div>
         
@@ -144,7 +146,7 @@ function renderSubmissionCards() {
   container.appendChild(fragment);
   updatePaginationInfo(filteredSubmissions.length);
 }
-
+  
 /**
  * TOGGLE DROPDOWN LOGIC
  */
