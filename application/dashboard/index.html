@@ -182,6 +182,38 @@ function renderSubmissionCards() {
   container.appendChild(fragment);
   updatePaginationInfo(filteredSubmissions.length);
 }
+
+async function cancelSubmission(id) {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: "This will permanently delete this application and its files!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    confirmButtonText: 'Yes, Delete it!'
+  });
+
+  if (result.isConfirmed) {
+    showLoader(); 
+    try {
+      const res = await fetch(GAS_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "deleteSubmission", id: id })
+      });
+      const final = await res.json();
+      if(final.success) {
+        await loadSubmissions(); 
+        Swal.fire({ icon: 'success', title: 'Deleted!', text: 'Submission removed.', timer: 1500, showConfirmButton: false });
+      } else {
+        hideLoader();
+        Swal.fire('Error', final.error, 'error');
+      }
+    } catch (err) {
+      hideLoader();
+      Swal.fire('Error', 'Network Error', 'error');
+    }
+  }
+}
   
 /**
  * TOGGLE DROPDOWN LOGIC
