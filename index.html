@@ -880,6 +880,8 @@
   
 <script src="../auth/script.js"></script>
   <script>
+
+    let currentUser = null;
     /** 
      * ENTERPRISE CAPABILITY LOGIC - FIXED FOR MULTILINE SUMMARY & GREEN INDICATORS
      */
@@ -887,6 +889,7 @@
     
     // Mapping: 0:NO, 1:AUTH, 2:RATING, 3:ATA, 4:SHOP, 5:PN, 6:NAME, 7:MANUF, 8:REF, 14:A/C TYPE, 15:SUMMARY, 16:STATUS
     const DISPLAY_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16, 17];
+    
     
     let rawData = [];
     let viewData = [];
@@ -993,9 +996,54 @@
       openSubmissionForm(data); 
     }
     
-    // 2. Gabungkan Logic openSubmissionForm (Mendukung New & Edit)
+    /**
+     * NEW: openLoginModal
+     * Memuat UI simulasi login/registrasi sebelum akses ke form diberikan.
+     */
+    async function openLoginModal() {
+      const targetPath = "application/dashboard/modal/signinSimulation/index.html";
+      try {
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("Auth modal file not found");
+        const html = await response.text();
+        
+        let authModal = document.getElementById("authModalOverlay");
+        if (!authModal) {
+          authModal = document.createElement("div");
+          authModal.id = "authModalOverlay";
+          authModal.className = "modal-overlay";
+          document.body.appendChild(authModal);
+        }
+        
+        authModal.innerHTML = html;
+        authModal.style.display = "flex";
+
+        // Eksekusi script internal (Login/Register logic)
+        const scripts = authModal.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+      } catch (err) {
+        console.error("Login Modal Error:", err);
+        Swal.fire("Error", "Gagal memuat modul login.", "error");
+      }
+    }
+
+    /**
+     * REPAIRED: openSubmissionForm with Role-Gate
+     * Mencegah akses ke form jika currentUser belum terautentikasi.
+     */
     async function openSubmissionForm(editData = null) {
-      // Tetap pertahankan baris ini dari script asli Anda
+      // --- LOGIN CHECK (INA - Security Gate) ---
+      if (!currentUser) {
+        window.pendingAction = 'openForm'; // Simpan aksi untuk dilanjutkan setelah login
+        openLoginModal();
+        return;
+      }
+      // --- END LOGIN CHECK ---
+
       const container = document.getElementById("modalUpdateSourceContainer"); 
       const targetPath = "application/dashboard/modal/form/index.html";
     
@@ -1003,7 +1051,6 @@
         const response = await fetch(targetPath);
         const html = await response.text();
         
-        // Buat/Gunakan overlay modal agar tidak bentrok
         let subModal = document.getElementById("submissionModalOverlay");
         if (!subModal) {
           subModal = document.createElement("div");
@@ -1015,7 +1062,6 @@
         subModal.innerHTML = html;
         subModal.style.display = "flex";
     
-        // Jalankan script internal modal (Penting untuk interaktivitas form)
         const scripts = subModal.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -1023,22 +1069,29 @@
           document.body.appendChild(newScript);
         });
         
-        // REPAIR: Inisialisasi Form dengan mengirimkan parameter editData
-        // Jika editData null, maka form akan menjadi form kosong (New Application)
-        // Jika editData berisi objek, maka form akan terisi data (Manage Submission)
+        // Inisialisasi Form dengan parameter editData (jika ada)
         if (typeof initFormScript === "function") {
           initFormScript(editData); 
         }
     
       } catch (err) {
         console.error("Form Load Error:", err);
+        Swal.fire("Error", "Gagal memuat formulir pengajuan.", "error");
       }
     }
     
-    // 3. Fungsi Close Modal tetap dipertahankan
+    /**
+     * 3. Fungsi Close Modal (Preserved)
+     */
     function closeModal() {
       const subModal = document.getElementById("submissionModalOverlay");
       if (subModal) subModal.style.display = "none";
+    }
+
+    // Helper untuk menutup modal auth
+    function closeAuthModal() {
+      const authModal = document.getElementById("authModalOverlay");
+      if (authModal) authModal.style.display = "none";
     }
     
     // 1. Format Logo
