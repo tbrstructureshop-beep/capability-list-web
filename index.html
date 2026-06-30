@@ -1198,36 +1198,30 @@
       currentUser = null;
       updateAuthUI();
     }
-    
+
     /**
      * OPTIMIZED FETCH: refreshData
-     * Mempercepat parsing data besar (21k+) dengan efisiensi memori.
-     * Menggunakan For-Loop tradisional untuk performa maksimal.
+     * Fixed Typo and ensured hideLoader() is called reliably to prevent infinite spinner.
      */
-   function refreshData(isInitial = false) {
+    function refreshData(isInitial = false) {
       if (isInitial) showLoader();
       
-      // Menambahkan timestamp cache-buster agar browser selalu mengambil data terbaru
       const url = `${GAS_API_URL}?action=getCapabilityList&_=${new Date().getTime()}`;
       
       fetch(url)
         .then(res => res.json())
         .then(rows => {
-          // Cek jika ada error dari GAS
           if (rows.success === false) throw new Error(rows.error);
           if (!rows || rows.length < 3) throw new Error("Data empty");
 
-          // 1. Ekstraksi Header (Sangat Cepat)
           colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
           
-          // 2. Pre-filter data (Gunakan for loop tradisional: 5-10x lebih cepat untuk data masif)
           const tempRaw = [];
           const dataLength = rows.length;
           const displayColsLen = DISPLAY_COLS.length;
           
           for (let i = 3; i < dataLength; i++) {
             const r = rows[i];
-            // Cek index 1 (Authority) untuk membuang baris kosong
             if (r[1] && String(r[1]).trim() !== "") {
               const mappedRow = new Array(displayColsLen);
               for (let j = 0; j < displayColsLen; j++) {
@@ -1238,18 +1232,15 @@
           }
           rawData = tempRaw;
 
-          // 3. Gunakan requestAnimationFrame agar UI tidak freeze (spinner tetap berputar lancar)
           requestAnimationFrame(() => {
-            if (isInitial) {
-              buildFilterInputs(colNames);
+            try {
+              if (isInitial) buildFilterInputs(colNames);
+              applyAllFilters();
+            } finally {
+              // INA: Hide loader regardless of rendering success to prevent stuck UI
+              if (isInitial) hideLoader();
             }
             
-            // Terapkan filter yang sedang aktif ke data baru
-            applyAllFilters();
-            
-            if (isInitial) hideLoader();
-            
-            // Update Status Terakhir
             const now = new Date();
             const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
             console.log(`Data auto-refreshed at: ${timeStr} | ${rawData.length} records processed.`);
@@ -1257,33 +1248,26 @@
         })
         .catch(err => { 
           console.error("Fetch Error:", err); 
-          hideLoader();
+          hideLoader(); // INA: Ensure spinner disappears on connection failure
           const statusEl = document.getElementById("dataStatus");
           if (statusEl) {
-            statusEl.innerHTML = `<span style="color:red">Sync Error. Retrying in 5 mins...</span>`;
+            statusEl.innerHTML = `<span style="color:#ef4444; font-weight:700;">⚠️ Sync Error. Retrying in 5 mins...</span>`;
           }
         });
     }
 
-    // Jalankan pertama kali saat halaman dibuka
+    // Trigger initial load on boot
     refreshData(true);
 
-    // Lokasi: Di dalam script index.html bagian auto-refresh
+    // Auto-refresh Interval
     setInterval(() => {
       console.log(`Auto-refreshing view: ${currentView}`);
-      
       if (currentView === "submissions") {
-        // Jika sedang di view pengajuan, refresh data pengajuan saja
         if (typeof loadSubmissions === "function") loadSubmissions();
       } else {
-        // Jika di database, refresh data database
         refreshData(false); 
       }
-      
-      // Background check untuk Source Status tetap berjalan
-      if (typeof loadSourceCards === "function") {
-        loadSourceCards(); 
-      }
+      if (typeof loadSourceCards === "function") loadSourceCards(); 
     }, 5 * 60 * 1000);
     
     
