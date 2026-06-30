@@ -1095,9 +1095,16 @@
     // 3. Loader & General UI
     function showLoader() { document.getElementById("loader").style.display = "flex"; }
     function hideLoader() { document.getElementById("loader").style.display = "none"; }
+    
     function toggleFilters() {
       filtersVisible = !filtersVisible;
-      document.getElementById("filterRow").style.display = filtersVisible ? "grid" : "none";
+      const filterRow = document.getElementById("filterRow");
+      filterRow.style.display = filtersVisible ? "grid" : "none";
+      
+      // CRITICAL FIX: Jika dibuka, langsung isi datanya
+      if (filtersVisible) {
+        refreshAllDropdowns();
+      }
     }
     
     /**
@@ -1406,9 +1413,9 @@
     }
     
     /** 
-     * FINAL MERGED & HIGH-PERFORMANCE: refreshAllDropdowns
-     * Mengoptimalkan cascading filter untuk Database (Array) dan Submissions (Object).
-     * Mencegah browser lag dengan limitasi render DOM dan indikator status pilihan.
+     * FINAL MERGED & REPAIRED: refreshAllDropdowns
+     * Menggabungkan High-Performance rendering dengan Safety Checks.
+     * Mendukung cascading filter untuk Database (Array) dan Submissions (Object).
      */
     function refreshAllDropdowns() {
       // 1. Guard: Hanya proses jika panel filter sedang terbuka
@@ -1423,35 +1430,46 @@
         const listContainer = document.getElementById(`list-${displayIdx}`);
         if (!listContainer) return;
     
-        // 2. Optimasi Sumber Data: Gunakan data terfilter (cascading) atau fallback ke master data
+        // 2. SAFETY: Pastikan activeFilters untuk index ini sudah terinisialisasi sebagai Set
+        if (!activeFilters[displayIdx]) activeFilters[displayIdx] = new Set();
+    
+        // 3. OPTIMASI SUMBER DATA: Gunakan data terfilter (cascading) atau fallback ke master data
         let sourceForDropdown;
         if (isSubView) {
-          sourceForDropdown = filteredSubmissions.length > 0 ? filteredSubmissions : allSubmissions;
+          sourceForDropdown = (filteredSubmissions && filteredSubmissions.length > 0) ? filteredSubmissions : allSubmissions;
         } else {
-          sourceForDropdown = viewData.length > 0 ? viewData : rawData;
+          sourceForDropdown = (viewData && viewData.length > 0) ? viewData : rawData;
         }
     
-        // 3. Kalkulasi Frekuensi (Counts)
+        // 4. LOADING STATE: Jika data masih kosong (sedang fetch), beri feedback ke user
+        if (!sourceForDropdown || sourceForDropdown.length === 0) {
+          listContainer.innerHTML = '<div style="padding:12px; font-size:11px; color:var(--text-light); text-align:center;">Loading values...</div>';
+          return;
+        }
+    
+        // 5. KALKULASI FREKUENSI (Counts)
         const counts = {};
         sourceForDropdown.forEach(row => {
           let val;
           if (isSubView) {
+            // Submissions adalah Array of Objects, akses via keys
             const keys = Object.keys(row);
             val = String(row[keys[displayIdx]] || "").trim() || "(Blanks)";
           } else {
+            // Main Database adalah Array of Arrays, akses via index
             val = String(row[displayIdx] || "").trim() || "(Blanks)";
           }
           counts[val] = (counts[val] || 0) + 1;
         });
     
-        // 4. Performance Limit: Maksimal 500 unique values untuk mencegah browser crash
+        // 6. PERFORMANCE LIMIT: Maksimal 500 unique values untuk mencegah browser crash/freeze
         const uniqueValues = Object.keys(counts).sort().slice(0, 500); 
         
-        // 5. Render DOM Items
+        // 7. RENDER DOM ITEMS
         listContainer.innerHTML = uniqueValues.map(val => {
           // Escape single quote untuk keamanan string JS dalam atribut onchange
           const safeVal = val.replace(/'/g, "\\'");
-          const isChecked = activeFilters[displayIdx] && activeFilters[displayIdx].has(val);
+          const isChecked = activeFilters[displayIdx].has(val);
           
           return `
             <label class="list-item">
@@ -1462,9 +1480,9 @@
           `;
         }).join('');
     
-        // 6. Update Label Button (Indikator jumlah yang terpilih)
+        // 8. UPDATE LABEL BUTTON: Indikator jumlah yang terpilih pada trigger dropdown
         const labelEl = document.getElementById(`label-col-${displayIdx}`);
-        const countSelected = activeFilters[displayIdx] ? activeFilters[displayIdx].size : 0;
+        const countSelected = activeFilters[displayIdx].size;
         if (labelEl) {
           labelEl.textContent = countSelected === 0 ? "All Values" : `${countSelected} selected`;
         }
