@@ -905,7 +905,7 @@
 <script src="../auth/script.js"></script>
   <script>
 
-    let currentUser = null;
+    let currentUser = JSON.parse(localStorage.getItem('capability_session')) || null;
     /** 
      * ENTERPRISE CAPABILITY LOGIC - FIXED FOR MULTILINE SUMMARY & GREEN INDICATORS
      */
@@ -1186,13 +1186,25 @@
         refreshAllDropdowns();
       }
     }
+
+    function saveSession(userData) {
+      localStorage.setItem('capability_session', JSON.stringify(userData));
+      currentUser = userData;
+      updateAuthUI();
+    }
+
+    function clearSession() {
+      localStorage.removeItem('capability_session');
+      currentUser = null;
+      updateAuthUI();
+    }
     
     /**
      * OPTIMIZED FETCH: refreshData
      * Mempercepat parsing data besar (21k+) dengan efisiensi memori.
      * Menggunakan For-Loop tradisional untuk performa maksimal.
      */
-    function refreshData(isInitial = false) {
+   unction refreshData(isInitial = false) {
       if (isInitial) showLoader();
       
       // Menambahkan timestamp cache-buster agar browser selalu mengambil data terbaru
@@ -1986,11 +1998,15 @@
         confirmButtonText: 'Yes, Sign Out'
       }).then((result) => {
         if (result.isConfirmed) {
-          currentUser = null;
-          updateAuthUI();
+          showLoader(); // Brief loader for transition
+          clearSession();
           toggleSidebar();
           switchView('database');
-          Swal.fire('Logged Out', 'You have been safely signed out.', 'success');
+          
+          setTimeout(() => {
+            hideLoader();
+            Swal.fire({ icon: 'success', title: 'Logged Out', timer: 1000, showConfirmButton: false });
+          }, 500);
         }
       });
     }
@@ -2083,7 +2099,7 @@
 
     // Lokasi: Bagian paling bawah script index.html
     window.addEventListener('DOMContentLoaded', () => {
-      // Paksa ke database view saat pertama kali load agar tombol tersembunyi
+      updateAuthUI(); // Check session immediately
       switchView('database'); 
       loadExternalModal();
     });
