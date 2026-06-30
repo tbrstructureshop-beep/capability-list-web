@@ -467,6 +467,11 @@ function handleAuthorityChange() {
  * FINAL REPAIRED: initFormScript
  * Sinkronisasi Role-Simulation dengan Populasi Data Submission & Protection Logic.
  */
+/**
+ * FINAL REPAIRED: initFormScript
+ * Sinkronisasi Role-Simulation dengan Populasi Data Submission & Protection Logic.
+ * Case: Slamet (Admin) vs Eko (user). STATUS read-only for user, editable for Admin.
+ */
 function initFormScript(editData) {
   const form = document.getElementById("newCapForm");
   if (!form) return; 
@@ -482,7 +487,11 @@ function initFormScript(editData) {
   if (editData) {
     // === MODE: MANAGE / EDIT SUBMISSION ===
     document.getElementById("formTitle").textContent = "Manage Submission: " + editData.id;
-    document.getElementById("mgmtBox").style.display = "block";
+    
+    // UI GATE: Hanya Admin yang bisa melihat & mengedit MGMT BOX (Status & Reviewer)
+    const mgmtBox = document.getElementById("mgmtBox");
+    if (mgmtBox) mgmtBox.style.display = isAdmin ? "block" : "none"; 
+    
     document.getElementById("editId").value = editData.id;
     
     // 2. Populasi Identitas & Tanggal
@@ -499,21 +508,27 @@ function initFormScript(editData) {
     const statusSel = document.getElementById("statusSelect");
     if (statusSel) {
       statusSel.value = editData.status || "SUBMITTED";
-      statusSel.disabled = !isAdmin; // HANYA ADMIN yang bisa ganti status
+      // DOUBLE PROTECTION: Status read-only for user, editable for Admin
+      statusSel.disabled = !isAdmin; 
       statusSel.onchange = handleStatusChangeUI; 
     }
 
-    // 4. PROTECTION LOGIC: Lock Form if Approved & User is not Admin
+    // 4. PROTECTION LOGIC: Lock Form for Applicants (Eko) if Status is APPROVED
     if (isApproved && !isAdmin) {
       const allInputs = form.querySelectorAll('input, select, textarea');
       allInputs.forEach(input => input.disabled = true);
       document.getElementById("btnSubmitForm").style.display = "none";
       document.getElementById("formTitle").textContent = "View Approved Application: " + editData.id;
     } else {
-      // Re-enable inputs (kecuali yang memang readonly by design)
+      // Re-enable inputs for owners (Eko) if still SUBMITTED/UNDER REVIEW
       const allInputs = form.querySelectorAll('input, select, textarea');
       allInputs.forEach(input => {
-        if(input.id !== "submitDate" && input.id !== "username") input.disabled = false;
+        // ID-ID ini tetap disabled/readonly sesuai aturan bisnis
+        if(input.id === "submitDate" || input.id === "username" || input.id === "statusSelect") {
+           input.disabled = true;
+        } else {
+           input.disabled = false;
+        }
       });
       document.getElementById("btnSubmitForm").style.display = "inline-flex";
     }
@@ -521,7 +536,7 @@ function initFormScript(editData) {
     // 5. Trigger Perubahan Otoritas (Label & Level)
     handleAuthorityChange();
     
-    // 6. Timeout Populasi (DOM Element Otoritas)
+    // 6. Timeout Populasi Data Teknis agar dropdown Category terisi dulu
     setTimeout(() => {
       const capItem = document.getElementById("caplistItem");
       if (capItem) capItem.value = editData.caplistItem || "";
@@ -536,29 +551,27 @@ function initFormScript(editData) {
       const currentLevels = (editData.levels || "").split(", ");
       document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
         cb.checked = currentLevels.includes(cb.value);
-        if (isApproved && !isAdmin) cb.disabled = true; // Lock checkboxes
+        // Lock checkbox jika pengajuan sudah Approved dan user bukan Admin
+        if (isApproved && !isAdmin) cb.disabled = true; 
       });
 
       if (typeof handleStatusChangeUI === "function") handleStatusChangeUI();
     }, 300); 
 
-    // 7. Technical Detail Lainnya
     document.getElementById("partNumber").value = editData.partNumber || "";
     document.getElementById("partName").value = editData.partName || "";
     document.getElementById("ataChapter").value = editData.ataChapter || "";
 
-    // --- SAFETY GUARD (INA - Added Logic) ---
+    // 7. Safety Guard UI Update
     setTimeout(() => {
-      if (typeof handleStatusChangeUI === "function") {
-        handleStatusChangeUI();
-      }
+      if (typeof handleStatusChangeUI === "function") handleStatusChangeUI();
     }, 500); 
     
   } else {
     // === MODE: NEW APPLICATION ===
-    const tempId = "REQ-" + new Date().getTime().toString().slice(-6);
-    document.getElementById("formTitle").textContent = "New App (" + tempId + ")";
-    document.getElementById("mgmtBox").style.display = "none";
+    document.getElementById("formTitle").textContent = "New Capability Application";
+    const mgmtBox = document.getElementById("mgmtBox");
+    if (mgmtBox) mgmtBox.style.display = "none";
     document.getElementById("editId").value = ""; 
     
     // Reset all inputs to enabled for new form
