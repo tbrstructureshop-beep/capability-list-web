@@ -899,51 +899,52 @@
     let actionMode = false;
     let currentView = "database"; 
 
-    // Update State Tracker
-    // Update State Tracker di index.html
+   /**
+     * REPAIRED: switchView with Robust Sidebar Guard
+     * Ensures UI states (like New Application button) are strictly synchronized.
+     */
     async function switchView(view) {
       currentView = view;
       currentPage = 1; 
       
-      // 1. Tampilkan Loader Global
       showLoader(); 
 
       const title = document.querySelector("h1");
       const searchInput = document.getElementById("globalSearch");
       const subSidebar = document.getElementById("submissionSidebarActions");
-      const bulkSidebar = document.querySelector(".authority-tag").parentElement; // Kontainer Bulk Actions
+      
+      // Guard: Safe selector for bulkSidebar to prevent null pointer errors
+      const authTag = document.querySelector(".authority-tag");
+      const bulkSidebar = authTag ? authTag.parentElement : null;
 
       // Reset UI state
-      searchInput.value = "";
-      document.getElementById("filterRow").style.display = "none";
+      if (searchInput) searchInput.value = "";
+      const filterRow = document.getElementById("filterRow");
+      if (filterRow) filterRow.style.display = "none";
       filtersVisible = false;
 
       if (view === "submissions") {
-        title.textContent = "Submission Tracking";
-        searchInput.placeholder = "Search by Part Number, Name, or ID...";
+        if (title) title.textContent = "Submission Tracking";
+        if (searchInput) searchInput.placeholder = "Search by Part Number, Name, or ID...";
         
-        // Tampilkan menu New Application, Sembunyikan Bulk Action Database
-        if(subSidebar) subSidebar.style.display = "block";
-        if(bulkSidebar) bulkSidebar.style.display = "none";
+        // Strictly show Submission actions, hide Database bulk actions
+        if (subSidebar) subSidebar.style.display = "block";
+        if (bulkSidebar) bulkSidebar.style.display = "none";
 
-        // Inject module jika belum ada
         if (typeof loadSubmissions !== "function") {
           await injectSubmissionModule();
         }
         
-        // Panggil load data (Loader akan ditutup di dalam loadSubmissions)
         loadSubmissions(); 
         
       } else {
-        // Mode Database Utama
-        title.textContent = "Enterprise Capability Web";
-        searchInput.placeholder = "Search components, part numbers, or descriptions...";
+        if (title) title.textContent = "Enterprise Capability Web";
+        if (searchInput) searchInput.placeholder = "Search components, part numbers, or descriptions...";
         
-        // Sembunyikan menu New App, Tampilkan kembali Bulk Action
-        if(subSidebar) subSidebar.style.display = "none";
-        if(bulkSidebar) bulkSidebar.style.display = "block";
+        // Strictly hide Submission actions, show Database bulk actions
+        if (subSidebar) subSidebar.style.display = "none";
+        if (bulkSidebar) bulkSidebar.style.display = "block";
         
-        // Refresh data utama (Loader akan ditutup di dalam refreshData)
         refreshData(true);
       }
     }
@@ -1152,21 +1153,21 @@
     // Jalankan pertama kali saat halaman dibuka
     refreshData(true);
 
-    // SETUP AUTO REFRESH SETIAP 5 MENIT (300,000 ms)
+    // Lokasi: Di dalam script index.html bagian auto-refresh
     setInterval(() => {
-      refreshData(false); // Refresh tabel dashboard utama (Background)
+      console.log(`Auto-refreshing view: ${currentView}`);
       
-      // Logika Penjaga: Pastikan fungsi loadSourceCards tersedia
-      if (typeof loadSourceCards === "function") {
-        console.log("Background check: Source statuses...");
-        loadSourceCards(); 
+      if (currentView === "submissions") {
+        // Jika sedang di view pengajuan, refresh data pengajuan saja
+        if (typeof loadSubmissions === "function") loadSubmissions();
       } else {
-        // Jika modal belum pernah dibuka, kita panggil loadExternalModal secara diam-diam
-        if (typeof loadExternalModal === "function") {
-          loadExternalModal().then(() => {
-             if (typeof loadSourceCards === "function") loadSourceCards();
-          });
-        }
+        // Jika di database, refresh data database
+        refreshData(false); 
+      }
+      
+      // Background check untuk Source Status tetap berjalan
+      if (typeof loadSourceCards === "function") {
+        loadSourceCards(); 
       }
     }, 5 * 60 * 1000);
     
@@ -1827,6 +1828,13 @@
       } else {
         header.classList.remove('scrolled');
       }
+    });
+
+    // Lokasi: Bagian paling bawah script index.html
+    window.addEventListener('DOMContentLoaded', () => {
+      // Paksa ke database view saat pertama kali load agar tombol tersembunyi
+      switchView('database'); 
+      loadExternalModal();
     });
     
   </script>
