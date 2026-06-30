@@ -230,24 +230,20 @@ window.processLogin = async function() {
     const data = await res.json();
     
     if (data.success) {
-      // Set Global User State
-      currentUser = data.user; 
-      currentUser.empId = idVal; // Capture Emp ID reference
-
-      // Trigger sidebar refresh
-      if (typeof updateAuthUI === "function") updateAuthUI();
+      // INA: Persistent Session
+      const userData = { ...data.user, empId: idVal };
+      saveSession(userData); 
       
       Swal.fire({
         icon: "success",
         title: "Authenticated",
-        text: `Welcome back, ${currentUser.name}`,
+        text: `Welcome back, ${userData.name}`,
         timer: 1500,
         showConfirmButton: false
       });
       
       closeAuthModal();
       
-      // Lanjutkan aksi tertunda jika ada
       if(window.pendingAction === 'openForm') {
         window.pendingAction = null;
         openSubmissionForm(); 
