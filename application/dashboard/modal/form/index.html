@@ -158,6 +158,10 @@
   </div>
   <div class="modal-footer">
     <button class="btn" onclick="closeModal()">Cancel</button>
+    <button id="btnProcessApproval" class="btn" style="display:none; background:var(--success); color:white; border:none; gap:8px;" onclick="triggerFinalApproval()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      Process Approval
+    </button>
     <button id="btnSubmitForm" class="btn btn-primary" onclick="submitForm()">Save & Submit</button>
   </div>
 </div>
@@ -170,6 +174,42 @@ const MODAL_COL_MAP = { AUTH: 1, SHOP: 4, NAME: 6, MANUF: 7, REF: 8, ACTYPE: 9, 
 
 let uploadedFiles = []; // Array untuk menyimpan blob data sebelum dikirim
 
+let isAdmin = false;
+
+function handleStatusChangeUI() {
+  const status = document.getElementById("statusSelect").value;
+  const btnProcess = document.getElementById("btnProcessApproval");
+  const btnSubmit = document.getElementById("btnSubmitForm");
+  
+  if (status === "APPROVED" && isAdmin) {
+    btnProcess.style.display = "inline-flex";
+    btnSubmit.style.display = "none"; // Sembunyikan Save biasa jika mau Approve
+  } else {
+    btnProcess.style.display = "none";
+    btnSubmit.style.display = "inline-flex";
+  }
+}
+
+/**
+ * Action saat klik Process Approval
+ */
+async function triggerFinalApproval() {
+  const result = await Swal.fire({
+    title: 'Process to Master Summary?',
+    text: "Sistem akan menerbitkan Nomor Capability baru dan mengunci pengajuan ini.",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#22c55e',
+    confirmButtonText: 'Yes, Process & Issue'
+  });
+
+  if (result.isConfirmed) {
+    // 1. Jalankan submit biasa dulu untuk update status di Submissions
+    // Kita panggil submitForm namun dengan tambahan flag approval
+    await submitForm(true); 
+  }
+}
+  
 /**
  * Penanganan Multi-File (INA - Logic)
  */
