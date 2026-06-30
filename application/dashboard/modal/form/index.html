@@ -247,10 +247,11 @@ function handleMultiFile(input) {
 }
 
 /**
- * SINKRONISASI PROSES SUBMISSION (INA - Process)
- * Updated: Added Rating field to payload
+ * REPAIRED: submitForm
+ * Menangani submission baru, update, dan Final Approval ke Master Summary.
+ * Memastikan payload lengkap terkirim dan reset variabel global files setelah sukses.
  */
-async function submitForm() {
+async function submitForm(isFinalApproval = false) {
   const form = document.getElementById("newCapForm");
   
   // 1. Validasi Input
@@ -258,8 +259,8 @@ async function submitForm() {
 
   // 2. Tampilkan Loading Spinner Blocking (SweetAlert2)
   Swal.fire({
-    title: 'Processing Submission',
-    html: 'Uploading documents and writing metadata...<br><b>Please do not close this window.</b>',
+    title: isFinalApproval ? 'Finalizing Approval...' : 'Processing Submission...',
+    html: 'Writing data to database and summary sheets...<br><b>Please do not close this window.</b>',
     allowOutsideClick: false,
     didOpen: () => {
       Swal.showLoading();
@@ -269,16 +270,17 @@ async function submitForm() {
   const isEdit = document.getElementById("editId").value !== "";
   const selectedLevels = Array.from(document.querySelectorAll('input[name="authLevels"]:checked')).map(c => c.value).join(", ");
 
-  // 3. Construct Payload
+  // 3. Construct Full Payload
+  // Pastikan semua field teknis terikut agar saat "Approve", fungsi Summary di GAS tidak kehilangan data.
   const payload = {
-    action: isEdit ? "updateSubmission" : "newSubmission",
+    action: isFinalApproval ? "approveSubmission" : (isEdit ? "updateSubmission" : "newSubmission"),
     id: document.getElementById("editId").value,
     date: document.getElementById("submitDate").value,
     username: document.getElementById("username").value,
     unit: document.getElementById("unit").value,
     authority: document.getElementById("authSelect").value,
     caplistItem: document.getElementById("caplistItem").value,
-    rating: document.getElementById("rating").value, // <--- ADDED: Rating capture
+    rating: document.getElementById("rating").value,
     partNumber: document.getElementById("partNumber").value,
     partName: document.getElementById("partName").value,
     manufacturer: document.getElementById("manufacturer").value,
@@ -289,7 +291,7 @@ async function submitForm() {
     status: isEdit ? document.getElementById("statusSelect").value : "SUBMITTED",
     reviewer: document.getElementById("reviewerName").value,
     reason: document.getElementById("statusReason").value,
-    files: uploadedFiles // Kirim array file blob
+    files: uploadedFiles // Hanya berisi data jika ada upload file baru (Base64)
   };
 
   try {
@@ -301,18 +303,21 @@ async function submitForm() {
     const result = await response.json();
 
     if (result.success) {
-      // 4. Sukses: Tutup Loading & Tampilkan Notifikasi Sukses
+      // 4. CLEANUP: Reset variabel global agar tidak terupload ulang pada pemanggilan berikutnya
+      uploadedFiles = []; 
+      
+      // 5. Sukses: Tutup Loading & Tampilkan Notifikasi
       Swal.fire({
         icon: 'success',
-        title: isEdit ? 'Updated!' : 'Submitted!',
-        text: `Submission ${result.id || payload.id} has been processed successfully.`,
+        title: isFinalApproval ? 'Approved & Issued!' : (isEdit ? 'Updated!' : 'Submitted!'),
+        text: `Submission ${payload.id || result.id} has been processed successfully.`,
         timer: 2000,
         showConfirmButton: false
       });
 
       closeModal(); // Tutup Modal Form
       
-      // Refresh list di dashboard jika fungsi tersedia
+      // Refresh list di dashboard agar data terbaru (termasuk status APPROVED) muncul
       if (typeof loadSubmissions === "function") loadSubmissions();
       
     } else {
