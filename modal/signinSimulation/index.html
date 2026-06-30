@@ -43,18 +43,48 @@ function toggleAuthMode(mode) {
   document.getElementById('authTitle').textContent = mode === 'login' ? 'Sign In' : 'New Registration';
 }
 
+// Di dalam modal/signinSimulation/index.html <script>
+
 async function processLogin() {
-  const payload = { action: "userAuth", empId: document.getElementById('loginId').value, password: document.getElementById('loginPass').value };
-  const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-  const data = await res.json();
-  if (data.success) {
-    currentUser = data.user;
-    Swal.fire("Success", `Welcome ${currentUser.name}`, "success");
-    closeAuthModal();
-    // Jika login berhasil, langsung buka form pengajuan jika tadi ingin mengajukan
-    if(window.pendingAction === 'openForm') openSubmissionForm();
-  } else {
-    Swal.fire("Error", data.error, "error");
+  const idVal = document.getElementById('loginId').value;
+  const passVal = document.getElementById('loginPass').value;
+  
+  if(!idVal || !passVal) return Swal.fire("Input Required", "ID dan Password harus diisi", "warning");
+
+  const payload = { 
+    action: "userAuth", 
+    empId: idVal, 
+    password: passVal 
+  };
+  
+  try {
+    const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+    const data = await res.json();
+    
+    if (data.success) {
+      // SINKRONISASI: Set ke variabel global di index.html
+      currentUser = data.user; 
+      
+      Swal.fire({
+        icon: "success",
+        title: "Welcome " + currentUser.name,
+        text: "Logged in as " + currentUser.role,
+        timer: 1500,
+        showConfirmButton: false
+      });
+      
+      closeAuthModal();
+      
+      // Lanjutkan aksi yang tertunda (misal buka form)
+      if(window.pendingAction === 'openForm') {
+        window.pendingAction = null;
+        openSubmissionForm(); 
+      }
+    } else {
+      Swal.fire("Authentication Failed", data.error, "error");
+    }
+  } catch (e) {
+    Swal.fire("Error", "Gagal menghubungi server", "error");
   }
 }
 
