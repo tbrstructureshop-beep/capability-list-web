@@ -465,8 +465,7 @@ function handleAuthorityChange() {
 
 /**
  * FINAL REPAIRED: initFormScript
- * Sinkronisasi Role-Simulation dengan Populasi Data Submission.
- * Ditambahkan safety guard timeout 500ms untuk memastikan UI Update terpanggil sempurna.
+ * Sinkronisasi Role-Simulation dengan Populasi Data Submission & Protection Logic.
  */
 function initFormScript(editData) {
   const form = document.getElementById("newCapForm");
@@ -478,6 +477,7 @@ function initFormScript(editData) {
 
   // 1. SINKRONISASI ROLE DARI LOGIN SIMULATION
   isAdmin = (typeof currentUser !== 'undefined' && currentUser !== null && currentUser.role === "Admin");
+  const isApproved = editData && editData.status === "APPROVED";
 
   if (editData) {
     // === MODE: MANAGE / EDIT SUBMISSION ===
@@ -491,7 +491,7 @@ function initFormScript(editData) {
     document.getElementById("unit").value = editData.unit || "";
     document.getElementById("authSelect").value = editData.authority || "";
     
-    // 3. ROLE LOGIC: Reviewer & Status Listener
+    // 3. ROLE LOGIC: Reviewer & Status Protection
     if (isAdmin && typeof currentUser !== 'undefined') {
       document.getElementById("reviewerName").value = currentUser.name;
     }
@@ -499,13 +499,29 @@ function initFormScript(editData) {
     const statusSel = document.getElementById("statusSelect");
     if (statusSel) {
       statusSel.value = editData.status || "SUBMITTED";
+      statusSel.disabled = !isAdmin; // HANYA ADMIN yang bisa ganti status
       statusSel.onchange = handleStatusChangeUI; 
     }
 
-    // 4. Trigger Perubahan Otoritas (Label & Level)
+    // 4. PROTECTION LOGIC: Lock Form if Approved & User is not Admin
+    if (isApproved && !isAdmin) {
+      const allInputs = form.querySelectorAll('input, select, textarea');
+      allInputs.forEach(input => input.disabled = true);
+      document.getElementById("btnSubmitForm").style.display = "none";
+      document.getElementById("formTitle").textContent = "View Approved Application: " + editData.id;
+    } else {
+      // Re-enable inputs (kecuali yang memang readonly by design)
+      const allInputs = form.querySelectorAll('input, select, textarea');
+      allInputs.forEach(input => {
+        if(input.id !== "submitDate" && input.id !== "username") input.disabled = false;
+      });
+      document.getElementById("btnSubmitForm").style.display = "inline-flex";
+    }
+
+    // 5. Trigger Perubahan Otoritas (Label & Level)
     handleAuthorityChange();
     
-    // 5. Timeout Populasi (DOM Element Otoritas)
+    // 6. Timeout Populasi (DOM Element Otoritas)
     setTimeout(() => {
       const capItem = document.getElementById("caplistItem");
       if (capItem) capItem.value = editData.caplistItem || "";
@@ -520,18 +536,18 @@ function initFormScript(editData) {
       const currentLevels = (editData.levels || "").split(", ");
       document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
         cb.checked = currentLevels.includes(cb.value);
+        if (isApproved && !isAdmin) cb.disabled = true; // Lock checkboxes
       });
 
       if (typeof handleStatusChangeUI === "function") handleStatusChangeUI();
     }, 300); 
 
-    // 6. Technical Detail Lainnya
+    // 7. Technical Detail Lainnya
     document.getElementById("partNumber").value = editData.partNumber || "";
     document.getElementById("partName").value = editData.partName || "";
     document.getElementById("ataChapter").value = editData.ataChapter || "";
 
     // --- SAFETY GUARD (INA - Added Logic) ---
-    // Baris terakhir blok if(editData) untuk menjamin tombol muncul jika status APPROVED
     setTimeout(() => {
       if (typeof handleStatusChangeUI === "function") {
         handleStatusChangeUI();
@@ -545,6 +561,11 @@ function initFormScript(editData) {
     document.getElementById("mgmtBox").style.display = "none";
     document.getElementById("editId").value = ""; 
     
+    // Reset all inputs to enabled for new form
+    const allInputs = form.querySelectorAll('input, select, textarea');
+    allInputs.forEach(input => input.disabled = false);
+    document.getElementById("btnSubmitForm").style.display = "inline-flex";
+
     if (typeof currentUser !== 'undefined' && currentUser !== null) {
       document.getElementById("username").value = currentUser.name;
       document.getElementById("unit").value = currentUser.unit;
