@@ -386,20 +386,48 @@ function showAdvice(input, colIdx) {
 }
 
 /**
- * REPAIRED: selectAdvice (Selection Logic)
- * Memasukkan data pilihan ke input dan menangani pemotongan string khusus Rating.
+ * REPAIRED: selectAdvice (With Auto-Category Logic for EASA)
+ * Mengisi nilai input dan secara otomatis mensinkronkan Category jika Rating EASA dipilih.
  */
 function selectAdvice(inputId, value) {
   let finalValue = value;
+  let categoryValue = "";
   
-  // Jika ini input rating dan mengandung pemisah " - ", ambil kodenya saja (C1)
+  // Jika ini input rating dan mengandung pemisah " - ", pecah datanya (e.g., "C7 - Engine - APU")
   if (inputId === "rating" && value.includes(" - ")) {
-    finalValue = value.split(" - ")[0].trim();
+    const parts = value.split(" - ");
+    finalValue = parts[0].trim();       // Ambil kodenya (misal: C7)
+    categoryValue = parts.slice(1).join(" - ").trim(); // Ambil deskripsinya (misal: Engine - APU)
   }
   
   const targetInput = document.getElementById(inputId);
   if (targetInput) {
     targetInput.value = finalValue;
+  }
+
+  // --- AUTO FILL CATEGORY LOGIC (INA) ---
+  if (inputId === "rating" && categoryValue !== "") {
+    const auth = document.getElementById("authSelect").value;
+    if (auth === "EASA") {
+      const catSelect = document.getElementById("caplistItem");
+      // Cek apakah categoryValue ada di pilihan dropdown
+      let exists = false;
+      if (catSelect) {
+        for (let i = 0; i < catSelect.options.length; i++) {
+          if (catSelect.options[i].value === categoryValue) {
+            catSelect.value = categoryValue;
+            exists = true;
+            break;
+          }
+        }
+        // Jika tidak ada di dropdown (karena filter rawData), tambahkan sementara agar valid
+        if (!exists) {
+          const newOpt = new Option(categoryValue, categoryValue);
+          catSelect.add(newOpt);
+          catSelect.value = categoryValue;
+        }
+      }
+    }
   }
 
   // Sembunyikan popover advice setelah dipilih
