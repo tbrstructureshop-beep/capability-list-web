@@ -1,1 +1,162 @@
+<style>
+  /* Premium Modal Styling for Authorized Person */
+  .auth-person-card {
+    background: #fff;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: authPersonSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
 
+  @keyframes authPersonSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .auth-person-header {
+    padding: 24px;
+    background: var(--primary-light);
+    border-bottom: 1px solid rgba(60, 146, 166, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .auth-person-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .auth-person-body {
+    padding: 40px 32px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .coming-soon-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .cs-badge {
+    background: #fff7ed;
+    color: #c2410c;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1px solid #fed7aa;
+  }
+
+  .target-info {
+    background: #f9fafb;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .target-info span {
+    display: block;
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .target-info strong {
+    font-size: 15px;
+    color: var(--text-main);
+  }
+
+  .btn-close-cs {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 10px;
+  }
+
+  .btn-close-cs:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+  }
+</style>
+
+<div class="auth-person-card">
+  <div class="auth-person-header">
+    <div class="auth-person-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="8.5" cy="7" r="4"></circle>
+        <polyline points="17 11 19 13 23 9"></polyline>
+      </svg>
+      Authorized Personnel
+    </div>
+    <button class="close-x" onclick="closeAuthPersonModal()">&times;</button>
+  </div>
+
+  <div class="auth-person-body">
+    <div class="coming-soon-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    
+    <div class="cs-badge">Under Development</div>
+    
+    <div style="max-width: 300px;">
+      <h4 style="margin: 0 0 8px 0; color: var(--text-main);">Module Coming Soon</h4>
+      <p style="margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
+        Detail personil yang memiliki otorisasi untuk komponen ini sedang dalam tahap integrasi database.
+      </p>
+    </div>
+
+    <div class="target-info">
+      <span>Target Component</span>
+      <strong id="cs_partNumber">PN -</strong>
+      <div style="margin-top: 4px; font-size: 12px; color: var(--primary); font-weight: 700;" id="cs_authority">AUTH: -</div>
+    </div>
+
+    <button class="btn-close-cs" onclick="closeAuthPersonModal()">Understand & Close</button>
+  </div>
+</div>
+
+<script>
+  /**
+   * Fungsi inisialisasi yang dipanggil oleh index.html utama
+   */
+  function initAuthPerson(auth, pn) {
+    document.getElementById('cs_partNumber').textContent = pn;
+    document.getElementById('cs_authority').textContent = "AUTHORITY: " + auth;
+  }
+</script>
