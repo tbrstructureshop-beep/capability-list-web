@@ -900,37 +900,48 @@
     let currentView = "database"; 
 
    /**
-     * REPAIRED: switchView with Robust Sidebar Guard
-     * Ensures UI states (like New Application button) are strictly synchronized.
+     * FINAL MERGED: switchView
+     * Menggabungkan Robust Sidebar Guard dengan Adaptive Filter Injection.
+     * Memastikan filter direset dan dibangun ulang sesuai konteks view (Submissions vs DB).
      */
     async function switchView(view) {
       currentView = view;
       currentPage = 1; 
       
       showLoader(); 
-
+    
       const title = document.querySelector("h1");
       const searchInput = document.getElementById("globalSearch");
       const subSidebar = document.getElementById("submissionSidebarActions");
+      const filterRow = document.getElementById("filterRow");
       
-      // Guard: Safe selector for bulkSidebar to prevent null pointer errors
+      // Guard: Safe selector untuk bulkSidebar
       const authTag = document.querySelector(".authority-tag");
       const bulkSidebar = authTag ? authTag.parentElement : null;
-
-      // Reset UI state
-      if (searchInput) searchInput.value = "";
-      const filterRow = document.getElementById("filterRow");
-      if (filterRow) filterRow.style.display = "none";
+    
+      // --- LOGIC: Filter & Search Reset (No Ruin) ---
+      activeFilters = {}; 
+      if (filterRow) {
+        filterRow.innerHTML = ""; 
+        filterRow.style.display = "none";
+      }
       filtersVisible = false;
-
+      if (searchInput) searchInput.value = "";
+    
       if (view === "submissions") {
         if (title) title.textContent = "Submission Tracking";
         if (searchInput) searchInput.placeholder = "Search by Part Number, Name, or ID...";
         
-        // Strictly show Submission actions, hide Database bulk actions
+        // Sidebar Guard Logic
         if (subSidebar) subSidebar.style.display = "block";
         if (bulkSidebar) bulkSidebar.style.display = "none";
-
+    
+        // --- LOGIC: Inject Submission Filter Headers ---
+        const subHeaders = ["ID", "Date", "User", "Unit", "Auth", "Category", "Rating", "P/N", "Name", "Mfr", "ATA", "Shop", "A/C", "Levels", "Files", "Status"];
+        if (typeof buildFilterInputs === "function") {
+          buildFilterInputs(subHeaders);
+        }
+    
         if (typeof loadSubmissions !== "function") {
           await injectSubmissionModule();
         }
@@ -941,9 +952,14 @@
         if (title) title.textContent = "Enterprise Capability Web";
         if (searchInput) searchInput.placeholder = "Search components, part numbers, or descriptions...";
         
-        // Strictly hide Submission actions, show Database bulk actions
+        // Sidebar Guard Logic
         if (subSidebar) subSidebar.style.display = "none";
         if (bulkSidebar) bulkSidebar.style.display = "block";
+        
+        // --- LOGIC: Re-build Main Database Filters ---
+        if (typeof colNames !== 'undefined' && colNames.length > 0 && typeof buildFilterInputs === "function") {
+          buildFilterInputs(colNames);
+        }
         
         refreshData(true);
       }
@@ -1272,47 +1288,73 @@
     }
     
     /**
-     * OPTIMIZED FILTER: applyAllFilters
-     * Melakukan filter cascading pada data masif tanpa membuat UI membeku.
-     * Menggunakan logika short-circuit untuk mempercepat pencarian.
+     * FINAL MERGED & OPTIMIZED: applyAllFilters
+     * Mendukung filter ganda untuk Main Database (Array) dan Submissions (Object).
+     * Menggunakan short-circuit logic dan try-catch untuk stabilitas data masif.
      */
     function applyAllFilters() {
-      // 1. Tampilkan loader hanya jika data besar (>5000) agar dataset kecil terasa instan
-      if (rawData.length > 5000) showLoader();
-
+      // 1. Loader Guard: Hanya tampilkan jika data besar agar tetap responsif
+      const dataSize = (currentView === "submissions") ? allSubmissions.length : rawData.length;
+      if (dataSize > 5000) showLoader();
+    
       setTimeout(() => {
         try {
-          currentPage = 1; // Reset ke halaman pertama setiap kali filter berubah
+          currentPage = 1; 
           const searchInput = document.getElementById("globalSearch");
-          globalKeyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
-
-          // 2. OPTIMASI: Gunakan filtering yang lebih cerdas
-          viewData = rawData.filter(row => {
-            // A. Global Search (Hanya jalan jika ada keyword untuk menghemat CPU)
+          const globalKeyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
+          
+          // 2. Tentukan Sumber Data Berdasarkan Context View
+          let sourceData = (currentView === "submissions") ? allSubmissions : rawData;
+    
+          // 3. PROSES FILTERING (Adaptive Logic)
+          const result = sourceData.filter(row => {
+            // A. Global Search Short-circuit
             if (globalKeyword) {
-              const matchesGlobal = row.some(cell => String(cell).toLowerCase().includes(globalKeyword));
+              const rowValues = (currentView === "submissions") ? Object.values(row) : row;
+              const matchesGlobal = rowValues.some(cell => String(cell).toLowerCase().includes(globalKeyword));
               if (!matchesGlobal) return false;
             }
-
+    
             // B. Multi-Select Filters (Cascading)
             return Object.keys(activeFilters).every(colIdx => {
               const selected = activeFilters[colIdx];
-              if (!selected || selected.size === 0) return true; // Lewati jika filter kolom ini kosong
-              return selected.has(String(row[colIdx]).trim() || "(Blanks)");
+              if (!selected || selected.size === 0) return true;
+    
+              // Mapping nilai: Submissions menggunakan Keys, Main DB menggunakan Index
+              let cellValue;
+              if (currentView === "submissions") {
+                const keys = Object.keys(row);
+                cellValue = String(row[keys[colIdx]] || "").trim() || "(Blanks)";
+              } else {
+                cellValue = String(row[colIdx] || "").trim() || "(Blanks)";
+              }
+              return selected.has(cellValue);
             });
           });
-
-          // 3. Update UI dan Dropdown
-          renderCards(viewData);
-          updateDataStatus();
-          refreshAllDropdowns();
+    
+          // 4. BRANCH RENDERING & ASSIGNMENT
+          if (currentView === "submissions") {
+            filteredSubmissions = result;
+            if (typeof renderSubmissionCards === "function") {
+              renderSubmissionCards();
+            }
+          } else {
+            viewData = result;
+            renderCards(viewData);
+          }
           
+          // 5. Update UI & Dropdown State
+          updateDataStatus();
+          if (typeof refreshAllDropdowns === "function") {
+            refreshAllDropdowns();
+          }
+    
         } catch (e) {
-          console.error("Filter Logic Error:", e);
+          console.error("Critical Filter Logic Error:", e);
         } finally {
           hideLoader();
         }
-      }, 10); // Timeout 10ms memberikan kesempatan browser untuk me-render loader sebelum heavy task
+      }, 10);
     }
     
     // 2. Membangun Struktur UI Dropdown (Dipanggil setelah Fetch Data)
@@ -1363,49 +1405,64 @@
       refreshAllDropdowns(); 
     }
     
-/** 
-     * HIGH-PERFORMANCE DROPDOWN: refreshAllDropdowns
-     * Mengoptimalkan cascading filter untuk 21.000+ data.
-     * Mencegah lag dengan limitasi render dan pengecekan visibility.
+    /** 
+     * FINAL MERGED & HIGH-PERFORMANCE: refreshAllDropdowns
+     * Mengoptimalkan cascading filter untuk Database (Array) dan Submissions (Object).
+     * Mencegah browser lag dengan limitasi render DOM dan indikator status pilihan.
      */
     function refreshAllDropdowns() {
       // 1. Guard: Hanya proses jika panel filter sedang terbuka
       if (!filtersVisible) return; 
-
-      colNames.forEach((name, displayIdx) => {
+    
+      const isSubView = (currentView === "submissions");
+      const activeHeaders = isSubView ? 
+        ["id", "date", "username", "unit", "authority", "caplistItem", "rating", "partNumber", "partName", "manufacturer", "ataChapter", "shop", "aircraftType", "levels", "fileUrl", "status"] : 
+        colNames;
+    
+      activeHeaders.forEach((name, displayIdx) => {
         const listContainer = document.getElementById(`list-${displayIdx}`);
         if (!listContainer) return;
-
-        // 2. Optimasi Sumber Data: 
-        // Menggunakan viewData (data yang sudah terfilter global) jauh lebih cepat 
-        // daripada melakukan kalkulasi cascading mendalam di setiap kolom.
-        const sourceForDropdown = viewData.length > 0 ? viewData : rawData;
-
+    
+        // 2. Optimasi Sumber Data: Gunakan data terfilter (cascading) atau fallback ke master data
+        let sourceForDropdown;
+        if (isSubView) {
+          sourceForDropdown = filteredSubmissions.length > 0 ? filteredSubmissions : allSubmissions;
+        } else {
+          sourceForDropdown = viewData.length > 0 ? viewData : rawData;
+        }
+    
+        // 3. Kalkulasi Frekuensi (Counts)
         const counts = {};
         sourceForDropdown.forEach(row => {
-          const val = String(row[displayIdx]).trim() || "(Blanks)";
+          let val;
+          if (isSubView) {
+            const keys = Object.keys(row);
+            val = String(row[keys[displayIdx]] || "").trim() || "(Blanks)";
+          } else {
+            val = String(row[displayIdx] || "").trim() || "(Blanks)";
+          }
           counts[val] = (counts[val] || 0) + 1;
         });
-
-        // 3. Performance Limit: 
-        // Batasi maksimal 500 unique values yang di-render di DOM per dropdown.
-        // Menampilkan 21.000 checkbox di dalam satu dropdown akan membuat browser crash.
+    
+        // 4. Performance Limit: Maksimal 500 unique values untuk mencegah browser crash
         const uniqueValues = Object.keys(counts).sort().slice(0, 500); 
         
-        // 4. Render Item
+        // 5. Render DOM Items
         listContainer.innerHTML = uniqueValues.map(val => {
-          // Escape single quote untuk keamanan string JS
+          // Escape single quote untuk keamanan string JS dalam atribut onchange
           const safeVal = val.replace(/'/g, "\\'");
+          const isChecked = activeFilters[displayIdx] && activeFilters[displayIdx].has(val);
+          
           return `
             <label class="list-item">
-              <input type="checkbox" ${activeFilters[displayIdx].has(val) ? 'checked' : ''} 
+              <input type="checkbox" ${isChecked ? 'checked' : ''} 
                      onchange="updateFilterState(${displayIdx}, '${safeVal}', this.checked)">
               <span>${val} <small style="color:var(--text-light)">(${counts[val]})</small></span>
             </label>
           `;
         }).join('');
-        
-        // 5. Update Label Button (Indikator jumlah yang terpilih)
+    
+        // 6. Update Label Button (Indikator jumlah yang terpilih)
         const labelEl = document.getElementById(`label-col-${displayIdx}`);
         const countSelected = activeFilters[displayIdx] ? activeFilters[displayIdx].size : 0;
         if (labelEl) {
