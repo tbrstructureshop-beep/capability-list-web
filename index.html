@@ -913,6 +913,8 @@
     
     // Mapping: 0:NO, 1:AUTH, 2:RATING, 3:ATA, 4:SHOP, 5:PN, 6:NAME, 7:MANUF, 8:REF, 14:A/C TYPE, 15:SUMMARY, 16:STATUS
     const DISPLAY_COLS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 14, 15, 16, 17];
+
+    const DB_CONFIG = { name: "CapabilityListDB", store: "main_cache", version: 1 };
     
     
     let rawData = [];
@@ -925,6 +927,32 @@
     let activeFilters = {};    // <--- TAMBAHKAN INI (State untuk Multi-Select)
     let actionMode = false;
     let currentView = "database"; 
+
+
+     async function getLocalCache() {
+      return new Promise((resolve) => {
+        const req = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
+        req.onupgradeneeded = (e) => e.target.result.createObjectStore(DB_CONFIG.store);
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          const tx = db.transaction(DB_CONFIG.store, "readonly");
+          const store = tx.objectStore(DB_CONFIG.store);
+          const get = store.get("capability_data");
+          get.onsuccess = () => resolve(get.result);
+          get.onerror = () => resolve(null);
+        };
+        req.onerror = () => resolve(null);
+      });
+    }
+
+    async function setLocalCache(payload) {
+      const req = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction(DB_CONFIG.store, "readwrite");
+        tx.objectStore(DB_CONFIG.store).put(payload, "capability_data");
+      };
+    }
 
    /**
      * FINAL MERGED: switchView
@@ -1200,58 +1228,75 @@
     }
 
     /**
-     * OPTIMIZED FETCH: refreshData
-     * Fixed Typo and ensured hideLoader() is called reliably to prevent infinite spinner.
+     * ULTRALAST LOADING: refreshData with IndexedDB Cache
+     * Memuat data instan dari disk lokal sebelum menyentuh jaringan.
      */
-    function refreshData(isInitial = false) {
-      if (isInitial) showLoader();
-      
-      const url = `${GAS_API_URL}?action=getCapabilityList&_=${new Date().getTime()}`;
+    async function refreshData(isInitial = false) {
+      if (isInitial) {
+        showLoader();
+        
+        // 1. LOGIN PERSISTENCE
+        const savedSession = localStorage.getItem('capability_session');
+        if (savedSession && !currentUser) {
+          currentUser = JSON.parse(savedSession);
+          if (typeof updateAuthUI === 'function') updateAuthUI();
+        }
+
+        // 2. LOAD DARI CACHE (INSTAN!)
+        const cache = await getLocalCache();
+        if (cache && cache.rawData && cache.rawData.length > 0) {
+          rawData = cache.rawData;
+          colNames = cache.colNames;
+          buildFilterInputs(colNames);
+          applyAllFilters();
+          hideLoader(); // Langsung matikan loader, UI sudah siap!
+          console.log("Flash Load from Local Cache: " + rawData.length + " rows");
+        }
+      }
+
+      // 3. BACKGROUND FETCH (Update data terbaru tanpa mematikan UI)
+      const url = `${GAS_API_URL}?action=getCapabilityList&_=${Date.now()}`;
       
       fetch(url)
         .then(res => res.json())
         .then(rows => {
-          if (rows.success === false) throw new Error(rows.error);
-          if (!rows || rows.length < 3) throw new Error("Data empty");
+          if (rows.success === false || !rows || rows.length < 3) return;
 
-          colNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+          const newColNames = DISPLAY_COLS.map(i => `${rows[0][i] || ""} ${rows[1][i] || ""}`.trim());
+          const newRawData = [];
           
-          const tempRaw = [];
-          const dataLength = rows.length;
-          const displayColsLen = DISPLAY_COLS.length;
-          
-          for (let i = 3; i < dataLength; i++) {
+          for (let i = 3; i < rows.length; i++) {
             const r = rows[i];
             if (r[1] && String(r[1]).trim() !== "") {
-              const mappedRow = new Array(displayColsLen);
-              for (let j = 0; j < displayColsLen; j++) {
+              const mappedRow = new Array(DISPLAY_COLS.length);
+              for (let j = 0; j < DISPLAY_COLS.length; j++) {
                 mappedRow[j] = r[DISPLAY_COLS[j]] ?? "";
               }
-              tempRaw.push(mappedRow);
+              newRawData.push(mappedRow);
             }
           }
-          rawData = tempRaw;
 
-          requestAnimationFrame(() => {
-            try {
+          // Cek jika ada perubahan data, baru update UI
+          if (JSON.stringify(newRawData) !== JSON.stringify(rawData)) {
+            rawData = newRawData;
+            colNames = newColNames;
+            
+            requestAnimationFrame(() => {
               if (isInitial) buildFilterInputs(colNames);
               applyAllFilters();
-            } finally {
-              // INA: Hide loader regardless of rendering success to prevent stuck UI
-              if (isInitial) hideLoader();
-            }
-            
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-            console.log(`Data auto-refreshed at: ${timeStr} | ${rawData.length} records processed.`);
-          });
+              hideLoader();
+            });
+
+            // Simpan ke Cache untuk kunjungan berikutnya
+            setLocalCache({ rawData: newRawData, colNames: newColNames, timestamp: Date.now() });
+          }
         })
-        .catch(err => { 
-          console.error("Fetch Error:", err); 
-          hideLoader(); // INA: Ensure spinner disappears on connection failure
+        .catch(err => {
+          console.error("Background Refresh Failed:", err);
+          hideLoader();
           const statusEl = document.getElementById("dataStatus");
-          if (statusEl) {
-            statusEl.innerHTML = `<span style="color:#ef4444; font-weight:700;">⚠️ Sync Error. Retrying in 5 mins...</span>`;
+          if (statusEl && !rawData.length) {
+            statusEl.innerHTML = `<span style="color:red">Connection Error. Data offline.</span>`;
           }
         });
     }
