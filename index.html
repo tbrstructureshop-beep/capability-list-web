@@ -764,6 +764,11 @@
     <h2 style="font-size: 18px; margin:0;">Control Panel</h2>
     <button onclick="toggleSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
   </div>
+
+  <button id="signInSideBtn" onclick="openLoginModal(); toggleSidebar();" class="menu-item" style="color: var(--primary); border: 1px dashed var(--primary);">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+    Sign In to System
+  </button>
   
   <!-- Menu Utama -->
   <button onclick="switchView('database'); toggleSidebar();" class="menu-item">
@@ -1942,15 +1947,22 @@
     }
 
     function updateAuthUI() {
+      const loginBtn = document.getElementById('signInSideBtn');
+      const profile = document.getElementById('userProfile');
+      const logoutBtn = document.getElementById('logoutBtn');
+    
       if (currentUser) {
-        document.getElementById('userProfile').style.display = 'block';
-        document.getElementById('logoutBtn').style.display = 'flex';
+        if(loginBtn) loginBtn.style.display = 'none';
+        if(profile) profile.style.display = 'block';
+        if(logoutBtn) logoutBtn.style.display = 'flex';
+        
         document.getElementById('sideUserName').textContent = currentUser.name;
         document.getElementById('sideUserMeta').textContent = `ID: ${currentUser.empId || 'N/A'} | Unit: ${currentUser.unit}`;
         document.getElementById('userInitial').textContent = currentUser.name.charAt(0).toUpperCase();
       } else {
-        document.getElementById('userProfile').style.display = 'none';
-        document.getElementById('logoutBtn').style.display = 'none';
+        if(loginBtn) loginBtn.style.display = 'flex';
+        if(profile) profile.style.display = 'none';
+        if(logoutBtn) logoutBtn.style.display = 'none';
       }
     }
 
