@@ -208,6 +208,7 @@ function handleMultiFile(input) {
 
 /**
  * SINKRONISASI PROSES SUBMISSION (INA - Process)
+ * Updated: Added Rating field to payload
  */
 async function submitForm() {
   const form = document.getElementById("newCapForm");
@@ -237,6 +238,7 @@ async function submitForm() {
     unit: document.getElementById("unit").value,
     authority: document.getElementById("authSelect").value,
     caplistItem: document.getElementById("caplistItem").value,
+    rating: document.getElementById("rating").value, // <--- ADDED: Rating capture
     partNumber: document.getElementById("partNumber").value,
     partName: document.getElementById("partName").value,
     manufacturer: document.getElementById("manufacturer").value,
@@ -423,7 +425,7 @@ function handleAuthorityChange() {
 
 /**
  * REPAIRED: initFormScript
- * Memastikan populasi data saat mode Manage/Edit berjalan sempurna.
+ * Memastikan populasi data (termasuk Rating) saat mode Manage/Edit berjalan sempurna.
  * Menangani sinkronisasi tanggal standar HTML5 (YYYY-MM-DD).
  */
 function initFormScript(editData) {
@@ -440,7 +442,7 @@ function initFormScript(editData) {
     document.getElementById("mgmtBox").style.display = "block";
     document.getElementById("editId").value = editData.id;
     
-    // 2. POPULASI TANGGAL (PENTING!)
+    // 2. POPULASI TANGGAL
     // Menggunakan data.date yang sudah diformat YYYY-MM-DD oleh GAS
     document.getElementById("submitDate").value = editData.date || "";
 
@@ -452,11 +454,15 @@ function initFormScript(editData) {
     // Trigger perubahan otoritas untuk merender Level & Label dinamis
     handleAuthorityChange();
     
-    // 4. Populasi Elemen Dinamis (Gunakan Timeout agar DOM selesai render)
+    // 4. Populasi Elemen Dinamis (Gunakan Timeout agar DOM selesai render dari handleAuthorityChange)
     setTimeout(() => {
       // Isi Category Dropdown
       const capItem = document.getElementById("caplistItem");
       if (capItem) capItem.value = editData.caplistItem || "";
+      
+      // FIXED: Isi Field Rating yang sebelumnya tidak terpopulasi
+      const ratingInput = document.getElementById("rating");
+      if (ratingInput) ratingInput.value = editData.rating || "";
       
       // Isi Field Autocomplete
       document.getElementById("manufacturer").value = editData.manufacturer || "";
@@ -468,7 +474,7 @@ function initFormScript(editData) {
       document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
         cb.checked = currentLevels.includes(cb.value);
       });
-    }, 250); // Jeda 250ms untuk memastikan transisi DOM stabil
+    }, 250); 
 
     // 5. Technical Detail Lainnya
     document.getElementById("partNumber").value = editData.partNumber || "";
@@ -484,10 +490,11 @@ function initFormScript(editData) {
     const tempId = "REQ-" + new Date().getTime().toString().slice(-6);
     document.getElementById("formTitle").textContent = "New App (" + tempId + ")";
     document.getElementById("mgmtBox").style.display = "none";
-    document.getElementById("editId").value = ""; // Pastikan ID kosong
+    document.getElementById("editId").value = ""; 
     
     // Default tanggal hari ini untuk pengajuan baru
     document.getElementById("submitDate").value = new Date().toISOString().split('T')[0];
   }
 }
+  
 </script>
