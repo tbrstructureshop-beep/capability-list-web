@@ -1,94 +1,262 @@
-<div class="modal-card" style="max-width: 400px;">
-  <div class="modal-header">
-    <h3 id="authTitle">Sign In System</h3>
-    <button class="close-x" onclick="closeAuthModal()">&times;</button>
+<style>
+  /* Premium Auth UI */
+  .auth-card {
+    background: #fff;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: authSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes authSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .auth-header {
+    padding: 32px 32px 16px 32px;
+    text-align: center;
+  }
+
+  .auth-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+  }
+
+  .auth-header p {
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .auth-body {
+    padding: 0 32px 32px 32px;
+  }
+
+  /* Custom Input Styling */
+  .auth-group {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .auth-group label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .auth-group input, .auth-group select {
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    font-size: 14px;
+    transition: var(--transition);
+    outline: none;
+    background: #f9fafb;
+  }
+
+  .auth-group input:focus {
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1);
+  }
+
+  .btn-auth {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .btn-auth:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+  }
+
+  .auth-footer {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .auth-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .auth-link:hover {
+    text-decoration: underline;
+  }
+
+  .close-auth {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #f3f4f6;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: 0.2s;
+  }
+
+  .close-auth:hover {
+    background: #e5e7eb;
+    color: var(--text-main);
+  }
+</style>
+
+<div class="auth-card">
+  <button class="close-auth" onclick="closeAuthModal()">&times;</button>
+  
+  <div class="auth-header">
+    <h3 id="authTitle">Sign In</h3>
+    <p id="authSubtitle">Enter your credentials to continue</p>
   </div>
-  <div class="modal-body">
+
+  <div class="auth-body">
+    <!-- FORM LOGIN -->
     <div id="loginForm">
-      <div class="form-group" style="margin-bottom:15px;">
+      <div class="auth-group">
         <label>Employee ID</label>
-        <input type="text" id="loginId" placeholder="Input ID...">
+        <input type="text" id="loginId" placeholder="e.g. 123456">
       </div>
-      <div class="form-group" style="margin-bottom:15px;">
+      <div class="auth-group">
         <label>Password</label>
-        <input type="password" id="loginPass" placeholder="******">
+        <input type="password" id="loginPass" placeholder="••••••••">
       </div>
-      <button class="btn btn-primary" style="width:100%" onclick="processLogin()">Login</button>
-      <p style="text-align:center; font-size:12px; margin-top:15px;">
-        Belum punya akun? <a href="#" onclick="toggleAuthMode('reg')">Daftar di sini</a>
-      </p>
+      <button class="btn-auth" onclick="processLogin()">
+        Sign In
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+      <div class="auth-footer">
+        Don't have an account? <span class="auth-link" onclick="toggleAuthMode('reg')">Register here</span>
+      </div>
     </div>
 
+    <!-- FORM REGISTER -->
     <div id="registerForm" style="display:none;">
-      <div class="form-group"><label>Employee ID</label><input type="text" id="regId"></div>
-      <div class="form-group"><label>Full Name</label><input type="text" id="regName"></div>
-      <div class="form-group"><label>Unit</label><input type="text" id="regUnit"></div>
-      <div class="form-group">
-        <label>Role</label>
-        <select id="regRole"><option value="user">Applicant (User)</option><option value="Admin">Admin (QA/Technical)</option></select>
+      <div class="auth-group">
+        <label>Employee ID</label>
+        <input type="text" id="regId" placeholder="ID Number">
       </div>
-      <div class="form-group"><label>Password</label><input type="password" id="regPass"></div>
-      <button class="btn btn-primary" style="width:100%; margin-top:15px;" onclick="processRegister()">Register</button>
-      <a href="#" onclick="toggleAuthMode('login')" style="display:block; text-align:center; font-size:12px; margin-top:10px;">Kembali ke Login</a>
+      <div class="auth-group">
+        <label>Full Name</label>
+        <input type="text" id="regName" placeholder="Full Name">
+      </div>
+      <div class="auth-group">
+        <label>Unit / Department</label>
+        <input type="text" id="regUnit" placeholder="e.g. QA, TCP-10">
+      </div>
+      <div class="auth-group">
+        <label>Access Role</label>
+        <select id="regRole">
+          <option value="user">Applicant (User)</option>
+          <option value="Admin">System Administrator</option>
+        </select>
+      </div>
+      <div class="auth-group">
+        <label>Create Password</label>
+        <input type="password" id="regPass" placeholder="••••••••">
+      </div>
+      <button class="btn-auth" onclick="processRegister()">
+        Create Account
+      </button>
+      <div class="auth-footer">
+        Already have an account? <span class="auth-link" onclick="toggleAuthMode('login')">Back to Sign In</span>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-let currentUser = null;
+/**
+ * REPAIRED TOGGLE: Menggunakan window scope agar terpanggil meski di-inject
+ */
+window.toggleAuthMode = function(mode) {
+  const isLogin = mode === 'login';
+  document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+  
+  document.getElementById('authTitle').textContent = isLogin ? 'Sign In' : 'Registration';
+  document.getElementById('authSubtitle').textContent = isLogin ? 
+    'Enter your credentials to continue' : 
+    'Create your account for the capability system';
+};
 
-function toggleAuthMode(mode) {
-  document.getElementById('loginForm').style.display = mode === 'login' ? 'block' : 'none';
-  document.getElementById('registerForm').style.display = mode === 'reg' ? 'block' : 'none';
-  document.getElementById('authTitle').textContent = mode === 'login' ? 'Sign In' : 'New Registration';
-}
-
-// Di dalam modal/signinSimulation/index.html <script>
-
-async function processLogin() {
+window.processLogin = async function() {
   const idVal = document.getElementById('loginId').value;
   const passVal = document.getElementById('loginPass').value;
   
-  if(!idVal || !passVal) return Swal.fire("Input Required", "ID dan Password harus diisi", "warning");
+  if(!idVal || !passVal) {
+    return Swal.fire({ icon: 'warning', title: 'Empty Fields', text: 'Please enter ID and Password' });
+  }
 
-  const payload = { 
-    action: "userAuth", 
-    empId: idVal, 
-    password: passVal 
-  };
-  
+  Swal.fire({ title: 'Authenticating...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
   try {
-    const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+    const res = await fetch(GAS_API_URL, { 
+      method: "POST", 
+      body: JSON.stringify({ action: "userAuth", empId: idVal, password: passVal }) 
+    });
     const data = await res.json();
     
     if (data.success) {
-      // SINKRONISASI: Set ke variabel global di index.html
+      // Set Global User State
       currentUser = data.user; 
       
       Swal.fire({
         icon: "success",
-        title: "Welcome " + currentUser.name,
-        text: "Logged in as " + currentUser.role,
+        title: "Authenticated",
+        text: `Welcome back, ${currentUser.name}`,
         timer: 1500,
         showConfirmButton: false
       });
       
       closeAuthModal();
       
-      // Lanjutkan aksi yang tertunda (misal buka form)
+      // Lanjutkan aksi tertunda jika ada
       if(window.pendingAction === 'openForm') {
         window.pendingAction = null;
         openSubmissionForm(); 
       }
     } else {
-      Swal.fire("Authentication Failed", data.error, "error");
+      Swal.fire("Error", data.error, "error");
     }
   } catch (e) {
-    Swal.fire("Error", "Gagal menghubungi server", "error");
+    Swal.fire("Error", "Server connection failed", "error");
   }
-}
+};
 
-async function processRegister() {
+window.processRegister = async function() {
   const payload = {
     action: "userRegister",
     empId: document.getElementById('regId').value,
@@ -97,15 +265,23 @@ async function processRegister() {
     role: document.getElementById('regRole').value,
     password: document.getElementById('regPass').value
   };
-  const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
-  const data = await res.json();
-  if (data.success) {
-    Swal.fire("Registered", "Silakan login sekarang", "success");
-    toggleAuthMode('login');
-  }
-}
 
-function closeAuthModal() {
-  document.getElementById("authModalOverlay").style.display = "none";
-}
+  // Basic Validation
+  if(!payload.empId || !payload.name || !payload.password) {
+    return Swal.fire("Required", "Please fill all mandatory fields", "warning");
+  }
+
+  Swal.fire({ title: 'Registering...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+  try {
+    const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.success) {
+      Swal.fire("Success", "Account created. You can now login.", "success");
+      toggleAuthMode('login');
+    }
+  } catch (e) {
+    Swal.fire("Error", "Registration failed", "error");
+  }
+};
 </script>
