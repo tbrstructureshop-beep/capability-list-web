@@ -1709,6 +1709,16 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
             LOGS
           </button>
+
+          <button class="history-trigger-btn" title="Authorized Person Detail" style="border-color: var(--primary); color: var(--primary);" onclick="event.stopPropagation(); openAuthorizedPersonDetail('${auth}', '${pn}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <polyline points="17 11 19 13 23 9"></polyline>
+            </svg>
+            PERSON
+          </button>
+          
         </div>
       `;
     }
@@ -1983,6 +1993,53 @@
           Swal.fire('Logged Out', 'You have been safely signed out.', 'success');
         }
       });
+    }
+
+    async function openAuthorizedPersonDetail(auth, pn) {
+      showLoader();
+      const targetPath = "modal/authorizedPerson/index.html";
+      
+      try {
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("File Authorized Person modal tidak ditemukan");
+        const html = await response.text();
+        
+        hideLoader();
+        let modalOverlay = document.getElementById("authPersonModalOverlay");
+        if (!modalOverlay) {
+          modalOverlay = document.createElement("div");
+          modalOverlay.id = "authPersonModalOverlay";
+          modalOverlay.className = "modal-overlay";
+          document.body.appendChild(modalOverlay);
+        }
+        
+        modalOverlay.innerHTML = html;
+        modalOverlay.style.display = "flex";
+    
+        // Inject scripts jika ada di dalam html tersebut
+        const scripts = modalOverlay.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+    
+        // Panggil fungsi inisialisasi jika nanti Anda membuatnya di index.html modal tersebut
+        if (typeof initAuthPerson === "function") {
+          initAuthPerson(auth, pn);
+        }
+    
+      } catch (err) {
+        hideLoader();
+        console.error(err);
+        Swal.fire("Error", "Gagal memuat detail person: " + err.message, "error");
+      }
+    }
+    
+    // Fungsi untuk menutup modal ini (panggil dari tombol close di modal person)
+    function closeAuthPersonModal() {
+      const modal = document.getElementById("authPersonModalOverlay");
+      if (modal) modal.style.display = "none";
     }
     
     // Opsional: Muat modal di awal (Background load) agar saat klik tombol terasa instan
