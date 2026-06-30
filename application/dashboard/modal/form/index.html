@@ -464,9 +464,9 @@ function handleAuthorityChange() {
 }
 
 /**
- * FINAL MERGED: initFormScript
+ * FINAL REPAIRED: initFormScript
  * Sinkronisasi Role-Simulation dengan Populasi Data Submission.
- * No Ruin: Mempertahankan timeout untuk render elemen otoritas dinamis.
+ * Ditambahkan safety guard timeout 500ms untuk memastikan UI Update terpanggil sempurna.
  */
 function initFormScript(editData) {
   const form = document.getElementById("newCapForm");
@@ -476,7 +476,7 @@ function initFormScript(editData) {
   const filePreview = document.getElementById("fileListPreview");
   if (filePreview) filePreview.innerHTML = "";
 
-  // 1. SINKRONISASI ROLE DARI LOGIN SIMULATION (INA Logic)
+  // 1. SINKRONISASI ROLE DARI LOGIN SIMULATION
   isAdmin = (typeof currentUser !== 'undefined' && currentUser !== null && currentUser.role === "Admin");
 
   if (editData) {
@@ -485,13 +485,13 @@ function initFormScript(editData) {
     document.getElementById("mgmtBox").style.display = "block";
     document.getElementById("editId").value = editData.id;
     
-    // 2. Populasi Identitas & Tanggal (Standard HTML5 format)
+    // 2. Populasi Identitas & Tanggal
     document.getElementById("submitDate").value = editData.date || "";
     document.getElementById("username").value = editData.username || "";
     document.getElementById("unit").value = editData.unit || "";
     document.getElementById("authSelect").value = editData.authority || "";
     
-    // 3. ROLE LOGIC: Management Control (Reviewer & Status Listener)
+    // 3. ROLE LOGIC: Reviewer & Status Listener
     if (isAdmin && typeof currentUser !== 'undefined') {
       document.getElementById("reviewerName").value = currentUser.name;
     }
@@ -499,33 +499,29 @@ function initFormScript(editData) {
     const statusSel = document.getElementById("statusSelect");
     if (statusSel) {
       statusSel.value = editData.status || "SUBMITTED";
-      statusSel.onchange = handleStatusChangeUI; // Pasang listener deteksi Approval
+      statusSel.onchange = handleStatusChangeUI; 
     }
 
-    // 4. Trigger Perubahan Otoritas (Untuk render label & level)
+    // 4. Trigger Perubahan Otoritas (Label & Level)
     handleAuthorityChange();
     
-    // 5. Timeout Populasi (Menunggu DOM Otoritas Selesai Render)
+    // 5. Timeout Populasi (DOM Element Otoritas)
     setTimeout(() => {
-      // Isi dropdown kategori & rating
       const capItem = document.getElementById("caplistItem");
       if (capItem) capItem.value = editData.caplistItem || "";
       
       const ratingInput = document.getElementById("rating");
       if (ratingInput) ratingInput.value = editData.rating || "";
       
-      // Isi Field Autocomplete
       document.getElementById("manufacturer").value = editData.manufacturer || "";
       document.getElementById("shop").value = editData.shop || "";
       document.getElementById("aircraftType").value = editData.aircraftType || "";
       
-      // Centang Level yang tersimpan
       const currentLevels = (editData.levels || "").split(", ");
       document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
         cb.checked = currentLevels.includes(cb.value);
       });
 
-      // Update UI Tombol Approval (Munculkan jika status Approved + Admin)
       if (typeof handleStatusChangeUI === "function") handleStatusChangeUI();
     }, 300); 
 
@@ -533,6 +529,14 @@ function initFormScript(editData) {
     document.getElementById("partNumber").value = editData.partNumber || "";
     document.getElementById("partName").value = editData.partName || "";
     document.getElementById("ataChapter").value = editData.ataChapter || "";
+
+    // --- SAFETY GUARD (INA - Added Logic) ---
+    // Baris terakhir blok if(editData) untuk menjamin tombol muncul jika status APPROVED
+    setTimeout(() => {
+      if (typeof handleStatusChangeUI === "function") {
+        handleStatusChangeUI();
+      }
+    }, 500); 
     
   } else {
     // === MODE: NEW APPLICATION ===
@@ -541,7 +545,6 @@ function initFormScript(editData) {
     document.getElementById("mgmtBox").style.display = "none";
     document.getElementById("editId").value = ""; 
     
-    // OTOMATIS ISI DARI DATA LOGIN (Simulation Logic)
     if (typeof currentUser !== 'undefined' && currentUser !== null) {
       document.getElementById("username").value = currentUser.name;
       document.getElementById("unit").value = currentUser.unit;
@@ -549,7 +552,6 @@ function initFormScript(editData) {
     
     document.getElementById("submitDate").value = new Date().toISOString().split('T')[0];
     
-    // Pastikan tombol approval sembunyi
     const btnProcess = document.getElementById("btnProcessApproval");
     if (btnProcess) btnProcess.style.display = "none";
   }
