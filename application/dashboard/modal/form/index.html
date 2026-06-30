@@ -467,7 +467,8 @@ function handleAuthorityChange() {
 /**
  * FINAL REPAIRED: initFormScript
  * Sinkronisasi Role-Simulation dengan Populasi Data Submission & Protection Logic.
- * Logic: Robust role detection (case-insensitive) & strict status locking for users.
+ * Case: Admin (Slamet) vs User (Eko). 
+ * Status lock untuk user, Reviewer auto-fill, Remark manual.
  */
 function initFormScript(editData) {
   const form = document.getElementById("newCapForm");
@@ -478,67 +479,69 @@ function initFormScript(editData) {
   if (filePreview) filePreview.innerHTML = "";
 
   // 1. SINKRONISASI ROLE DARI LOGIN SIMULATION (Robust Logic)
-  // Ensure "Admin", "admin", or " ADMIN " are all detected correctly.
   isAdmin = false;
   if (typeof currentUser !== 'undefined' && currentUser !== null && currentUser.role) {
     isAdmin = (currentUser.role.toString().trim().toLowerCase() === "admin");
   }
 
-  const isApproved = editData && editData.status === "APPROVED";
-
   if (editData) {
     // === MODE: MANAGE / EDIT SUBMISSION ===
+    const isApproved = editData.status === "APPROVED";
     document.getElementById("formTitle").textContent = "Manage Submission: " + editData.id;
-    
-    // UI GATE: Management Box (Status & Reviewer) ONLY visible to Admin
-    const mgmtBox = document.getElementById("mgmtBox");
-    if (mgmtBox) mgmtBox.style.display = isAdmin ? "block" : "none"; 
-    
     document.getElementById("editId").value = editData.id;
     
-    // 2. Populasi Identitas & Tanggal
+    // UI GATE: Tampilkan MGMT BOX untuk semua (agar user lihat siapa reviewer/remarknya)
+    // Namun input di dalamnya dikontrol oleh role
+    const mgmtBox = document.getElementById("mgmtBox");
+    if (mgmtBox) mgmtBox.style.display = "block"; 
+
+    // 2. AUTO-FILL REVIEWER & STATUS PROTECTION
+    const revInput = document.getElementById("reviewerName");
+    const statusSel = document.getElementById("statusSelect");
+    const reasonInput = document.getElementById("statusReason");
+
+    if (revInput) {
+      // Auto-fill nama dari session user yang sedang membuka form
+      revInput.value = currentUser ? currentUser.name : (editData.reviewer || "");
+      revInput.disabled = !isAdmin; // User (Eko) tidak bisa ubah nama reviewer dirinya sendiri
+    }
+
+    if (statusSel) {
+      statusSel.value = editData.status || "SUBMITTED";
+      statusSel.disabled = !isAdmin; // Hanya Admin (Slamet) yang bisa ganti status
+      statusSel.onchange = handleStatusChangeUI; 
+    }
+    
+    if (reasonInput) {
+      reasonInput.value = editData.reason || "";
+      reasonInput.disabled = (isApproved && !isAdmin); // Lock remark jika sudah approved
+    }
+
+    // 3. POPULASI IDENTITAS UTAMA
     document.getElementById("submitDate").value = editData.date || "";
     document.getElementById("username").value = editData.username || "";
     document.getElementById("unit").value = editData.unit || "";
     document.getElementById("authSelect").value = editData.authority || "";
     
-    // 3. ROLE LOGIC: Reviewer & Status Protection
-    if (isAdmin && typeof currentUser !== 'undefined') {
-      document.getElementById("reviewerName").value = currentUser.name;
-    }
-    
-    const statusSel = document.getElementById("statusSelect");
-    if (statusSel) {
-      statusSel.value = editData.status || "SUBMITTED";
-      // STRICT PROTECTION: Status read-only for Eko (user), editable for Slamet (Admin)
-      statusSel.disabled = !isAdmin; 
-      statusSel.onchange = handleStatusChangeUI; 
-    }
-
-    // 4. PROTECTION LOGIC: Loop for inputs control
+    // 4. PROTECTION LOGIC: Lock Form jika Approved & User bukan Admin
     const allInputs = form.querySelectorAll('input, select, textarea');
     
     if (isApproved && !isAdmin) {
-      // Logic for Eko (User) viewing an already APPROVED application
+      // Case: Eko melihat pengajuan yang sudah Approved
       allInputs.forEach(input => input.disabled = true);
       document.getElementById("btnSubmitForm").style.display = "none";
       document.getElementById("formTitle").textContent = "View Approved Application: " + editData.id;
     } else {
-      // Logic for standard Edit (User) or Manage (Admin)
+      // Case: Standard Edit (User) atau Manage (Admin)
       allInputs.forEach(input => {
-        // ID-ID ini tetap disabled/readonly untuk menjaga integritas sejarah
+        // ID ini selalu terkunci untuk semua (integritas data)
         if (input.id === "submitDate" || input.id === "username") {
            input.disabled = true;
         } 
-        // Reviewer name hanya bisa diubah admin
-        else if (input.id === "reviewerName") {
+        // ID ini dikontrol role (sudah dihandle di atas, ini double check)
+        else if (input.id === "statusSelect" || input.id === "reviewerName") {
            input.disabled = !isAdmin;
         }
-        // Status select dihandle terpisah di atas, tapi diamankan kembali di sini
-        else if (input.id === "statusSelect") {
-           input.disabled = !isAdmin;
-        }
-        // Sisanya (Data Teknis) bisa diedit kecuali sudah approved (oleh Admin sekalipun)
         else {
            input.disabled = false;
         }
@@ -546,40 +549,33 @@ function initFormScript(editData) {
       document.getElementById("btnSubmitForm").style.display = "inline-flex";
     }
 
-    // 5. Trigger Perubahan Otoritas (Label & Level)
+    // 5. TRIGGER OTORITAS & POPULASI DATA TEKNIS
     handleAuthorityChange();
     
-    // 6. Timeout Populasi Data Teknis agar dropdown Category terisi dulu
     setTimeout(() => {
+      // Re-populate categories & teknis setelah authority change selesai
       const capItem = document.getElementById("caplistItem");
       if (capItem) capItem.value = editData.caplistItem || "";
       
       const ratingInput = document.getElementById("rating");
       if (ratingInput) ratingInput.value = editData.rating || "";
       
+      document.getElementById("partNumber").value = editData.partNumber || "";
+      document.getElementById("partName").value = editData.partName || "";
       document.getElementById("manufacturer").value = editData.manufacturer || "";
+      document.getElementById("ataChapter").value = editData.ataChapter || "";
       document.getElementById("shop").value = editData.shop || "";
       document.getElementById("aircraftType").value = editData.aircraftType || "";
       
       const currentLevels = (editData.levels || "").split(", ");
       document.querySelectorAll('input[name="authLevels"]').forEach(cb => {
         cb.checked = currentLevels.includes(cb.value);
-        // Lock checkbox jika pengajuan sudah Approved dan user bukan Admin
         if (isApproved && !isAdmin) cb.disabled = true; 
       });
 
       if (typeof handleStatusChangeUI === "function") handleStatusChangeUI();
-    }, 300); 
+    }, 400); 
 
-    document.getElementById("partNumber").value = editData.partNumber || "";
-    document.getElementById("partName").value = editData.partName || "";
-    document.getElementById("ataChapter").value = editData.ataChapter || "";
-
-    // 7. Safety Guard UI Update untuk tombol Approval
-    setTimeout(() => {
-      if (typeof handleStatusChangeUI === "function") handleStatusChangeUI();
-    }, 500); 
-    
   } else {
     // === MODE: NEW APPLICATION ===
     document.getElementById("formTitle").textContent = "New Capability Application";
@@ -587,11 +583,11 @@ function initFormScript(editData) {
     if (mgmtBox) mgmtBox.style.display = "none";
     document.getElementById("editId").value = ""; 
     
-    // Reset all inputs to enabled for new form
+    // Aktifkan input untuk pengajuan baru
     const allInputs = form.querySelectorAll('input, select, textarea');
     allInputs.forEach(input => {
        if (input.id === "statusSelect" || input.id === "reviewerName") {
-         input.disabled = true; // Tidak relevan saat input baru
+         input.disabled = true;
        } else {
          input.disabled = false;
        }
