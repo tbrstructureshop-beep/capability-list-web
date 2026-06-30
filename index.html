@@ -1001,10 +1001,12 @@
      * Memuat UI simulasi login/registrasi sebelum akses ke form diberikan.
      */
     async function openLoginModal() {
-      const targetPath = "application/dashboard/modal/signinSimulation/index.html";
+      // PERBAIKAN: Hilangkan path application/dashboard jika file ada di root modal/
+      const targetPath = "modal/signinSimulation/index.html"; 
+      
       try {
         const response = await fetch(targetPath);
-        if (!response.ok) throw new Error("Auth modal file not found");
+        if (!response.ok) throw new Error("File modal login tidak ditemukan di server");
         const html = await response.text();
         
         let authModal = document.getElementById("authModalOverlay");
@@ -1017,8 +1019,8 @@
         
         authModal.innerHTML = html;
         authModal.style.display = "flex";
-
-        // Eksekusi script internal (Login/Register logic)
+    
+        // Re-inject scripts
         const scripts = authModal.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -1027,7 +1029,8 @@
         });
       } catch (err) {
         console.error("Login Modal Error:", err);
-        Swal.fire("Error", "Gagal memuat modul login.", "error");
+        // Memberikan alert yang lebih informatif untuk debugging
+        Swal.fire("Error", "Gagal memuat modul login. Path: " + targetPath, "error");
       }
     }
 
