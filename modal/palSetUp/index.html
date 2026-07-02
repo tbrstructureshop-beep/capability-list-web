@@ -29,7 +29,6 @@
       flex-direction: column !important;
     }
 
-    /* Fixed Bottom Footer for Print */
     .meta-footer-fixed {
       position: fixed;
       bottom: 0;
@@ -38,7 +37,6 @@
       display: flex;
       justify-content: space-between;
       font-size: 10px;
-      /* Removed border-top as requested */
       padding-top: 5px;
       visibility: visible !important;
     }
@@ -88,7 +86,7 @@
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-  /* Footer Signature Table (25:50:25) - Clean Box with Vertical Dividers */
+  /* --- FIXED SIGNATURE TABLE --- */
   .footer-sig-table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -98,24 +96,30 @@
     break-inside: avoid;
   }
   .footer-sig-table td { 
-    border-left: 1px solid black; 
-    height: 85px; 
+    border: 1px solid black; 
+    height: 110px; /* Fixed height for consistent look */
     vertical-align: top; 
     padding: 10px; 
     font-size: 11px; 
   }
-  .footer-sig-table td:first-child { border-left: none; }
   
   .col-25 { width: 25%; }
   .col-50 { width: 50%; }
 
-  /* Metadata Footer Styles */
+  /* Vertical Alignment Container */
+  .sig-inner-flex {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    text-align: center;
+  }
+
   .meta-footer {
     display: flex;
     justify-content: space-between;
     margin-top: 5px;
     font-size: 10px;
-    /* Removed border-top as requested */
   }
 
   .meta-footer-fixed { display: none; }
@@ -165,23 +169,25 @@
           <span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span>
         </td>
         <td class="col-50"></td>
-        <td class="col-25" style="text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; border-top: none; border-bottom: none; border-right: none;">
-          <div style="margin-bottom: 5px;">Approved by SM Structure Workshop</div>
-          <div style="margin-top: auto;">
-            ( <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> )<br>
-            <span style="font-size: 10px;">Name & Signature</span>
+        <td class="col-25">
+          <div class="sig-inner-flex">
+            <div>Approved by<br>SM Structure Workshop</div>
+            <div>
+              ( ___________________________ )<br>
+              <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
+            </div>
           </div>
         </td>
       </tr>
     </table>
 
-    <!-- Screen Preview Footer (No Horizontal Line above it) -->
+    <!-- Screen Preview Footer -->
     <div class="meta-footer no-print">
       <div>Form No.: GMF/Q-364 R1</div>
       <div id="web_page_counter">Page 1 of 1</div>
     </div>
 
-    <!-- Print Footer (Page X of Total) -->
+    <!-- Print Footer -->
     <div class="meta-footer-fixed">
       <div>Form No.: GMF/Q-364 R1</div>
       <div class="page-counter"></div>
