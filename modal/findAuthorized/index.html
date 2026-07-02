@@ -1,111 +1,106 @@
 <style>
   .find-card {
-    background: #fff; width: 100%; max-width: 500px; border-radius: 20px;
-    overflow: hidden; display: flex; flex-direction: column;
-    box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25);
+    background: #fff; width: 450px; border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    display: flex; flex-direction: column; overflow: hidden;
     animation: findSlideIn 0.3s ease-out;
   }
-  @keyframes findSlideIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-  .find-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
-  .search-box-wrapper { padding: 20px 24px; position: relative; background: #f9fafb; }
+  @keyframes findSlideIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
   
-  .advice-input {
-    width: 100%; padding: 14px 20px; border-radius: 12px; border: 2px solid var(--border);
-    font-size: 15px; outline: none; transition: 0.2s;
+  .find-search-box { padding: 20px; border-bottom: 1px solid var(--border); background: #f9fafb; }
+  .find-input { 
+    width: 100%; padding: 14px 16px; border-radius: 12px; 
+    border: 1.5px solid var(--border); outline: none; font-size: 15px;
+    transition: 0.2s;
   }
-  .advice-input:focus { border-color: var(--primary); background: #fff; }
+  .find-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1); }
 
-  .advice-list {
-    max-height: 300px; overflow-y: auto; display: none; /* Hidden by default */
-    border-top: 1px solid var(--border);
-  }
+  .advice-list { max-height: 350px; overflow-y: auto; padding: 10px; display: none; flex-direction: column; gap: 4px; }
   .advice-item {
-    padding: 12px 24px; display: flex; align-items: center; gap: 15px;
-    cursor: pointer; transition: 0.2s; border-bottom: 1px solid #f3f4f6;
+    padding: 12px 16px; border-radius: 10px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    transition: 0.2s; border: 1px solid transparent;
   }
-  .advice-item:hover { background: var(--primary-light); }
+  .advice-item:hover { background: var(--primary-light); border-color: var(--primary); }
+  .advice-info { display: flex; flex-direction: column; }
+  .advice-name { font-weight: 700; color: var(--text-main); font-size: 14px; }
+  .advice-meta { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+  .advice-unit { font-size: 10px; background: #eee; padding: 2px 8px; border-radius: 20px; font-weight: 800; }
   
-  .avatar-circle {
-    width: 40px; height: 40px; background: #e5e7eb; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; color: #6b7280; font-size: 14px; flex-shrink: 0;
-  }
-  .user-info-text b { display: block; font-size: 14px; color: var(--text-main); }
-  .user-info-text span { font-size: 11px; color: var(--text-muted); }
-
-  .empty-state { padding: 40px; text-align: center; color: var(--text-light); font-size: 13px; }
+  .empty-advice { padding: 40px 20px; text-align: center; color: var(--text-light); font-size: 13px; }
 </style>
 
 <div class="find-card">
-  <div class="find-header">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-      <h4 style="margin:0;">Find Personnel</h4>
-      <button class="close-x" onclick="closeFindPersonModal()">&times;</button>
+  <div class="find-search-box">
+    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+       <label style="font-size:11px; font-weight:800; color:var(--primary); text-transform:uppercase;">Search Personnel</label>
+       <button onclick="closeFindModal()" style="border:none; background:none; cursor:pointer; font-size:18px;">&times;</button>
     </div>
+    <input type="text" id="findPersonInput" class="find-input" placeholder="Type ID, Name, or Unit..." oninput="handleAdvice(this.value)">
   </div>
-
-  <div class="search-box-wrapper">
-    <input type="text" id="personSearchInput" class="advice-input" placeholder="Type ID, Name, or Unit..." autocomplete="off">
-  </div>
-
-  <div id="adviceList" class="advice-list"></div>
   
-  <div id="findInitialState" class="empty-state">
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px; opacity:0.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-    <p>Start typing to search personnel...</p>
+  <div id="adviceContainer" class="advice-list"></div>
+  
+  <div id="initialState" class="empty-advice">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="margin-bottom:10px; opacity:0.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <p>Start typing to find personnel...</p>
   </div>
 </div>
 
 <script>
-  let searchableUsers = [];
+  let localStaff = [];
+  let existingIds = new Set();
 
-  function initFindPerson(users) {
-    searchableUsers = users;
-    const input = document.getElementById('personSearchInput');
-    input.focus();
-
-    input.addEventListener('input', (e) => {
-      const val = e.target.value.trim().toLowerCase();
-      if(val.length < 1) {
-        document.getElementById('adviceList').style.display = 'none';
-        document.getElementById('findInitialState').style.display = 'block';
-        return;
-      }
-      renderAdvice(val);
-    });
+  function initFindPersonnel(staff, existing) {
+    localStaff = staff;
+    existingIds = existing;
+    document.getElementById('findPersonInput').focus();
   }
 
-  function renderAdvice(keyword) {
-    const list = document.getElementById('adviceList');
-    const initialState = document.getElementById('findInitialState');
+  function handleAdvice(query) {
+    const container = document.getElementById('adviceContainer');
+    const initialState = document.getElementById('initialState');
     
-    const filtered = searchableUsers.filter(u => 
-      String(u.empId).toLowerCase().includes(keyword) || 
-      String(u.name).toLowerCase().includes(keyword) || 
-      String(u.unit).toLowerCase().includes(keyword)
-    ).slice(0, 10); // Show top 10 matches for speed
-
-    initialState.style.display = 'none';
-    list.style.display = 'block';
-
-    if(filtered.length === 0) {
-      list.innerHTML = `<div class="empty-state">No personnel found matching "${keyword}"</div>`;
+    if(!query || query.length < 1) {
+      container.style.display = 'none';
+      initialState.style.display = 'block';
       return;
     }
 
-    list.innerHTML = filtered.map(u => `
-      <div class="advice-item" onclick='selectUser(${JSON.stringify(u)})'>
-        <div class="avatar-circle">${u.name.charAt(0)}</div>
-        <div class="user-info-text">
-          <b>${u.name}</b>
-          <span>ID: ${u.empId} • Unit: ${u.unit}</span>
+    const q = query.toLowerCase();
+    const matches = localStaff.filter(u => {
+      if(existingIds.has(String(u.empId))) return false; // Hide if already in set
+      return String(u.empId).toLowerCase().includes(q) || 
+             String(u.name).toLowerCase().includes(q) || 
+             String(u.unit).toLowerCase().includes(q);
+    }).slice(0, 10); // Show top 10
+
+    initialState.style.display = 'none';
+    container.style.display = 'flex';
+
+    if(matches.length === 0) {
+      container.innerHTML = `<div class="empty-advice">No matching personnel found (or already added)</div>`;
+    } else {
+      container.innerHTML = matches.map(u => `
+        <div class="advice-item" onclick="selectPersonnel('${u.empId}', '${u.name}')">
+          <div class="advice-info">
+            <span class="advice-name">${u.name}</span>
+            <span class="advice-meta">ID: ${u.empId} • ${u.jobTitle || 'No Title'}</span>
+          </div>
+          <span class="advice-unit">${u.unit}</span>
         </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 
-  function selectUser(user) {
-    if(window.onPersonSelected) window.onPersonSelected(user);
+  function selectPersonnel(id, name) {
+    closeFindModal();
+    if(typeof processAddPerson === 'function') {
+      processAddPerson(id);
+    }
+  }
+
+  function closeFindModal() {
+    document.getElementById('findAuthorizedOverlay').style.display = 'none';
   }
 </script>
