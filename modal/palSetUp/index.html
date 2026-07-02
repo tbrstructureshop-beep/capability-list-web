@@ -1,54 +1,83 @@
 <style>
   /* --- PRINT SETUP A4 PORTRAIT --- */
-  @page { 
-    size: A4 portrait; 
-    margin: 15mm 15mm 20mm 15mm; 
-  }
+  @page { size: A4 portrait; margin: 15mm; }
 
   @media print {
     body * { visibility: hidden !important; background: none !important; }
     #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
-    
     #palDocumentModal { 
-      position: absolute !important; left: 0 !important; top: 0 !important; 
-      width: 210mm !important; background: white !important; display: block !important; 
+      position: absolute !important; 
+      left: 0 !important; 
+      top: 0 !important; 
+      width: 210mm !important; 
+      background: white !important; 
+      display: block !important; 
     }
     .no-print { display: none !important; }
-    
-    .pal-doc-container { 
-      margin: 0 !important; border: none !important; box-shadow: none !important; width: 100% !important; 
+    .pal-doc { 
+      margin: 0 !important; 
+      box-shadow: none !important; 
+      width: 100% !important; 
+      min-height: 100% !important; 
+      display: flex !important; 
+      flex-direction: column !important; 
     }
-
-    /* Force Table Header and Footer repetition */
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
-    
-    .page-counter:after { content: counter(page) " of " counter(pages); }
+    .meta-footer-fixed { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      display: flex; 
+      justify-content: space-between; 
+      font-size: 10px; 
+      padding-top: 5px; 
+      visibility: visible !important; 
+    }
+    .page-counter:after { content: "Page " counter(page) " of " counter(pages); }
   }
 
   /* --- SCREEN VIEW STYLES --- */
-  .pal-doc-container { 
-    background: white; width: 210mm; min-height: 297mm; padding: 15mm; 
-    margin: 20px auto; color: #000; font-family: Arial, sans-serif;
-    box-shadow: 0 0 15px rgba(0,0,0,0.3); box-sizing: border-box;
+  .pal-doc { 
+    background: white; 
+    width: 210mm; 
+    min-height: 297mm; 
+    padding: 15mm; 
+    margin: 20px auto; 
+    color: #000; 
+    font-family: Arial, sans-serif; 
+    display: flex; 
+    flex-direction: column;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3); 
+    box-sizing: border-box; 
+    position: relative;
   }
 
-  .logo-img { height: 45px; width: auto; display: block; margin: 0 auto 10px auto; }
+  .logo-container { text-align: center; margin-bottom: 10px; }
+  .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
   .title-section { 
-    text-align: center; font-weight: bold; font-size: 14px; 
-    text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; 
+    text-align: center; 
+    font-weight: bold; 
+    font-size: 14px; 
+    text-decoration: underline; 
+    margin-bottom: 20px; 
+    text-transform: uppercase; 
   }
   
-  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; text-align: left; }
+  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
   .info-table td { padding: 2px 0; }
 
-  /* Main Data Table */
-  .main-print-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .main-print-table th { 
+  .main-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    border: 1px solid black; 
+    flex-grow: 1; 
+    table-layout: fixed; 
+  }
+  .main-table th { 
     border: 1px solid black; padding: 8px 4px; background: #f2f2f2; 
     text-transform: uppercase; font-size: 10px; font-weight: bold; 
   }
-  .main-print-table td { 
+  .main-table td { 
     border: 1px solid black; padding: 6px; font-size: 10px; 
     vertical-align: top; word-wrap: break-word; 
   }
@@ -56,25 +85,42 @@
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-  /* Signature Block */
-  .sig-row-container { padding-top: 20px; page-break-inside: avoid; }
-  .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
-  .footer-sig-table td { border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; font-size: 11px; }
+  /* --- FOOTER SIGNATURE TABLE (APPLIED CUSTOM WIDTHS) --- */
+  .footer-sig-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    border: 1px solid black; 
+    margin-top: 20px; 
+    table-layout: fixed; 
+    break-inside: avoid;
+  }
+  .footer-sig-table td { 
+    border: 1px solid black; 
+    height: 110px; 
+    vertical-align: top; 
+    padding: 10px; 
+    font-size: 11px; 
+  }
   
-  /* Your Calibrated Widths */
-  .col-sig-1 { width: 35.59%; }
-  .col-sig-2 { width: 33.68%; }
-  .col-sig-3 { width: 30.73%; }
+  /* Applied your visual adjustment values */
+  #col_1 { width: 35.59%; }
+  #col_2 { width: 33.68%; }
+  #col_3 { width: 30.73%; } /* Balanced to 100% total */
 
-  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
+  .sig-inner-flex { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    height: 100%; 
+    text-align: center; 
+  }
 
-  /* Global Page Footer */
-  .meta-footer-wrap { display: flex; justify-content: space-between; font-size: 10px; padding-top: 10px; width: 100%; }
+  .meta-footer { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; }
+  .meta-footer-fixed { display: none; }
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
   
-  <!-- Modal Actions -->
   <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
      <div style="display:flex; gap: 12px;">
        <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
@@ -83,67 +129,77 @@
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
-  <!-- Printable Content -->
-  <div class="pal-doc-container" id="palPrintArea">
-    <table class="main-print-table">
+  <div id="palPrintArea" class="pal-doc">
+    <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
+    <div class="title-section">PERSONAL ABILITY LIST</div>
+
+    <table class="info-table">
+      <tr><td width="150">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
+      <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
+      <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
+    </table>
+
+    <table class="main-table">
       <thead>
-        <!-- Logo & Title Row -->
-        <tr>
-          <th colspan="5" style="border:none; background:none; padding:0;">
-            <img src="pricing/assets/GMF_Logo.png" class="logo-img">
-            <div class="title-section">PERSONAL ABILITY LIST</div>
-          </th>
-        </tr>
-        <!-- Personnel Info Row -->
-        <tr>
-          <th colspan="5" style="border:none; background:none; padding:0; padding-bottom:15px;">
-            <table class="info-table">
-              <tr><td width="130">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
-              <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
-              <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
-            </table>
-          </th>
-        </tr>
-        <!-- Actual Data Column Headers -->
         <tr>
           <th width="35">No.</th>
           <th width="180">DESCRIPTION</th>
           <th>PART NUMBER</th>
-          <th width="85">ATA</th>
+          <th width="90">ATA</th>
           <th width="90">RELATED AUTH</th>
         </tr>
       </thead>
-
-      <tbody id="pal_items_body">
-        <!-- Dynamic Data Rows injected here -->
-      </tbody>
-
-      <tfoot>
-        <tr>
-          <td colspan="5" style="border:none; padding:0;">
-            <div class="meta-footer-wrap">
-              <div>Form No.: GMF/Q-364 R1</div>
-              <div>Page <span class="page-counter">1 of 1</span></div>
-            </div>
-          </td>
-        </tr>
-      </tfoot>
+      <tbody id="pal_items_body"></tbody>
     </table>
+    
+    <!-- Signature Table -->
+    <table class="footer-sig-table">
+      <tr>
+        <td id="col_1">
+          Date : <br><br>
+          <span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span>
+        </td>
+        <td id="col_2">
+          <!-- Middle Column -->
+        </td>
+        <td id="col_3">
+          <div class="sig-inner-flex">
+            <div>Approved by<br>SM Structure Workshop</div>
+            <div>
+              ( ___________________________ )<br>
+              <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="meta-footer no-print">
+      <div>Form No.: GMF/Q-364 R1</div>
+      <div id="web_page_counter">Page 1 of 1</div>
+    </div>
+
+    <div class="meta-footer-fixed">
+      <div>Form No.: GMF/Q-364 R1</div>
+      <div class="page-counter"></div>
+    </div>
   </div>
 </div>
 
 <script>
+/**
+ * Global Function for rendering the PAL Document
+ */
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
-  const body = document.getElementById('pal_items_body');
-  if (!modal || !body) return;
+  if (!modal) return;
 
-  // Set Header Info
   document.getElementById('pal_name').textContent = name;
   document.getElementById('pal_id').textContent = empId;
   document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
   
   const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+  document.getElementById('pal_today_date').textContent = today;
 
   modal.style.display = 'block';
   document.body.style.overflow = 'hidden'; 
@@ -161,10 +217,9 @@ window.openPALDocument = async function(empId, name, title) {
       return acc;
     }, {});
 
+    const body = document.getElementById('pal_items_body');
     body.innerHTML = '';
-    const items = Object.values(aggregated);
-
-    items.forEach((group, idx) => {
+    Object.values(aggregated).forEach((group, idx) => {
       const mid = Math.ceil(group.pns.length / 2);
       const col1 = group.pns.slice(0, mid);
       const col2 = group.pns.slice(mid);
@@ -185,29 +240,6 @@ window.openPALDocument = async function(empId, name, title) {
       `;
       body.appendChild(tr);
     });
-
-    // APPEND SIGNATURE BLOCK (Only once at the end of tbody)
-    const sigTr = document.createElement('tr');
-    sigTr.innerHTML = `
-      <td colspan="5" style="border:none; padding:0;">
-        <div class="sig-row-container">
-          <table class="footer-sig-table">
-            <tr>
-              <td class="col-sig-1">Date : <br><br> <span style="font-weight:bold; font-size: 12px;">${today}</span></td>
-              <td class="col-sig-2"></td>
-              <td class="col-sig-3">
-                <div class="sig-inner-flex">
-                  <div>Approved by<br>SM Structure Workshop</div>
-                  <div>( ___________________________ )<br><span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span></div>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </td>
-    `;
-    body.appendChild(sigTr);
-
   } catch(e) { console.error(e); }
   finally { if (typeof hideLoader === 'function') hideLoader(); }
 }
