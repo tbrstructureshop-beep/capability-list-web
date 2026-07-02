@@ -1020,6 +1020,12 @@
         // Sidebar Guard Logic
         if (subSidebar) subSidebar.style.display = "none";
         if (bulkSidebar) bulkSidebar.style.display = "none";
+
+        // --- NEW: Inject PAL Filter Headers ---
+        const palHeaders = ["Employee ID", "Full Name", "Unit", "Job Title", "Stamp No"];
+        if (typeof buildFilterInputs === "function") {
+          buildFilterInputs(palHeaders);
+        }
     
         // Inject Personnel logic if not exists
         if (typeof loadPersonnelDashboard !== "function") {
@@ -1503,7 +1509,7 @@
           if (currentView === "submissions") {
             sourceData = allSubmissions || [];
           } else if (currentView === "personnel") {
-            sourceData = allPersonnel || [];
+            sourceData = (typeof allPersonnel !== 'undefined') ? allPersonnel : [];
           } else {
             sourceData = rawData || [];
           }
@@ -1517,17 +1523,21 @@
               if (!matchesGlobal) return false;
             }
     
-            // B. Multi-Select Filters (Cascading)
+            // B. Multi-Select Filters (Cascading Logic for Submissions & Personnel)
+            // Property mapping must match buildFilterInputs headers precisely
+            const palKeys = ["empId", "name", "unit", "jobTitle", "stampNo"];
+            const subKeys = ["id", "date", "username", "unit", "authority", "caplistItem", "rating", "partNumber", "partName", "manufacturer", "ataChapter", "shop", "aircraftType", "levels", "fileUrl", "status"];
+
             return Object.keys(activeFilters).every(colIdx => {
               const selected = activeFilters[colIdx];
               if (!selected || selected.size === 0) return true;
     
               // Mapping nilai berdasarkan struktur data view
               let cellValue;
-              if (currentView === "submissions" || currentView === "personnel") {
-                // Akses property object berdasarkan urutan keys (untuk sinkronisasi dengan dropdown index)
-                const keys = Object.keys(row);
-                cellValue = String(row[keys[colIdx]] || "").trim() || "(Blanks)";
+              if (currentView === "personnel") {
+                cellValue = String(row[palKeys[colIdx]] || "").trim() || "(Blanks)";
+              } else if (currentView === "submissions") {
+                cellValue = String(row[subKeys[colIdx]] || "").trim() || "(Blanks)";
               } else {
                 // Main DB menggunakan index array
                 cellValue = String(row[colIdx] || "").trim() || "(Blanks)";
@@ -1614,18 +1624,22 @@
     /** 
      * FINAL MERGED & REPAIRED: refreshAllDropdowns
      * Menggabungkan High-Performance rendering dengan Safety Checks.
-     * Mendukung cascading filter untuk Database (Array) dan Submissions (Object).
+     * Mendukung cascading filter untuk Database (Array), Submissions (Object), dan Personnel (Object).
      */
     function refreshAllDropdowns() {
       // 1. Guard: Hanya proses jika panel filter sedang terbuka
       if (!filtersVisible) return; 
     
       const isSubView = (currentView === "submissions");
-      const activeHeaders = isSubView ? 
-        ["id", "date", "username", "unit", "authority", "caplistItem", "rating", "partNumber", "partName", "manufacturer", "ataChapter", "shop", "aircraftType", "levels", "fileUrl", "status"] : 
-        colNames;
+      const isPalView = (currentView === "personnel");
     
-      activeHeaders.forEach((name, displayIdx) => {
+      // Define property mapping for Objects to ensure sync between filter index and data keys
+      const subKeys = ["id", "date", "username", "unit", "authority", "caplistItem", "rating", "partNumber", "partName", "manufacturer", "ataChapter", "shop", "aircraftType", "levels", "fileUrl", "status"];
+      const palKeys = ["empId", "name", "unit", "jobTitle", "stampNo"];
+    
+      const activeHeaders = isSubView ? subKeys : (isPalView ? palKeys : colNames);
+    
+      activeHeaders.forEach((keyOrName, displayIdx) => {
         const listContainer = document.getElementById(`list-${displayIdx}`);
         if (!listContainer) return;
     
@@ -1636,6 +1650,8 @@
         let sourceForDropdown;
         if (isSubView) {
           sourceForDropdown = (filteredSubmissions && filteredSubmissions.length > 0) ? filteredSubmissions : allSubmissions;
+        } else if (isPalView) {
+          sourceForDropdown = (typeof filteredPersonnel !== 'undefined' && filteredPersonnel.length > 0) ? filteredPersonnel : allPersonnel;
         } else {
           sourceForDropdown = (viewData && viewData.length > 0) ? viewData : rawData;
         }
@@ -1650,12 +1666,11 @@
         const counts = {};
         sourceForDropdown.forEach(row => {
           let val;
-          if (isSubView) {
-            // Submissions adalah Array of Objects, akses via keys
-            const keys = Object.keys(row);
-            val = String(row[keys[displayIdx]] || "").trim() || "(Blanks)";
+          if (isSubView || isPalView) {
+            // Akses via property key string (Object)
+            val = String(row[keyOrName] || "").trim() || "(Blanks)";
           } else {
-            // Main Database adalah Array of Arrays, akses via index
+            // Main Database (Array) akses via index
             val = String(row[displayIdx] || "").trim() || "(Blanks)";
           }
           counts[val] = (counts[val] || 0) + 1;
