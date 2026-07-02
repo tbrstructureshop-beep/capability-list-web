@@ -1353,9 +1353,9 @@
         const summaryText = row[10];
         const currentStatusValue = String(row[12] || "ACTIVE").toUpperCase();
     
-        // ESCAPE FIX: Prevent single quotes from breaking the onclick attribute
-        const safeAuthName = String(authName).replace(/'/g, "\\'");
-        const safePn = String(pn).replace(/'/g, "\\'");
+        // ESCAPE & FLATTEN FIX: Ensure long multi-line FAA PN strings don't break the JS
+        const safeAuthName = String(authName).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").replace(/"/g, '\\"');
+        const safePn = String(pn).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").replace(/"/g, '\\"');
     
         // 3. Logic Tombol (Seleksi vs Menu Tiga Titik)
         const checkHtml = actionMode ? `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
@@ -1743,9 +1743,9 @@
       };
       const colorClass = statusMap[status] || 'status-active';
       
-      // ESCAPE FIX: Prevent single quotes from breaking the onclick attribute strings
-      const safeAuth = String(auth).replace(/'/g, "\\'");
-      const safePn = String(pn).replace(/'/g, "\\'");
+      // ESCAPE & FLATTEN FIX: Remove newlines and escape quotes
+      const safeAuth = String(auth).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").replace(/"/g, '\\"');
+      const safePn = String(pn).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").replace(/"/g, '\\"');
       
       return `
         <div class="status-badge-container" style="display: flex; align-items: center; gap: 8px;">
