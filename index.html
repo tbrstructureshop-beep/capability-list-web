@@ -992,6 +992,7 @@
       filtersVisible = false;
       if (searchInput) searchInput.value = "";
     
+      // --- BRANCHING LOGIC (Isolated with else-if) ---
       if (view === "submissions") {
         if (title) title.textContent = "Submission Tracking";
         if (searchInput) searchInput.placeholder = "Search by Part Number, Name, or ID...";
@@ -1012,11 +1013,23 @@
         
         loadSubmissions(); 
         
-      } 
-      if (view === 'personnel') {
+      } else if (view === 'personnel') {
         if (title) title.textContent = "Personnel Ability List Dashboard";
+        if (searchInput) searchInput.placeholder = "Search by Employee Name or ID...";
+        
+        // Sidebar Guard Logic
+        if (subSidebar) subSidebar.style.display = "none";
+        if (bulkSidebar) bulkSidebar.style.display = "none";
+    
+        // Inject Personnel logic if not exists
+        if (typeof loadPersonnelDashboard !== "function") {
+          await injectPersonnelModule();
+        }
+        
         loadPersonnelDashboard();
+    
       } else {
+        // DEFAULT: Main Database
         if (title) title.textContent = "Enterprise Capability Web";
         if (searchInput) searchInput.placeholder = "Search components, part numbers, or descriptions...";
         
@@ -1053,6 +1066,33 @@
         console.log("Submission Module Injected.");
       } catch (err) {
         console.error("Injection Error:", err);
+      }
+    }
+
+    /**
+     * NEW: injectPersonnelModule
+     * Loads the logic for Personnel Ability List cards and modals.
+     */
+    async function injectPersonnelModule() {
+      const targetPath = "application/PersonelAbilityList/index.html"; 
+      try {
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("Personnel Module not found");
+        const html = await response.text();
+        
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = html;
+        
+        const scripts = tempDiv.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+        console.log("Personnel Module Injected.");
+      } catch (err) {
+        console.error("Personnel Injection Error:", err);
+        Swal.fire("Error", "Gagal memuat modul Personel.", "error");
       }
     }
 
