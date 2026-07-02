@@ -1,80 +1,159 @@
 <style>
+  /* --- UI MODAL STYLES --- */
+  #palDocumentModal {
+    z-index: 15500;
+  }
+
+  /* --- PRINT SETUP A4 --- */
+  @page {
+    size: A4 portrait;
+    margin: 5mm;
+  }
+
   @media print {
     body * { visibility: hidden; }
     #palPrintArea, #palPrintArea * { visibility: visible; }
-    #palPrintArea { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 5mm; }
+    #palPrintArea { 
+      position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; 
+    }
     .no-print { display: none !important; }
+    
+    /* Footer Page Numbering logic */
+    .pal-footer {
+      position: fixed;
+      bottom: 5mm;
+      right: 5mm;
+      font-size: 9px;
+    }
+    .page-number:after { content: "Page " counter(page); }
   }
-  
+
   .pal-doc { 
-    background: white; width: 210mm; min-height: 297mm; padding: 20px; 
-    margin: 0 auto; color: #000; font-family: 'Arial', sans-serif; 
+    background: white; 
+    width: 200mm; /* A4 minus margins */
+    min-height: 287mm; 
+    padding: 10mm; 
+    margin: 0 auto; 
+    color: #000; 
+    font-family: 'Segoe UI', Arial, sans-serif; 
+    position: relative;
   }
-  .pal-header-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
-  .pal-main-table { width: 100%; border-collapse: collapse; border: 1px solid #000; }
-  .pal-main-table th, .pal-main-table td { border: 1px solid #000; padding: 6px; font-size: 11px; text-align: left; }
-  .pal-main-table th { background: #f0f0f0; text-transform: uppercase; }
-  
-  .logo-section { text-align: right; margin-bottom: 10px; }
-  .title-section { text-align: center; font-weight: bold; font-size: 16px; text-decoration: underline; margin-bottom: 20px; }
+
+  .pal-header-table { width: 100%; margin-bottom: 15px; border-collapse: collapse; font-size: 12px; }
+  .pal-header-table td { padding: 4px 0; vertical-align: top; }
+
+  .pal-main-table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; table-layout: fixed; }
+  .pal-main-table th { 
+    border: 1px solid #000; padding: 8px 5px; background: #f2f2f2; 
+    text-transform: uppercase; font-size: 10px; font-weight: bold; 
+  }
+  .pal-main-table td { 
+    border: 1px solid #000; padding: 6px; font-size: 10px; 
+    vertical-align: top; word-wrap: break-word; 
+  }
+
+  /* PN Column Layout: Two Sub-columns */
+  .pn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .pn-item {
+    display: flex;
+    gap: 4px;
+    line-height: 1.2;
+    margin-bottom: 2px;
+  }
+
+  .logo-section { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .logo-img { height: 35px; width: auto; }
+  .title-section { text-align: center; font-weight: 900; font-size: 18px; margin-bottom: 15px; letter-spacing: 1px; }
+
+  /* Table Pagination Fix */
+  .pal-main-table tr { break-inside: avoid; page-break-inside: avoid; }
+
+  .signature-space { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
 </style>
 
-<div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.8);">
-  <div style="max-width: 900px; width: 95%; height: 95vh; background: #eee; overflow-y: auto; border-radius: 12px; position: relative;">
+<div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85);">
+  <div style="max-width: 950px; width: 95%; height: 95vh; background: #525659; overflow-y: auto; border-radius: 8px; position: relative; box-shadow: 0 0 30px rgba(0,0,0,0.5);">
     
-    <!-- Controls -->
-    <div class="no-print" style="position: sticky; top: 0; background: #fff; padding: 15px 25px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; z-index: 10;">
-       <div style="display:flex; gap: 10px;">
-         <button class="btn btn-primary" onclick="window.print()">Print A4</button>
-         <button class="btn" onclick="openBulkAddModal()">+ Add New Item</button>
+    <!-- STICKY CONTROL BAR -->
+    <div class="no-print" style="position: sticky; top: 0; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 100;">
+       <div style="display:flex; gap: 12px;">
+         <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 20px;">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+           Print to PDF/A4
+         </button>
+         <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none; padding: 8px 20px;">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+           Add Items
+         </button>
        </div>
-       <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'">&times;</button>
+       <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'" style="color:#fff; opacity:0.8;">&times;</button>
     </div>
 
-    <!-- Printable Area -->
+    <!-- DOCUMENT AREA -->
     <div id="palPrintArea" class="pal-doc">
       <div class="logo-section">
-        <img src="../assets/logo.png" style="height: 40px;">
-        <div style="font-size: 10px; font-weight: bold;">GARUDA INDONESIA GROUP</div>
+        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+          <img src="pricing/assets/GMF_Logo.png" class="logo-img">
+          <div style="font-size: 8px; font-weight: bold; margin-top: 4px;">GARUDA INDONESIA GROUP</div>
+        </div>
+        <div style="font-size: 9px; text-align: right; color: #666;">Form No.: GMF/Q-364 R1</div>
       </div>
       
       <div class="title-section">PERSONAL ABILITY LIST</div>
 
       <table class="pal-header-table">
-        <tr><td width="150">Name</td><td>: <span id="pal_name"></span></td></tr>
-        <tr><td>Personnel Number</td><td>: <span id="pal_id"></span></td></tr>
-        <tr><td>Present Title</td><td>: <span id="pal_title"></span></td></tr>
+        <tr><td width="130">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform:uppercase;">-</strong></td></tr>
+        <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
+        <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
       </table>
 
       <table class="pal-main-table">
         <thead>
           <tr>
-            <th width="30">No.</th>
-            <th>DESCRIPTION</th>
+            <th width="35">No.</th>
+            <th width="180">DESCRIPTION</th>
             <th>PART NUMBER</th>
-            <th width="80">ATA</th>
-            <th width="120">RELATED AUTH</th>
+            <th width="75">ATA</th>
+            <th width="90">RELATED AUTH</th>
           </tr>
         </thead>
         <tbody id="pal_items_body">
-          <!-- Items injected here -->
+          <!-- Dynamically Injected Rows -->
         </tbody>
       </table>
       
-      <div style="margin-top: 50px; display: flex; justify-content: space-between;">
-        <div style="font-size: 12px;">Date: <br><br> ${new Date().toLocaleDateString()}</div>
-        <div style="text-align: center; font-size: 12px;">
-          Approved by SM Structure Workshop<br><br><br><br>
-          ( __________________________ )
+      <!-- Signature / Approval Section -->
+      <div class="signature-space">
+        <div style="font-size: 11px;">
+          Date : <br><br>
+          <span style="border-bottom: 1px dotted #000; min-width: 100px; display: inline-block;">${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}</span>
         </div>
+        
+        <div style="text-align: center; font-size: 11px;">
+          Approved by SM Structure Workshop<br><br>
+          <div style="height: 60px;"></div>
+          <strong style="text-decoration: underline;">YOSHUA K. PUTRA</strong><br>
+          Name & Signature
+        </div>
+      </div>
+
+      <!-- Footer Page Info (Print Only) -->
+      <div class="pal-footer no-print-view">
+        <span class="page-number"></span>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-let currentPalEmpId = "";
-
+/**
+ * INA: PAL DOCUMENT GENERATOR
+ * Logic to aggregate PNs and build two-column visibility.
+ */
 async function openPALDocument(empId, name, title) {
   currentPalEmpId = empId;
   document.getElementById('pal_name').textContent = name;
@@ -83,18 +162,56 @@ async function openPALDocument(empId, name, title) {
   
   document.getElementById('palDocumentModal').style.display = 'flex';
   
-  const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
-  const data = await res.json();
-  
-  const body = document.getElementById('pal_items_body');
-  body.innerHTML = data.items.map((it, idx) => `
-    <tr>
-      <td align="center">${idx + 1}</td>
-      <td>${it.desc}</td>
-      <td>${it.pn}</td>
-      <td align="center">${it.ata}</td>
-      <td align="center">${it.auth}</td>
-    </tr>
-  `).join('');
+  showLoader();
+  try {
+    const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
+    const data = await res.json();
+    
+    if(!data.success) throw new Error(data.error);
+
+    // --- AGGREGATION LOGIC (Group by Desc, Auth, and ATA) ---
+    const aggregated = data.items.reduce((acc, item) => {
+      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ata.trim()}`;
+      if (!acc[key]) {
+        acc[key] = { ...item, pns: [item.pn] };
+      } else {
+        if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
+      }
+      return acc;
+    }, {});
+
+    const groupedArray = Object.values(aggregated);
+    const body = document.getElementById('pal_items_body');
+    body.innerHTML = '';
+
+    groupedArray.forEach((group, idx) => {
+      // Split Part Numbers into two columns for visibility
+      const mid = Math.ceil(group.pns.length / 2);
+      const col1 = group.pns.slice(0, mid);
+      const col2 = group.pns.slice(mid);
+
+      let pnContentHtml = `<div class="pn-grid"><div>`;
+      col1.forEach(p => pnContentHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
+      pnContentHtml += `</div><div>`;
+      col2.forEach(p => pnContentHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
+      pnContentHtml += `</div></div>`;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td align="center">${idx + 1}</td>
+        <td style="text-transform: uppercase; font-weight: 600;">${group.desc}</td>
+        <td>${pnContentHtml}</td>
+        <td align="center"><strong>${group.ata}</strong></td>
+        <td align="center" style="font-size: 9px; font-weight: bold;">${group.auth}</td>
+      `;
+      body.appendChild(tr);
+    });
+
+  } catch(e) {
+    console.error("PAL Doc Error:", e);
+    Swal.fire("Error", "Could not load document data", "error");
+  } finally {
+    hideLoader();
+  }
 }
 </script>
