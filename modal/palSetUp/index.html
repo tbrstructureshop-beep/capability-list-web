@@ -1,46 +1,49 @@
 <style>
-  /* --- PRINT SETUP A4 --- */
+  /* --- PRINT SETUP A4 PORTRAIT --- */
   @page {
     size: A4 portrait;
-    margin: 5mm;
+    margin: 15mm; /* Standard margin as per learning HTML */
   }
 
   @media print {
-    /* Hide everything except the print area */
-    body * { visibility: hidden !important; overflow: visible !important; }
+    /* Hide everything on the website */
+    body * { visibility: hidden !important; background: none !important; }
+    /* Show ONLY the modal content and its children */
     #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
     
-    /* Reset position for printing to prevent doubling/offset */
+    /* Force Modal to be the top-level container for printing */
     #palDocumentModal { 
       position: absolute !important; 
       left: 0 !important; 
       top: 0 !important; 
-      width: 100% !important; 
-      height: auto !important;
+      width: 210mm !important; 
       background: white !important;
+      display: block !important;
     }
     
-    .modal-overlay { background: none !important; padding: 0 !important; display: block !important; }
     .no-print { display: none !important; }
     
-    #palPrintArea { 
+    /* Reset layout for the page */
+    .pal-doc { 
       margin: 0 !important; 
-      padding: 0 !important; 
-      width: 200mm !important; /* Fixed width to prevent overflow */
+      box-shadow: none !important; 
+      width: 100% !important;
+      min-height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
     }
 
-    /* Fixed Footer for actual printing */
-    .pal-footer-fixed {
+    /* Fixed Bottom Footer Logic */
+    .meta-footer-fixed {
       position: fixed;
-      bottom: 5mm;
-      left: 10mm;
-      right: 10mm;
+      bottom: 0;
+      left: 0;
+      right: 0;
       display: flex;
       justify-content: space-between;
-      font-size: 9px;
-      color: #000;
-      border-top: 1px solid #000;
-      padding-top: 4px;
+      font-size: 10px;
+      border-top: 1px solid black;
+      padding-top: 5px;
       visibility: visible !important;
     }
     .page-counter:after { content: "Page " counter(page) " of " counter(pages); }
@@ -49,156 +52,168 @@
   /* --- SCREEN VIEW STYLES --- */
   .pal-doc { 
     background: white; 
-    width: 200mm; 
-    min-height: 285mm; 
-    padding: 10mm; 
+    width: 210mm; 
+    min-height: 297mm; 
+    padding: 15mm; 
     margin: 20px auto; 
     color: #000; 
     font-family: Arial, sans-serif; 
     display: flex;
     flex-direction: column;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    box-sizing: border-box;
   }
 
-  .logo-section { text-align: center; margin-bottom: 25px; }
-  .logo-img { height: 48px; width: auto; }
+  .logo-container { text-align: center; margin-bottom: 10px; }
+  .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
   
   .title-section { 
     text-align: center; 
     font-weight: bold; 
-    font-size: 17px; 
+    font-size: 14px; 
     text-decoration: underline; 
-    margin-bottom: 25px; 
+    margin-bottom: 20px; 
+    text-transform: uppercase;
   }
 
-  .pal-header-table { width: 100%; margin-bottom: 15px; border-collapse: collapse; font-size: 12px; }
-  .pal-header-table td { padding: 4px 0; }
+  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+  .info-table td { padding: 2px 0; }
 
-  .pal-main-table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; table-layout: fixed; }
-  .pal-main-table th { 
-    border: 1px solid #000; padding: 8px 4px; background: #f2f2f2; 
+  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; flex-grow: 1; table-layout: fixed; }
+  .main-table th { 
+    border: 1px solid black; padding: 8px 4px; background: #f2f2f2; 
     text-transform: uppercase; font-size: 10px; font-weight: bold; 
   }
-  .pal-main-table td { 
-    border: 1px solid #000; padding: 6px; font-size: 10px; 
+  .main-table td { 
+    border: 1px solid black; padding: 6px; font-size: 10px; 
     vertical-align: top; word-wrap: break-word; 
   }
 
+  /* Aggregation PN Grid */
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-  /* Footer Table Ratio 25% | 50% | 25% */
-  .pal-sig-table { 
+  /* Footer Signature Table (25:50:25) */
+  .footer-sig-table { 
     width: 100%; 
-    margin-top: 40px; 
     border-collapse: collapse; 
-    font-size: 11px; 
+    border: 1px solid black; 
+    margin-top: 20px; 
     table-layout: fixed;
     break-inside: avoid;
   }
-  .pal-sig-table td { vertical-align: bottom; padding-bottom: 5px; }
-  
-  .col-date { width: 25%; text-align: left; }
-  .col-mid { width: 50%; }
-  .col-sig { width: 25%; text-align: center; }
+  .footer-sig-table td { border: 1px solid black; height: 80px; vertical-align: top; padding: 8px; font-size: 11px; }
+  .col-25 { width: 25%; }
+  .col-50 { width: 50%; }
 
-  /* Hide print footer in web preview */
-  .pal-footer-fixed { display: none; }
-  @media print { .pal-footer-fixed { display: flex; } }
-
-  .preview-footer {
-    margin-top: auto;
-    padding-top: 10px;
+  .meta-footer {
     display: flex;
     justify-content: space-between;
-    font-size: 9px;
-    border-top: 1px solid #000;
+    margin-top: 10px;
+    font-size: 10px;
+    border-top: 1px solid black;
+    padding-top: 5px;
   }
+
+  .meta-footer-fixed { display: none; }
 </style>
 
-<div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500;">
-  <div class="no-print" style="position: fixed; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
+<div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
+  
+  <!-- Controls -->
+  <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
      <div style="display:flex; gap: 12px;">
-       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none;">Print A4 Portrait</button>
-       <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none;">+ Add New Item</button>
+       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px;">Print A4 (PDF)</button>
+       <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none; padding: 8px 16px;">+ Add Items</button>
      </div>
-     <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'" style="color:white; opacity:0.8; font-size: 30px; border: none; background: none; cursor: pointer;">&times;</button>
+     <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
   <div id="palPrintArea" class="pal-doc">
-    <div class="logo-section">
-      <img src="pricing/assets/GMF_Logo.png" class="logo-img">
+    <!-- Header Logo -->
+    <div class="logo-container">
+       <img src="pricing/assets/GMF_Logo.png" class="logo-img">
     </div>
     
     <div class="title-section">PERSONAL ABILITY LIST</div>
 
-    <table class="pal-header-table">
+    <!-- Employee Info -->
+    <table class="info-table">
       <tr><td width="150">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
       <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
       <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
     </table>
 
-    <table class="pal-main-table">
+    <!-- Data Table -->
+    <table class="main-table">
       <thead>
         <tr>
           <th width="35">No.</th>
           <th width="180">DESCRIPTION</th>
           <th>PART NUMBER</th>
-          <th width="85">ATA</th>
+          <th width="90">ATA</th>
           <th width="90">RELATED AUTH</th>
         </tr>
       </thead>
       <tbody id="pal_items_body"></tbody>
     </table>
     
-    <!-- Signature Table 25/50/25 -->
-    <table class="pal-sig-table">
+    <!-- Signature Table 25% : 50% : 25% -->
+    <table class="footer-sig-table">
       <tr>
-        <td class="col-date">
+        <td class="col-25">
           Date : <br><br>
-          <span id="pal_today_date" style="border-bottom: 1px solid #000; min-width: 120px; display: inline-block; padding-bottom: 2px;">-</span>
+          <span id="pal_today_date" style="font-weight:bold;">-</span>
         </td>
-        <td class="col-mid"></td>
-        <td class="col-sig">
-          Approved by SM Structure Workshop<br><br><br><br>
-          ( <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> )<br>
+        <td class="col-50"></td>
+        <td class="col-25" style="text-align: center;">
+          Approved by SM Structure Workshop<br><br><br>
+          ( <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> )<br>
           Name & Signature
         </td>
       </tr>
     </table>
 
-    <!-- Screen Preview Footer -->
-    <div class="preview-footer no-print">
-      <span>Form No.: GMF/Q-364 R1</span>
-      <span>Page 1</span>
+    <!-- Web Footer -->
+    <div class="meta-footer no-print">
+      <div>Form No.: GMF/Q-364 R1</div>
+      <div id="web_page_counter">Page 1 of 1</div>
     </div>
 
-    <!-- Print Only Fixed Footer -->
-    <div class="pal-footer-fixed">
-      <span>Form No.: GMF/Q-364 R1</span>
-      <span class="page-counter"></span>
+    <!-- Print Footer (Fixed at bottom of every printed page) -->
+    <div class="meta-footer-fixed">
+      <div>Form No.: GMF/Q-364 R1</div>
+      <div class="page-counter"></div>
     </div>
   </div>
 </div>
 
 <script>
+/**
+ * REBUILT: openPALDocument
+ * Fixed Page Doubling, Correct Ratios, and Reference ATA.
+ */
 async function openPALDocument(empId, name, title) {
   currentPalEmpId = empId;
   document.getElementById('pal_name').textContent = name;
   document.getElementById('pal_id').textContent = empId;
   document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
   
+  // Set Date
   const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
   document.getElementById('pal_today_date').textContent = today;
 
+  // Fix: Use 'block' and ensure background scroll is handled
   document.getElementById('palDocumentModal').style.display = 'block';
-  
+  document.body.style.overflow = 'hidden'; // Prevent main page scrolling while modal open
+
   showLoader();
   try {
     const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
     const data = await res.json();
     if(!data.success) throw new Error(data.error);
 
+    // AGGREGATION: Group by Desc + Auth + Reference (Full ATA)
     const aggregated = data.items.reduce((acc, item) => {
       const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
       if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
@@ -208,7 +223,9 @@ async function openPALDocument(empId, name, title) {
 
     const body = document.getElementById('pal_items_body');
     body.innerHTML = '';
-    Object.values(aggregated).forEach((group, idx) => {
+    const items = Object.values(aggregated);
+
+    items.forEach((group, idx) => {
       const mid = Math.ceil(group.pns.length / 2);
       const col1 = group.pns.slice(0, mid);
       const col2 = group.pns.slice(mid);
@@ -221,15 +238,24 @@ async function openPALDocument(empId, name, title) {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td align="center">${idx + 1}</td>
+        <td style="text-align:center;">${idx + 1}</td>
         <td style="text-transform: uppercase;">${group.desc}</td>
         <td>${pnHtml}</td>
-        <td align="center"><strong>${group.ata}</strong></td>
-        <td align="center" style="font-weight: bold; font-size: 9px;">${group.auth}</td>
+        <td style="text-align:center;"><strong>${group.ata}</strong></td>
+        <td style="text-align:center; font-size: 9px; font-weight: bold;">${group.auth}</td>
       `;
       body.appendChild(tr);
     });
+    
+    // Update simple web counter (approximate)
+    document.getElementById('web_page_counter').textContent = `Page 1 of 1`;
+
   } catch(e) { console.error(e); }
   finally { hideLoader(); }
 }
+
+// Ensure cleanup on close
+document.querySelector('#palDocumentModal .close-x').addEventListener('click', () => {
+  document.body.style.overflow = 'auto';
+});
 </script>
