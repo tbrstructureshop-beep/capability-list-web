@@ -1,162 +1,235 @@
 <style>
-  /* Premium Modal Styling for Authorized Person */
   .auth-person-card {
     background: #fff;
     width: 100%;
-    max-width: 500px;
+    max-width: 850px; /* Wider for table */
     border-radius: 20px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    animation: authPersonSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-md);
+    animation: authPersonSlideUp 0.3s ease-out;
   }
 
-  @keyframes authPersonSlideUp {
-    from { opacity: 0; transform: translateY(30px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  .auth-person-header {
-    padding: 24px;
-    background: var(--primary-light);
-    border-bottom: 1px solid rgba(60, 146, 166, 0.1);
+  .ap-header {
+    padding: 20px 24px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
-  .auth-person-title {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--primary-dark);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .ap-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
 
-  .auth-person-body {
-    padding: 40px 32px;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .coming-soon-icon {
-    width: 80px;
-    height: 80px;
+  /* Search & Add Section */
+  .ap-admin-controls {
     background: var(--primary-light);
-    color: var(--primary);
-    border-radius: 50%;
+    padding: 16px;
+    border-radius: 12px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
+    gap: 12px;
+    align-items: flex-end;
   }
 
-  .cs-badge {
-    background: #fff7ed;
-    color: #c2410c;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    border: 1px solid #fed7aa;
+  .ap-input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+  .ap-input-group label { font-size: 11px; font-weight: 700; color: var(--primary-dark); }
+  .ap-input-group select, .ap-input-group input { 
+    padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #fff;
   }
 
-  .target-info {
-    background: #f9fafb;
-    padding: 12px 20px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    width: 100%;
-    margin-top: 10px;
+  /* Table Styling */
+  .ap-table-wrapper { 
+    border: 1px solid var(--border); 
+    border-radius: 12px; 
+    overflow: hidden; 
+    max-height: 400px; 
+    overflow-y: auto; 
   }
+  
+  .ap-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ap-table th { background: #f9fafb; padding: 12px; text-align: left; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+  .ap-table td { padding: 12px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+  
+  .btn-remove { 
+    color: #ef4444; background: #fef2f2; border: 1px solid #fee2e2; 
+    padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700;
+  }
+  .btn-remove:hover { background: #fee2e2; }
 
-  .target-info span {
-    display: block;
-    font-size: 11px;
-    color: var(--text-light);
-    font-weight: 600;
-    text-transform: uppercase;
-  }
-
-  .target-info strong {
-    font-size: 15px;
-    color: var(--text-main);
-  }
-
-  .btn-close-cs {
-    width: 100%;
-    padding: 14px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.2s;
-    margin-top: 10px;
-  }
-
-  .btn-close-cs:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-  }
+  .empty-state { padding: 40px; text-align: center; color: var(--text-light); }
 </style>
 
 <div class="auth-person-card">
-  <div class="auth-person-header">
-    <div class="auth-person-title">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-        <circle cx="8.5" cy="7" r="4"></circle>
-        <polyline points="17 11 19 13 23 9"></polyline>
-      </svg>
-      Authorized Personnel
+  <div class="ap-header">
+    <div>
+      <h3 style="margin:0; font-size: 18px; color: var(--text-main);">Authorized Personnel Set</h3>
+      <div id="ap_subtitle" style="font-size: 12px; color: var(--text-muted);">PN: - | Authority: -</div>
     </div>
     <button class="close-x" onclick="closeAuthPersonModal()">&times;</button>
   </div>
 
-  <div class="auth-person-body">
-    <div class="coming-soon-icon">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-      </svg>
-    </div>
-    
-    <div class="cs-badge">Under Development</div>
-    
-    <div style="max-width: 300px;">
-      <h4 style="margin: 0 0 8px 0; color: var(--text-main);">Module Coming Soon</h4>
-      <p style="margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">
-        Detail personil yang memiliki otorisasi untuk komponen ini sedang dalam tahap integrasi database.
-      </p>
+  <div class="ap-body">
+    <!-- Admin Only: Add Personnel -->
+    <div id="apAdminPanel" class="ap-admin-controls" style="display:none;">
+      <div class="ap-input-group">
+        <label>Search & Select Staff</label>
+        <select id="userSelector">
+          <option value="">-- Select Personnel --</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="handleAddStaff()" style="height: 40px;">Add to Set</button>
     </div>
 
-    <div class="target-info">
-      <span>Target Component</span>
-      <strong id="cs_partNumber">PN -</strong>
-      <div style="margin-top: 4px; font-size: 12px; color: var(--primary); font-weight: 700;" id="cs_authority">AUTH: -</div>
+    <!-- Table -->
+    <div class="ap-table-wrapper">
+      <table class="ap-table">
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Emp ID</th>
+            <th>Name</th>
+            <th>Unit</th>
+            <th>Job Title</th>
+            <th>Stamp No.</th>
+            <th id="thActions" style="display:none;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="apTableBody">
+          <!-- Rows injected here -->
+        </tbody>
+      </table>
+      <div id="apEmpty" class="empty-state" style="display:none;">No personnel authorized for this component yet.</div>
     </div>
-
-    <button class="btn-close-cs" onclick="closeAuthPersonModal()">Understand & Close</button>
   </div>
 </div>
 
 <script>
-  /**
-   * Fungsi inisialisasi yang dipanggil oleh index.html utama
-   */
-  function initAuthPerson(auth, pn) {
-    document.getElementById('cs_partNumber').textContent = pn;
-    document.getElementById('cs_authority').textContent = "AUTHORITY: " + auth;
+  let currentApContext = { auth: '', pn: '' };
+  let allStaffCache = [];
+
+  async function initAuthPerson(auth, pn) {
+    currentApContext = { auth, pn };
+    document.getElementById('ap_subtitle').textContent = `Part Number: ${pn} | Authority: ${auth}`;
+    
+    // Check if current user is Admin to show controls
+    const isAdmin = currentUser && currentUser.role === 'Admin';
+    if(isAdmin) {
+      document.getElementById('apAdminPanel').style.display = 'flex';
+      document.getElementById('thActions').style.display = 'table-cell';
+    }
+
+    loadAuthorizedList();
+  }
+
+  async function loadAuthorizedList() {
+    const tableBody = document.getElementById('apTableBody');
+    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
+
+    try {
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          action: 'getAuthorizedPersonnel', 
+          authority: currentApContext.auth, 
+          pn: currentApContext.pn 
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Update Selector for Admin
+        if(currentUser && currentUser.role === 'Admin') {
+          allStaffCache = data.allUsers;
+          const selector = document.getElementById('userSelector');
+          selector.innerHTML = '<option value="">-- Select Personnel --</option>';
+          data.allUsers.forEach(u => {
+            selector.innerHTML += `<option value="${u.empId}">${u.empId} - ${u.name} (${u.unit})</option>`;
+          });
+        }
+
+        renderApTable(data.authorizedList);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function renderApTable(list) {
+    const tableBody = document.getElementById('apTableBody');
+    const emptyState = document.getElementById('apEmpty');
+    const isAdmin = currentUser && currentUser.role === 'Admin';
+    
+    tableBody.innerHTML = '';
+    
+    if (!list || list.length === 0) {
+      emptyState.style.display = 'block';
+      return;
+    }
+    
+    emptyState.style.display = 'none';
+    list.forEach((user, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx + 1}</td>
+        <td>${user.empId}</td>
+        <td style="font-weight:600;">${user.name}</td>
+        <td>${user.unit}</td>
+        <td>${user.jobTitle}</td>
+        <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">${user.stampNo}</code></td>
+        ${isAdmin ? `<td><button class="btn-remove" onclick="handleRemoveStaff('${user.empId}')">Remove</button></td>` : ''}
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  async function handleAddStaff() {
+    const empId = document.getElementById('userSelector').value;
+    if(!empId) return;
+
+    Swal.fire({ title: 'Adding...', didOpen: () => Swal.showLoading() });
+
+    const res = await fetch(GAS_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        action: 'addAuthorizedPerson', 
+        empId, 
+        authority: currentApContext.auth, 
+        pn: currentApContext.pn 
+      })
+    });
+    const result = await res.json();
+    if(result.success) {
+      Swal.fire({ icon:'success', title:'Added', timer:1000, showConfirmButton:false });
+      loadAuthorizedList();
+    } else {
+      Swal.fire('Error', result.error, 'error');
+    }
+  }
+
+  async function handleRemoveStaff(empId) {
+    const confirm = await Swal.fire({
+      title: 'Remove Authorization?',
+      text: "This person will no longer be authorized to sign for this component.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Remove'
+    });
+
+    if(confirm.isConfirmed) {
+      const res = await fetch(GAS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          action: 'removeAuthorizedPerson', 
+          empId, 
+          authority: currentApContext.auth, 
+          pn: currentApContext.pn 
+        })
+      });
+      const result = await res.json();
+      if(result.success) {
+        loadAuthorizedList();
+      }
+    }
   }
 </script>
