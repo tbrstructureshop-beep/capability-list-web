@@ -1,30 +1,79 @@
 <script>
 /**
- * PERSONNEL ABILITY LIST MODULE
+ * PERSONNEL ABILITY LIST MODULE - REBUILT
  */
 let allPersonnel = [];
+let filteredPersonnel = [];
 
 async function loadPersonnelDashboard() {
   showLoader();
   try {
     const res = await fetch(`${GAS_API_URL}?action=getPersonnelPAL&_=${Date.now()}`);
-    allPersonnel = await res.json();
-    renderPersonnelCards(allPersonnel);
+    const data = await res.json();
+    
+    allPersonnel = data;
+    filteredPersonnel = data;
+    
+    // Ensure scripts for the PAL Modal are loaded
+    if (typeof openPALDocument !== "function") {
+      await injectPALModal();
+    }
+    
+    renderPersonnelCards();
+    updateDataStatus();
   } catch (e) {
     console.error("PAL Load Error:", e);
+    document.getElementById("tableBody").innerHTML = `<div style="text-align:center; padding:60px; color:red;">Failed to load personnel data.</div>`;
   } finally {
     hideLoader();
   }
 }
 
-function renderPersonnelCards(data) {
+/**
+ * NEW: injectPALModal
+ * Dynamic injection for the printable document modal
+ */
+async function injectPALModal() {
+  try {
+    const res = await fetch('modal/palSetUp/index.html');
+    const html = await res.text();
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    document.body.appendChild(div);
+    
+    div.querySelectorAll("script").forEach(s => {
+      const newS = document.createElement("script");
+      newS.text = s.innerHTML;
+      document.body.appendChild(newS);
+    });
+  } catch(e) { console.error("PAL Modal Injection failed"); }
+}
+
+function renderPersonnelCards() {
   const container = document.getElementById("tableBody");
   container.innerHTML = "";
   
-  data.forEach(person => {
+  if (filteredPersonnel.length === 0) {
+    container.innerHTML = `<div style="text-align:center; padding: 60px; color:var(--text-light);"><p>No matching personnel found.</p></div>`;
+    updatePaginationInfo(0);
+    return;
+  }
+
+  // --- PAGINATION LOGIC ---
+  let start = (currentPage - 1) * rowsPerPage;
+  let end = start + (rowsPerPage === "all" ? filteredPersonnel.length : rowsPerPage);
+  const pageData = filteredPersonnel.slice(start, end);
+
+  const fragment = document.createDocumentFragment();
+
+  pageData.forEach(person => {
     const card = document.createElement("div");
     card.className = "data-card";
     card.style.gridTemplateColumns = "1fr 2fr";
+
+    // Escape strings for onclick
+    const safeName = person.name.replace(/'/g, "\\'");
+    const safeTitle = (person.jobTitle || "Aircraft Structure Engineer").replace(/'/g, "\\'");
 
     card.innerHTML = `
       <div class="card-main">
@@ -43,20 +92,31 @@ function renderPersonnelCards(data) {
         </div>
       </div>
 
-      <div class="data-details" style="position:relative;">
-        <button class="card-menu-btn" title="View Personal Ability List" onclick="openPALDocument('${person.empId}', '${person.name.replace(/'/g, "\\'")}', '${person.jobTitle.replace(/'/g, "\\'")}')">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-        </button>
-
-        <div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value">${person.name}</span></div>
+      <div class="data-details" style="position:relative; min-height: 140px;">
+        <div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value" style="font-size: 15px;">${person.name}</span></div>
         <div class="detail-item"><span class="detail-label">Unit</span><span class="detail-value">${person.unit}</span></div>
         <div class="detail-item"><span class="detail-label">Job Title</span><span class="detail-value">${person.jobTitle || '—'}</span></div>
         <div class="detail-item"><span class="detail-label">Stamp No</span><span class="detail-value"><code>${person.stampNo || '—'}</code></span></div>
+
+        <!-- REPOSITIONED BUTTON: BOTTOM RIGHT -->
+        <button class="card-menu-btn" 
+                title="View Personal Ability List" 
+                style="position: absolute; right: 0; bottom: 0; top: auto;"
+                onclick="event.stopPropagation(); openPALDocument('${person.empId}', '${safeName}', '${safeTitle}')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </button>
       </div>
     `;
-    container.appendChild(card);
+    fragment.appendChild(card);
   });
   
-  document.getElementById("dataStatus").textContent = `Total Personnel: ${data.length}`;
+  container.appendChild(fragment);
+  updatePaginationInfo(filteredPersonnel.length);
 }
 </script>
