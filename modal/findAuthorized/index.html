@@ -1,1 +1,111 @@
+<style>
+  .find-card {
+    background: #fff; width: 100%; max-width: 500px; border-radius: 20px;
+    overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 30px 60px -12px rgba(0,0,0,0.25);
+    animation: findSlideIn 0.3s ease-out;
+  }
+  @keyframes findSlideIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
+  .find-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+  .search-box-wrapper { padding: 20px 24px; position: relative; background: #f9fafb; }
+  
+  .advice-input {
+    width: 100%; padding: 14px 20px; border-radius: 12px; border: 2px solid var(--border);
+    font-size: 15px; outline: none; transition: 0.2s;
+  }
+  .advice-input:focus { border-color: var(--primary); background: #fff; }
+
+  .advice-list {
+    max-height: 300px; overflow-y: auto; display: none; /* Hidden by default */
+    border-top: 1px solid var(--border);
+  }
+  .advice-item {
+    padding: 12px 24px; display: flex; align-items: center; gap: 15px;
+    cursor: pointer; transition: 0.2s; border-bottom: 1px solid #f3f4f6;
+  }
+  .advice-item:hover { background: var(--primary-light); }
+  
+  .avatar-circle {
+    width: 40px; height: 40px; background: #e5e7eb; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #6b7280; font-size: 14px; flex-shrink: 0;
+  }
+  .user-info-text b { display: block; font-size: 14px; color: var(--text-main); }
+  .user-info-text span { font-size: 11px; color: var(--text-muted); }
+
+  .empty-state { padding: 40px; text-align: center; color: var(--text-light); font-size: 13px; }
+</style>
+
+<div class="find-card">
+  <div class="find-header">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h4 style="margin:0;">Find Personnel</h4>
+      <button class="close-x" onclick="closeFindPersonModal()">&times;</button>
+    </div>
+  </div>
+
+  <div class="search-box-wrapper">
+    <input type="text" id="personSearchInput" class="advice-input" placeholder="Type ID, Name, or Unit..." autocomplete="off">
+  </div>
+
+  <div id="adviceList" class="advice-list"></div>
+  
+  <div id="findInitialState" class="empty-state">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:10px; opacity:0.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <p>Start typing to search personnel...</p>
+  </div>
+</div>
+
+<script>
+  let searchableUsers = [];
+
+  function initFindPerson(users) {
+    searchableUsers = users;
+    const input = document.getElementById('personSearchInput');
+    input.focus();
+
+    input.addEventListener('input', (e) => {
+      const val = e.target.value.trim().toLowerCase();
+      if(val.length < 1) {
+        document.getElementById('adviceList').style.display = 'none';
+        document.getElementById('findInitialState').style.display = 'block';
+        return;
+      }
+      renderAdvice(val);
+    });
+  }
+
+  function renderAdvice(keyword) {
+    const list = document.getElementById('adviceList');
+    const initialState = document.getElementById('findInitialState');
+    
+    const filtered = searchableUsers.filter(u => 
+      String(u.empId).toLowerCase().includes(keyword) || 
+      String(u.name).toLowerCase().includes(keyword) || 
+      String(u.unit).toLowerCase().includes(keyword)
+    ).slice(0, 10); // Show top 10 matches for speed
+
+    initialState.style.display = 'none';
+    list.style.display = 'block';
+
+    if(filtered.length === 0) {
+      list.innerHTML = `<div class="empty-state">No personnel found matching "${keyword}"</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(u => `
+      <div class="advice-item" onclick='selectUser(${JSON.stringify(u)})'>
+        <div class="avatar-circle">${u.name.charAt(0)}</div>
+        <div class="user-info-text">
+          <b>${u.name}</b>
+          <span>ID: ${u.empId} • Unit: ${u.unit}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function selectUser(user) {
+    if(window.onPersonSelected) window.onPersonSelected(user);
+  }
+</script>
