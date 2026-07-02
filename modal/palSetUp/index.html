@@ -5,63 +5,114 @@
   @media print {
     body * { visibility: hidden !important; background: none !important; }
     #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
-    #palDocumentModal { position: absolute !important; left: 0 !important; top: 0 !important; width: 210mm !important; background: white !important; display: block !important; }
+    #palDocumentModal { 
+      position: absolute !important; 
+      left: 0 !important; 
+      top: 0 !important; 
+      width: 210mm !important; 
+      background: white !important; 
+      display: block !important; 
+    }
     .no-print { display: none !important; }
-    .pal-doc { margin: 0 !important; box-shadow: none !important; width: 100% !important; min-height: 100% !important; display: flex !important; flex-direction: column !important; }
-    .meta-footer-fixed { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; font-size: 10px; padding-top: 5px; visibility: visible !important; }
+    .pal-doc { 
+      margin: 0 !important; 
+      box-shadow: none !important; 
+      width: 100% !important; 
+      min-height: 100% !important; 
+      display: flex !important; 
+      flex-direction: column !important; 
+    }
+    .meta-footer-fixed { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      right: 0; 
+      display: flex; 
+      justify-content: space-between; 
+      font-size: 10px; 
+      padding-top: 5px; 
+      visibility: visible !important; 
+    }
     .page-counter:after { content: "Page " counter(page) " of " counter(pages); }
   }
 
   /* --- SCREEN VIEW STYLES --- */
   .pal-doc { 
-    background: white; width: 210mm; min-height: 297mm; padding: 15mm; margin: 20px auto; 
-    color: #000; font-family: Arial, sans-serif; display: flex; flex-direction: column;
-    box-shadow: 0 0 15px rgba(0,0,0,0.3); box-sizing: border-box; position: relative;
+    background: white; 
+    width: 210mm; 
+    min-height: 297mm; 
+    padding: 15mm; 
+    margin: 20px auto; 
+    color: #000; 
+    font-family: Arial, sans-serif; 
+    display: flex; 
+    flex-direction: column;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3); 
+    box-sizing: border-box; 
+    position: relative;
   }
 
   .logo-container { text-align: center; margin-bottom: 10px; }
   .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
-  .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
+  .title-section { 
+    text-align: center; 
+    font-weight: bold; 
+    font-size: 14px; 
+    text-decoration: underline; 
+    margin-bottom: 20px; 
+    text-transform: uppercase; 
+  }
   
   .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
   .info-table td { padding: 2px 0; }
 
-  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; flex-grow: 1; table-layout: fixed; }
-  .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2; text-transform: uppercase; font-size: 10px; font-weight: bold; }
-  .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; }
+  .main-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    border: 1px solid black; 
+    flex-grow: 1; 
+    table-layout: fixed; 
+  }
+  .main-table th { 
+    border: 1px solid black; padding: 8px 4px; background: #f2f2f2; 
+    text-transform: uppercase; font-size: 10px; font-weight: bold; 
+  }
+  .main-table td { 
+    border: 1px solid black; padding: 6px; font-size: 10px; 
+    vertical-align: top; word-wrap: break-word; 
+  }
 
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-  /* --- FOOTER SIGNATURE TABLE --- */
+  /* --- FOOTER SIGNATURE TABLE (APPLIED CUSTOM WIDTHS) --- */
   .footer-sig-table { 
-    width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 20px; 
-    table-layout: fixed; break-inside: avoid;
+    width: 100%; 
+    border-collapse: collapse; 
+    border: 1px solid black; 
+    margin-top: 20px; 
+    table-layout: fixed; 
+    break-inside: avoid;
   }
   .footer-sig-table td { 
-    border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; 
-    font-size: 11px; position: relative; 
+    border: 1px solid black; 
+    height: 110px; 
+    vertical-align: top; 
+    padding: 10px; 
+    font-size: 11px; 
   }
   
-  /* Initial Widths - Bisa diadjust via UI nanti */
-  #col_1 { width: 25%; }
-  #col_2 { width: 50%; }
-  #col_3 { width: 25%; }
+  /* Applied your visual adjustment values */
+  #col_1 { width: 35.59%; }
+  #col_2 { width: 33.68%; }
+  #col_3 { width: 30.73%; } /* Balanced to 100% total */
 
-  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
-
-  /* ADJUSTMENT MODE STYLES */
-  .resizer {
-    width: 6px; position: absolute; right: -3px; top: 0; bottom: 0;
-    cursor: col-resize; z-index: 100; display: none;
-  }
-  .adj-mode-active .resizer { display: block; background: rgba(60, 146, 166, 0.3); }
-  .adj-mode-active .resizer:hover { background: #3c92a6; }
-  .adj-mode-active td { outline: 1px dashed #3c92a6; }
-
-  #css-output-box {
-    display: none; background: #222; color: #0f0; padding: 15px;
-    margin-top: 15px; font-family: 'Courier New', monospace; font-size: 12px; border-radius: 4px;
+  .sig-inner-flex { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+    height: 100%; 
+    text-align: center; 
   }
 
   .meta-footer { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; }
@@ -72,8 +123,8 @@
   
   <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
      <div style="display:flex; gap: 12px;">
-       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer;">Print A4 (PDF)</button>
-       <button id="toggleAdjBtn" onclick="window.toggleAdjustmentMode()" style="background:#ff9800; border:none; padding: 8px 16px; color:white; cursor:pointer;">Toggle Adjustment Mode</button>
+       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
+       <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none; padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 4px;">+ Add Items</button>
      </div>
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
@@ -90,21 +141,26 @@
 
     <table class="main-table">
       <thead>
-        <tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="90">ATA</th><th width="90">RELATED AUTH</th></tr>
+        <tr>
+          <th width="35">No.</th>
+          <th width="180">DESCRIPTION</th>
+          <th>PART NUMBER</th>
+          <th width="90">ATA</th>
+          <th width="90">RELATED AUTH</th>
+        </tr>
       </thead>
       <tbody id="pal_items_body"></tbody>
     </table>
     
-    <!-- Signature Table (Adjustable) -->
-    <table class="footer-sig-table" id="adj_footer_table">
+    <!-- Signature Table -->
+    <table class="footer-sig-table">
       <tr>
         <td id="col_1">
           Date : <br><br>
           <span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span>
-          <div class="resizer" id="resizer_1"></div>
         </td>
         <td id="col_2">
-          <div class="resizer" id="resizer_2"></div>
+          <!-- Middle Column -->
         </td>
         <td id="col_3">
           <div class="sig-inner-flex">
@@ -117,12 +173,6 @@
         </td>
       </tr>
     </table>
-
-    <!-- CSS Result Box (Hanya muncul saat adjustment) -->
-    <div id="css-output-box" class="no-print">
-      <strong>/* PASTE THIS TO YOUR CSS */</strong><br>
-      <code id="css-code">Enable Adjustment Mode to see values...</code>
-    </div>
 
     <div class="meta-footer no-print">
       <div>Form No.: GMF/Q-364 R1</div>
@@ -138,84 +188,11 @@
 
 <script>
 /**
- * Global Functions attached to window to ensure compatibility with dynamic injection
+ * Global Function for rendering the PAL Document
  */
-window.toggleAdjustmentMode = function() {
-  const table = document.getElementById('adj_footer_table');
-  const box = document.getElementById('css-output-box');
-  const btn = document.getElementById('toggleAdjBtn');
-  
-  const isActive = table.classList.toggle('adj-mode-active');
-  
-  if(isActive) {
-    box.style.display = 'block';
-    btn.style.background = '#4caf50';
-    btn.innerText = 'Save / Close Adjustment';
-    window.initResizers();
-  } else {
-    box.style.display = 'none';
-    btn.style.background = '#ff9800';
-    btn.innerText = 'Toggle Adjustment Mode';
-  }
-}
-
-window.initResizers = function() {
-  const table = document.getElementById('adj_footer_table');
-  const cols = [
-    document.getElementById('col_1'),
-    document.getElementById('col_2'),
-    document.getElementById('col_3')
-  ];
-
-  const updateCSSOutput = () => {
-    const totalWidth = table.offsetWidth;
-    const w1 = ((cols[0].offsetWidth / totalWidth) * 100).toFixed(2);
-    const w2 = ((cols[1].offsetWidth / totalWidth) * 100).toFixed(2);
-    const w3 = ((cols[2].offsetWidth / totalWidth) * 100).toFixed(2);
-    
-    document.getElementById('css-code').innerHTML = 
-      `#col_1 { width: ${w1}%; }<br>` +
-      `#col_2 { width: ${w2}%; }<br>` +
-      `#col_3 { width: ${w3}%; }`;
-  };
-
-  const setupDrag = (resizer, leftCol, rightCol) => {
-    let startX, startLeftW, startRightW;
-
-    resizer.onmousedown = (e) => {
-      startX = e.pageX;
-      startLeftW = leftCol.offsetWidth;
-      startRightW = rightCol.offsetWidth;
-      
-      document.onmousemove = (e) => {
-        const dx = e.pageX - startX;
-        const totalW = table.offsetWidth;
-        
-        let newLeftPerc = ((startLeftW + dx) / totalW) * 100;
-        let newRightPerc = ((startRightW - dx) / totalW) * 100;
-
-        if (newLeftPerc > 5 && newRightPerc > 5) {
-          leftCol.style.width = newLeftPerc + '%';
-          rightCol.style.width = newRightPerc + '%';
-          updateCSSOutput();
-        }
-      };
-
-      document.onmouseup = () => {
-        document.onmousemove = null;
-        document.onmouseup = null;
-      };
-    };
-  };
-
-  setupDrag(document.getElementById('resizer_1'), cols[0], cols[1]);
-  setupDrag(document.getElementById('resizer_2'), cols[1], cols[2]);
-  updateCSSOutput();
-}
-
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
-  if (!modal) return console.error("Modal not found in DOM");
+  if (!modal) return;
 
   document.getElementById('pal_name').textContent = name;
   document.getElementById('pal_id').textContent = empId;
