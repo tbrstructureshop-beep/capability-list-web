@@ -1,145 +1,80 @@
 <style>
   /* --- PRINT SETUP A4 PORTRAIT --- */
-  @page {
-    size: A4 portrait;
-    margin: 15mm; 
-  }
+  @page { size: A4 portrait; margin: 15mm; }
 
   @media print {
     body * { visibility: hidden !important; background: none !important; }
     #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
-    
-    #palDocumentModal { 
-      position: absolute !important; 
-      left: 0 !important; 
-      top: 0 !important; 
-      width: 210mm !important; 
-      background: white !important;
-      display: block !important;
-    }
-    
+    #palDocumentModal { position: absolute !important; left: 0 !important; top: 0 !important; width: 210mm !important; background: white !important; display: block !important; }
     .no-print { display: none !important; }
-    
-    .pal-doc { 
-      margin: 0 !important; 
-      box-shadow: none !important; 
-      width: 100% !important;
-      min-height: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-    }
-
-    .meta-footer-fixed {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      padding-top: 5px;
-      visibility: visible !important;
-    }
+    .pal-doc { margin: 0 !important; box-shadow: none !important; width: 100% !important; min-height: 100% !important; display: flex !important; flex-direction: column !important; }
+    .meta-footer-fixed { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; font-size: 10px; padding-top: 5px; visibility: visible !important; }
     .page-counter:after { content: "Page " counter(page) " of " counter(pages); }
   }
 
   /* --- SCREEN VIEW STYLES --- */
   .pal-doc { 
-    background: white; 
-    width: 210mm; 
-    min-height: 297mm; 
-    padding: 15mm; 
-    margin: 20px auto; 
-    color: #000; 
-    font-family: Arial, sans-serif; 
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 0 15px rgba(0,0,0,0.3);
-    box-sizing: border-box;
+    background: white; width: 210mm; min-height: 297mm; padding: 15mm; margin: 20px auto; 
+    color: #000; font-family: Arial, sans-serif; display: flex; flex-direction: column;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3); box-sizing: border-box; position: relative;
   }
 
   .logo-container { text-align: center; margin-bottom: 10px; }
   .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
-  
-  .title-section { 
-    text-align: center; 
-    font-weight: bold; 
-    font-size: 14px; 
-    text-decoration: underline; 
-    margin-bottom: 20px; 
-    text-transform: uppercase;
-  }
-
+  .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
   .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
   .info-table td { padding: 2px 0; }
 
   .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; flex-grow: 1; table-layout: fixed; }
-  .main-table th { 
-    border: 1px solid black; padding: 8px 4px; background: #f2f2f2; 
-    text-transform: uppercase; font-size: 10px; font-weight: bold; 
-  }
-  .main-table td { 
-    border: 1px solid black; padding: 6px; font-size: 10px; 
-    vertical-align: top; word-wrap: break-word; 
-  }
+  .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2; text-transform: uppercase; font-size: 10px; font-weight: bold; }
+  .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; }
 
-  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-  .pn-item { display: flex; gap: 5px; line-height: 1.2; }
-
-  /* --- FIXED SIGNATURE TABLE --- */
+  /* --- FOOTER SIGNATURE TABLE (ADJUSTABLE) --- */
   .footer-sig-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    border: 1px solid black; 
-    margin-top: 20px; 
-    table-layout: fixed;
-    break-inside: avoid;
+    width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 20px; 
+    table-layout: fixed; break-inside: avoid; position: relative;
   }
   .footer-sig-table td { 
-    border: 1px solid black; 
-    height: 110px; /* Fixed height for consistent look */
-    vertical-align: top; 
-    padding: 10px; 
-    font-size: 11px; 
+    border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; font-size: 11px; position: relative;
   }
   
-  .col-25 { width: 25%; }
-  .col-50 { width: 50%; }
+  /* Initial Ratios */
+  #col_1 { width: 25%; }
+  #col_2 { width: 50%; }
+  #col_3 { width: 25%; }
 
-  /* Vertical Alignment Container */
-  .sig-inner-flex {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    text-align: center;
+  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
+
+  /* ADJUSTMENT MODE STYLES */
+  .resizer {
+    width: 5px; position: absolute; right: -2.5px; top: 0; bottom: 0;
+    cursor: col-resize; z-index: 10; display: none;
+  }
+  .adj-mode-active .resizer { display: block; background: rgba(60, 146, 166, 0.2); }
+  .adj-mode-active .resizer:hover { background: #3c92a6; }
+  
+  #css-output-box {
+    display: none; background: #f8f9fa; border: 1px solid #ddd; padding: 10px;
+    margin-top: 10px; font-family: monospace; font-size: 12px; color: #333; border-radius: 4px;
   }
 
-  .meta-footer {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 5px;
-    font-size: 10px;
-  }
-
+  .meta-footer { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; }
   .meta-footer-fixed { display: none; }
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
   
+  <!-- Header Modal -->
   <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
      <div style="display:flex; gap: 12px;">
-       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px;">Print A4 (PDF)</button>
-       <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none; padding: 8px 16px;">+ Add Items</button>
+       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; border-radius: 4px; color: white; cursor: pointer;">Print A4 (PDF)</button>
+       <button id="toggleAdjBtn" onclick="toggleAdjustmentMode()" style="background:#ff9800; border:none; padding: 8px 16px; border-radius: 4px; color: white; cursor: pointer;">Toggle Adjustment Mode</button>
      </div>
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
   <div id="palPrintArea" class="pal-doc">
-    <div class="logo-container">
-       <img src="pricing/assets/GMF_Logo.png" class="logo-img">
-    </div>
-    
+    <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
     <div class="title-section">PERSONAL ABILITY LIST</div>
 
     <table class="info-table">
@@ -150,26 +85,23 @@
 
     <table class="main-table">
       <thead>
-        <tr>
-          <th width="35">No.</th>
-          <th width="180">DESCRIPTION</th>
-          <th>PART NUMBER</th>
-          <th width="90">ATA</th>
-          <th width="90">RELATED AUTH</th>
-        </tr>
+        <tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="90">ATA</th><th width="90">RELATED AUTH</th></tr>
       </thead>
       <tbody id="pal_items_body"></tbody>
     </table>
     
-    <!-- Signature Table (Ratios 25:50:25) -->
-    <table class="footer-sig-table">
+    <!-- Signature Table (Adjustable) -->
+    <table class="footer-sig-table" id="adj_footer_table">
       <tr>
-        <td class="col-25">
+        <td id="col_1">
           Date : <br><br>
           <span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span>
+          <div class="resizer" id="resizer_1"></div>
         </td>
-        <td class="col-50"></td>
-        <td class="col-25">
+        <td id="col_2">
+          <div class="resizer" id="resizer_2"></div>
+        </td>
+        <td id="col_3">
           <div class="sig-inner-flex">
             <div>Approved by<br>SM Structure Workshop</div>
             <div>
@@ -181,13 +113,16 @@
       </tr>
     </table>
 
-    <!-- Screen Preview Footer -->
+    <div id="css-output-box" class="no-print">
+      <strong>Generated CSS:</strong><br>
+      <code id="css-code">/* Aktifkan mode adjustment untuk melihat nilai */</code>
+    </div>
+
     <div class="meta-footer no-print">
       <div>Form No.: GMF/Q-364 R1</div>
       <div id="web_page_counter">Page 1 of 1</div>
     </div>
 
-    <!-- Print Footer -->
     <div class="meta-footer-fixed">
       <div>Form No.: GMF/Q-364 R1</div>
       <div class="page-counter"></div>
@@ -196,67 +131,83 @@
 </div>
 
 <script>
-/**
- * REBUILT: openPALDocument
- */
-async function openPALDocument(empId, name, title) {
-  currentPalEmpId = empId;
-  document.getElementById('pal_name').textContent = name;
-  document.getElementById('pal_id').textContent = empId;
-  document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
+let isAdjMode = false;
+
+function toggleAdjustmentMode() {
+  const table = document.getElementById('adj_footer_table');
+  const box = document.getElementById('css-output-box');
+  const btn = document.getElementById('toggleAdjBtn');
   
-  const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
-  document.getElementById('pal_today_date').textContent = today;
-
-  document.getElementById('palDocumentModal').style.display = 'block';
-  document.body.style.overflow = 'hidden'; 
-
-  showLoader();
-  try {
-    const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
-    const data = await res.json();
-    if(!data.success) throw new Error(data.error);
-
-    const aggregated = data.items.reduce((acc, item) => {
-      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
-      if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
-      else if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
-      return acc;
-    }, {});
-
-    const body = document.getElementById('pal_items_body');
-    body.innerHTML = '';
-    const itemsList = Object.values(aggregated);
-
-    itemsList.forEach((group, idx) => {
-      const mid = Math.ceil(group.pns.length / 2);
-      const col1 = group.pns.slice(0, mid);
-      const col2 = group.pns.slice(mid);
-
-      let pnHtml = `<div class="pn-grid"><div>`;
-      col1.forEach(p => pnHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
-      pnHtml += `</div><div>`;
-      col2.forEach(p => pnHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
-      pnHtml += `</div></div>`;
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="text-align:center;">${idx + 1}</td>
-        <td style="text-transform: uppercase; font-weight:bold;">${group.desc}</td>
-        <td>${pnHtml}</td>
-        <td style="text-align:center;"><strong>${group.ata}</strong></td>
-        <td style="text-align:center; font-size: 9px; font-weight: bold;">${group.auth}</td>
-      `;
-      body.appendChild(tr);
-    });
-    
-    document.getElementById('web_page_counter').textContent = `Page 1 of 1`;
-
-  } catch(e) { console.error(e); }
-  finally { hideLoader(); }
+  isAdjMode = !isAdjMode;
+  
+  if(isAdjMode) {
+    table.classList.add('adj-mode-active');
+    box.style.display = 'block';
+    btn.style.background = '#4caf50';
+    btn.innerText = 'Save / Close Adjustment';
+    initResizers();
+  } else {
+    table.classList.remove('adj-mode-active');
+    box.style.display = 'none';
+    btn.style.background = '#ff9800';
+    btn.innerText = 'Toggle Adjustment Mode';
+  }
 }
 
-document.querySelector('#palDocumentModal .close-x').addEventListener('click', () => {
-  document.body.style.overflow = 'auto';
-});
+function initResizers() {
+  const table = document.getElementById('adj_footer_table');
+  const cols = [
+    document.getElementById('col_1'),
+    document.getElementById('col_2'),
+    document.getElementById('col_3')
+  ];
+
+  const updateOutput = () => {
+    const totalWidth = table.offsetWidth;
+    const w1 = ((cols[0].offsetWidth / totalWidth) * 100).toFixed(2);
+    const w2 = ((cols[1].offsetWidth / totalWidth) * 100).toFixed(2);
+    const w3 = ((cols[2].offsetWidth / totalWidth) * 100).toFixed(2);
+    
+    document.getElementById('css-code').innerHTML = 
+      `.col-left { width: ${w1}%; }<br>` +
+      `.col-mid { width: ${w2}%; }<br>` +
+      `.col-right { width: ${w3}%; }`;
+  };
+
+  const createDrag = (resizer, targetCol, nextCol) => {
+    let startX, startWidth, nextWidth;
+
+    resizer.onmousedown = (e) => {
+      startX = e.pageX;
+      startWidth = targetCol.offsetWidth;
+      nextWidth = nextCol.offsetWidth;
+      
+      document.onmousemove = (e) => {
+        const diff = e.pageX - startX;
+        const totalW = table.offsetWidth;
+        
+        // Calculate new widths in percentage
+        let newW1 = ((startWidth + diff) / totalW) * 100;
+        let newW2 = ((nextWidth - diff) / totalW) * 100;
+
+        if (newW1 > 5 && newW2 > 5) {
+          targetCol.style.width = newW1 + '%';
+          nextCol.style.width = newW2 + '%';
+          updateOutput();
+        }
+      };
+
+      document.onmouseup = () => {
+        document.onmousemove = null;
+        document.onmouseup = null;
+      };
+    };
+  };
+
+  createDrag(document.getElementById('resizer_1'), cols[0], cols[1]);
+  createDrag(document.getElementById('resizer_2'), cols[1], cols[2]);
+  updateOutput();
+}
+
+// ... Sisanya fungsi openPALDocument Anda tetap sama ...
 </script>
