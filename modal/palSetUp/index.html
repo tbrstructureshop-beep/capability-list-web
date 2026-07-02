@@ -2,16 +2,13 @@
   /* --- PRINT SETUP A4 PORTRAIT --- */
   @page {
     size: A4 portrait;
-    margin: 15mm; /* Standard margin as per learning HTML */
+    margin: 15mm; 
   }
 
   @media print {
-    /* Hide everything on the website */
     body * { visibility: hidden !important; background: none !important; }
-    /* Show ONLY the modal content and its children */
     #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
     
-    /* Force Modal to be the top-level container for printing */
     #palDocumentModal { 
       position: absolute !important; 
       left: 0 !important; 
@@ -23,7 +20,6 @@
     
     .no-print { display: none !important; }
     
-    /* Reset layout for the page */
     .pal-doc { 
       margin: 0 !important; 
       box-shadow: none !important; 
@@ -33,7 +29,7 @@
       flex-direction: column !important;
     }
 
-    /* Fixed Bottom Footer Logic */
+    /* Fixed Bottom Footer for Print */
     .meta-footer-fixed {
       position: fixed;
       bottom: 0;
@@ -42,7 +38,7 @@
       display: flex;
       justify-content: space-between;
       font-size: 10px;
-      border-top: 1px solid black;
+      /* Removed border-top as requested */
       padding-top: 5px;
       visibility: visible !important;
     }
@@ -89,11 +85,10 @@
     vertical-align: top; word-wrap: break-word; 
   }
 
-  /* Aggregation PN Grid */
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-  /* Footer Signature Table (25:50:25) */
+  /* Footer Signature Table (25:50:25) - Clean Box with Vertical Dividers */
   .footer-sig-table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -102,17 +97,25 @@
     table-layout: fixed;
     break-inside: avoid;
   }
-  .footer-sig-table td { border: 1px solid black; height: 80px; vertical-align: top; padding: 8px; font-size: 11px; }
+  .footer-sig-table td { 
+    border-left: 1px solid black; 
+    height: 85px; 
+    vertical-align: top; 
+    padding: 10px; 
+    font-size: 11px; 
+  }
+  .footer-sig-table td:first-child { border-left: none; }
+  
   .col-25 { width: 25%; }
   .col-50 { width: 50%; }
 
+  /* Metadata Footer Styles */
   .meta-footer {
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
+    margin-top: 5px;
     font-size: 10px;
-    border-top: 1px solid black;
-    padding-top: 5px;
+    /* Removed border-top as requested */
   }
 
   .meta-footer-fixed { display: none; }
@@ -120,7 +123,6 @@
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
   
-  <!-- Controls -->
   <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
      <div style="display:flex; gap: 12px;">
        <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px;">Print A4 (PDF)</button>
@@ -130,21 +132,18 @@
   </div>
 
   <div id="palPrintArea" class="pal-doc">
-    <!-- Header Logo -->
     <div class="logo-container">
        <img src="pricing/assets/GMF_Logo.png" class="logo-img">
     </div>
     
     <div class="title-section">PERSONAL ABILITY LIST</div>
 
-    <!-- Employee Info -->
     <table class="info-table">
       <tr><td width="150">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
       <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
       <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
     </table>
 
-    <!-- Data Table -->
     <table class="main-table">
       <thead>
         <tr>
@@ -158,29 +157,31 @@
       <tbody id="pal_items_body"></tbody>
     </table>
     
-    <!-- Signature Table 25% : 50% : 25% -->
+    <!-- Signature Table (Ratios 25:50:25) -->
     <table class="footer-sig-table">
       <tr>
         <td class="col-25">
           Date : <br><br>
-          <span id="pal_today_date" style="font-weight:bold;">-</span>
+          <span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span>
         </td>
         <td class="col-50"></td>
-        <td class="col-25" style="text-align: center;">
-          Approved by SM Structure Workshop<br><br><br>
-          ( <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> )<br>
-          Name & Signature
+        <td class="col-25" style="text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; border-top: none; border-bottom: none; border-right: none;">
+          <div style="margin-bottom: 5px;">Approved by SM Structure Workshop</div>
+          <div style="margin-top: auto;">
+            ( <u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u> )<br>
+            <span style="font-size: 10px;">Name & Signature</span>
+          </div>
         </td>
       </tr>
     </table>
 
-    <!-- Web Footer -->
+    <!-- Screen Preview Footer (No Horizontal Line above it) -->
     <div class="meta-footer no-print">
       <div>Form No.: GMF/Q-364 R1</div>
       <div id="web_page_counter">Page 1 of 1</div>
     </div>
 
-    <!-- Print Footer (Fixed at bottom of every printed page) -->
+    <!-- Print Footer (Page X of Total) -->
     <div class="meta-footer-fixed">
       <div>Form No.: GMF/Q-364 R1</div>
       <div class="page-counter"></div>
@@ -191,7 +192,6 @@
 <script>
 /**
  * REBUILT: openPALDocument
- * Fixed Page Doubling, Correct Ratios, and Reference ATA.
  */
 async function openPALDocument(empId, name, title) {
   currentPalEmpId = empId;
@@ -199,13 +199,11 @@ async function openPALDocument(empId, name, title) {
   document.getElementById('pal_id').textContent = empId;
   document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
   
-  // Set Date
   const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
   document.getElementById('pal_today_date').textContent = today;
 
-  // Fix: Use 'block' and ensure background scroll is handled
   document.getElementById('palDocumentModal').style.display = 'block';
-  document.body.style.overflow = 'hidden'; // Prevent main page scrolling while modal open
+  document.body.style.overflow = 'hidden'; 
 
   showLoader();
   try {
@@ -213,7 +211,6 @@ async function openPALDocument(empId, name, title) {
     const data = await res.json();
     if(!data.success) throw new Error(data.error);
 
-    // AGGREGATION: Group by Desc + Auth + Reference (Full ATA)
     const aggregated = data.items.reduce((acc, item) => {
       const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
       if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
@@ -223,9 +220,9 @@ async function openPALDocument(empId, name, title) {
 
     const body = document.getElementById('pal_items_body');
     body.innerHTML = '';
-    const items = Object.values(aggregated);
+    const itemsList = Object.values(aggregated);
 
-    items.forEach((group, idx) => {
+    itemsList.forEach((group, idx) => {
       const mid = Math.ceil(group.pns.length / 2);
       const col1 = group.pns.slice(0, mid);
       const col2 = group.pns.slice(mid);
@@ -239,7 +236,7 @@ async function openPALDocument(empId, name, title) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="text-align:center;">${idx + 1}</td>
-        <td style="text-transform: uppercase;">${group.desc}</td>
+        <td style="text-transform: uppercase; font-weight:bold;">${group.desc}</td>
         <td>${pnHtml}</td>
         <td style="text-align:center;"><strong>${group.ata}</strong></td>
         <td style="text-align:center; font-size: 9px; font-weight: bold;">${group.auth}</td>
@@ -247,14 +244,12 @@ async function openPALDocument(empId, name, title) {
       body.appendChild(tr);
     });
     
-    // Update simple web counter (approximate)
     document.getElementById('web_page_counter').textContent = `Page 1 of 1`;
 
   } catch(e) { console.error(e); }
   finally { hideLoader(); }
 }
 
-// Ensure cleanup on close
 document.querySelector('#palDocumentModal .close-x').addEventListener('click', () => {
   document.body.style.overflow = 'auto';
 });
