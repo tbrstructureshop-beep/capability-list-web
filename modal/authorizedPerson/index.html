@@ -1,6 +1,6 @@
 <style>
   .auth-person-card {
-    background: #fff; width: 100%; max-width: 950px; border-radius: 20px;
+    background: #fff; width: 100%; max-width: 900px; border-radius: 20px;
     overflow: hidden; display: flex; flex-direction: column;
     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
     animation: authPersonSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -19,8 +19,7 @@
   .strip-item label { font-size: 10px; font-weight: 800; color: var(--primary); display: block; text-transform: uppercase; }
   .strip-item strong { font-size: 14px; color: var(--text-main); }
 
-  /* Table Styling */
-  .auth-table-container { padding: 0; max-height: 350px; overflow-y: auto; }
+  .auth-table-container { padding: 0; max-height: 450px; overflow-y: auto; min-height: 200px; }
   .auth-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
   .auth-table th { position: sticky; top: 0; background: #f9fafb; padding: 12px 16px; font-weight: 700; color: var(--text-muted); border-bottom: 1px solid var(--border); z-index: 5; }
   .auth-table td { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; color: var(--text-main); }
@@ -31,49 +30,22 @@
   .btn-icon.del { color: #ef4444; }
   .btn-icon.del:hover { background: #fef2f2; }
   
-  /* Search & Suggestion Logic */
-  .add-person-section { 
-    padding: 20px 24px; background: #fff; border-top: 1px solid var(--border); 
-    display: flex; flex-direction: column; gap: 10px; position: relative;
-  }
-  .search-wrapper { position: relative; width: 100%; }
-  .search-input { 
-    width: 100%; padding: 12px 16px 12px 40px; border-radius: 12px; 
-    border: 1.5px solid var(--border); outline: none; transition: 0.2s; font-size: 14px;
-  }
-  .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1); }
-  
-  .suggestion-box {
-    position: absolute; bottom: 100%; left: 0; width: 100%; 
-    background: #fff; border-radius: 12px; border: 1px solid var(--border);
-    box-shadow: 0 -10px 25px rgba(0,0,0,0.1); margin-bottom: 8px;
-    max-height: 250px; overflow-y: auto; display: none; z-index: 100;
-  }
-  .suggestion-box.active { display: block; }
-  .suggestion-item {
-    padding: 12px 16px; cursor: pointer; display: flex; flex-direction: column; gap: 2px;
-    border-bottom: 1px solid #f9fafb;
-  }
-  .suggestion-item:hover { background: var(--primary-light); }
-  .suggestion-item .name { font-weight: 700; color: var(--text-main); font-size: 13px; }
-  .suggestion-item .meta { font-size: 11px; color: var(--text-muted); }
-
-  .admin-only-badge {
-    font-size: 10px; background: #fee2e2; color: #b91c1c; padding: 2px 8px; 
-    border-radius: 4px; font-weight: 700; text-transform: uppercase;
-  }
+  .admin-only { display: none; } /* Hidden by default */
 </style>
 
 <div class="auth-person-card">
   <div class="auth-person-header">
-    <div style="display:flex; flex-direction:column; gap:4px;">
-      <h3 style="margin:0; display:flex; align-items:center; gap:10px;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
-        Authorized Personnel Set
-      </h3>
-      <div id="adminBadge" style="display:none;"><span class="admin-only-badge">Admin Mode</span></div>
+    <h3 style="margin:0; display:flex; align-items:center; gap:10px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+      Authorized Personnel Set
+    </h3>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="btn btn-primary admin-only" id="btnAddPersonTrigger" onclick="openFindPersonModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add Personnel
+      </button>
+      <button class="close-x" onclick="closeAuthPersonModal()">&times;</button>
     </div>
-    <button class="close-x" onclick="closeAuthPersonModal()">&times;</button>
   </div>
 
   <div class="target-strip">
@@ -86,40 +58,24 @@
       <thead>
         <tr>
           <th>No.</th>
-          <th>ID</th>
+          <th>Employee ID</th>
           <th>Name</th>
           <th>Unit</th>
           <th>Job Title</th>
           <th>Stamp No.</th>
-          <th id="actionHeaderCol">Actions</th>
+          <th class="admin-only">Actions</th>
         </tr>
       </thead>
-      <tbody id="authPersonTableBody">
-        <!-- Data dynamically injected -->
-      </tbody>
+      <tbody id="authPersonTableBody"></tbody>
     </table>
-  </div>
-
-  <!-- Admin Only Section -->
-  <div id="addPersonSection" class="add-person-section" style="display:none;">
-    <div style="font-size:12px; font-weight:700; color:var(--text-muted);">ADD NEW PERSONNEL</div>
-    <div class="search-wrapper">
-      <svg style="position:absolute; left:14px; top:14px; color:var(--text-light);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" id="personSearchInput" class="search-input" placeholder="Search by Employee ID, Name, or Unit..." oninput="handleStaffSearch(this.value)">
-      
-      <div id="suggestionBox" class="suggestion-box"></div>
-    </div>
   </div>
 </div>
 
 <script>
   let currentAuth = "";
   let currentPn = "";
-  let allStaffMaster = [];
-  let currentAuthorizedIds = new Set();
-  
-  // Normalize Role check
-  const isAdmin = currentUser && currentUser.role && currentUser.role.toLowerCase() === 'admin';
+  let allUsersList = []; // Kept for the find modal
+  let existingAuthIds = new Set();
 
   async function initAuthPerson(auth, pn) {
     currentAuth = auth;
@@ -127,12 +83,10 @@
     document.getElementById('view_auth').textContent = auth;
     document.getElementById('view_pn').textContent = pn;
     
-    // UI Permission Logic
-    if (isAdmin) {
-      document.getElementById('addPersonSection').style.display = 'flex';
-      document.getElementById('adminBadge').style.display = 'block';
-    } else {
-      document.getElementById('actionHeaderCol').style.display = 'none';
+    // Admin Role Check (Normalize Case)
+    const isAdmin = currentUser && currentUser.role && currentUser.role.toUpperCase() === 'ADMIN';
+    if(isAdmin) {
+      document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
     }
 
     loadAuthData();
@@ -140,7 +94,7 @@
 
   async function loadAuthData() {
     const tableBody = document.getElementById('authPersonTableBody');
-    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Loading Personnel Data...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">Loading Personnel...</td></tr>';
     
     try {
       const res = await fetch(GAS_API_URL, { 
@@ -150,8 +104,8 @@
       const data = await res.json();
       
       if(data.success) {
-        allStaffMaster = data.allUsers;
-        currentAuthorizedIds = new Set(data.authorizedList.map(u => String(u.empId)));
+        allUsersList = data.allUsers; // Cache for Search
+        existingAuthIds = new Set(data.authorizedList.map(u => String(u.empId)));
         renderStaffTable(data.authorizedList);
       }
     } catch (e) { console.error(e); }
@@ -159,11 +113,13 @@
 
   function renderStaffTable(list) {
     const body = document.getElementById('authPersonTableBody');
+    const isAdmin = currentUser && currentUser.role && currentUser.role.toUpperCase() === 'ADMIN';
+    
     if(list.length === 0) {
-      body.innerHTML = `<tr><td colspan="${isAdmin ? 7 : 6}" style="text-align:center; padding:40px; color:#9ca3af;">No personnel authorized for this item.</td></tr>`;
+      body.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#9ca3af;">No personnel authorized for this item yet.</td></tr>`;
       return;
     }
-    
+
     body.innerHTML = list.map((user, i) => `
       <tr>
         <td>${i+1}</td>
@@ -171,87 +127,29 @@
         <td>${user.name}</td>
         <td>${user.unit}</td>
         <td>${user.jobTitle || '-'}</td>
-        <td><code style="background:#f3f4f6; padding:2px 6px; border-radius:4px; font-weight:600;">${user.stampNo || '-'}</code></td>
-        ${isAdmin ? `
-        <td>
+        <td><code style="background:#eee; padding:2px 6px; border-radius:4px;">${user.stampNo || '-'}</code></td>
+        <td class="admin-only" style="display: ${isAdmin ? 'table-cell' : 'none'}">
           <div class="action-btns">
             <button class="btn-icon del" onclick="removePerson('${user.empId}')" title="Remove Authorization">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           </div>
-        </td>` : ''}
+        </td>
       </tr>
     `).join('');
   }
 
-  function handleStaffSearch(query) {
-    const box = document.getElementById('suggestionBox');
-    if (!query || query.length < 1) {
-      box.classList.remove('active');
-      return;
-    }
-
-    const q = query.toLowerCase();
-    // Filter out people already authorized and match query
-    const matches = allStaffMaster.filter(u => 
-      !currentAuthorizedIds.has(String(u.empId)) && 
-      (String(u.empId).includes(q) || u.name.toLowerCase().includes(q) || u.unit.toLowerCase().includes(q))
-    ).slice(0, 8); // Limit to top 8 suggestions
-
-    if (matches.length > 0) {
-      box.innerHTML = matches.map(u => `
-        <div class="suggestion-item" onclick="confirmAddPerson('${u.empId}', '${u.name}')">
-          <div class="name">${u.name}</div>
-          <div class="meta">ID: ${u.empId} • Unit: ${u.unit} • ${u.jobTitle || 'No Title'}</div>
-        </div>
-      `).join('');
-      box.classList.add('active');
-    } else {
-      box.innerHTML = '<div style="padding:15px; font-size:12px; color:#999; text-align:center;">No matching staff found</div>';
-      box.classList.add('active');
-    }
-  }
-
-  async function confirmAddPerson(empId, name) {
-    document.getElementById('suggestionBox').classList.remove('active');
-    document.getElementById('personSearchInput').value = "";
-    
-    const res = await Swal.fire({
-      title: 'Add Personnel?',
-      text: `Authorize ${name} (ID: ${empId}) for ${currentPn}?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Authorize'
-    });
-
-    if (res.isConfirmed) {
-      Swal.fire({ title: 'Processing...', didOpen: () => Swal.showLoading() });
-      const response = await fetch(GAS_API_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "addAuthorizedPerson", empId, authority: currentAuth, pn: currentPn })
-      });
-      const result = await response.json();
-      if(result.success) {
-        Swal.fire({ icon: 'success', title: 'Added Successfully', timer: 1000, showConfirmButton: false });
-        loadAuthData();
-      } else {
-        Swal.fire("Error", result.error, "error");
-      }
-    }
-  }
-
   async function removePerson(empId) {
     const confirm = await Swal.fire({
-      title: 'Revoke Authorization?',
-      text: "This person will no longer be able to sign for this component.",
+      title: 'Remove Person?',
+      text: "This person will no longer be authorized for this set.",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      confirmButtonText: 'Yes, Revoke'
+      confirmButtonColor: '#ef4444'
     });
 
     if(confirm.isConfirmed) {
-      Swal.fire({ title: 'Revoking...', didOpen: () => Swal.showLoading() });
+      Swal.fire({ title: 'Removing...', didOpen: () => Swal.showLoading() });
       const res = await fetch(GAS_API_URL, {
         method: "POST",
         body: JSON.stringify({ action: "removeAuthorizedPerson", empId, authority: currentAuth, pn: currentPn })
@@ -261,10 +159,65 @@
     }
   }
 
-  // Close suggestions when clicking outside
-  window.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-wrapper')) {
-      document.getElementById('suggestionBox').classList.remove('active');
+  // --- Search Modal Integration ---
+  async function openFindPersonModal() {
+    const targetPath = "modal/findAuthorized/index.html";
+    try {
+      const response = await fetch(targetPath);
+      const html = await response.text();
+      
+      let overlay = document.getElementById("findPersonOverlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "findPersonOverlay";
+        overlay.className = "modal-overlay";
+        overlay.style.zIndex = "12000"; // Above authPersonModal
+        document.body.appendChild(overlay);
+      }
+      
+      overlay.innerHTML = html;
+      overlay.style.display = "flex";
+
+      const scripts = overlay.querySelectorAll("script");
+      scripts.forEach(s => {
+        const newS = document.createElement("script");
+        newS.text = s.innerHTML;
+        document.body.appendChild(newS);
+      });
+
+      if (typeof initFindPerson === "function") {
+        // Filter users who are NOT already authorized
+        const available = allUsersList.filter(u => !existingAuthIds.has(String(u.empId)));
+        initFindPerson(available);
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  function closeFindPersonModal() {
+    const el = document.getElementById("findPersonOverlay");
+    if(el) el.style.display = 'none';
+  }
+
+  // Global callback for find modal
+  window.onPersonSelected = async function(user) {
+    closeFindPersonModal();
+    Swal.fire({ title: 'Adding Personnel...', didOpen: () => Swal.showLoading() });
+    
+    const res = await fetch(GAS_API_URL, {
+      method: "POST",
+      body: JSON.stringify({ 
+        action: "addAuthorizedPerson", 
+        empId: user.empId, 
+        authority: currentAuth, 
+        pn: currentPn 
+      })
+    });
+    const result = await res.json();
+    if(result.success) {
+      loadAuthData();
+      Swal.fire({ icon: 'success', title: 'User Added', timer: 1000, showConfirmButton: false });
+    } else {
+      Swal.fire("Error", result.error, "error");
     }
-  });
+  }
 </script>
