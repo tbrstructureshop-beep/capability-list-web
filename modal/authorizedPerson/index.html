@@ -155,6 +155,7 @@
     }
   }
 
+  
   function renderApTable(list) {
     const tableBody = document.getElementById('apTableBody');
     const emptyState = document.getElementById('apEmpty');
@@ -177,10 +178,24 @@
         <td>${user.unit}</td>
         <td>${user.jobTitle}</td>
         <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">${user.stampNo}</code></td>
-        ${isAdmin ? `<td><button class="btn-remove" onclick="handleRemoveStaff('${user.empId}')">Remove</button></td>` : ''}
+        ${isAdmin ? `
+          <td>
+            <div style="display:flex; gap:5px;">
+              <button class="btn" style="padding:5px 10px; font-size:11px; background:var(--primary-light); color:var(--primary); border-color:var(--primary);" onclick="openEditAccount('${user.empId}')">Edit</button>
+              <button class="btn-remove" onclick="handleRemoveStaff('${user.empId}')">Remove</button>
+            </div>
+          </td>` : ''}
       `;
       tableBody.appendChild(tr);
     });
+  }
+  
+  // Helper to open the edit modal from this view
+  async function openEditAccount(empId) {
+    // Logic to call the main index.html function
+    if (typeof window.openEditAccountModal === "function") {
+      window.openEditAccountModal(empId);
+    }
   }
 
   async function handleAddStaff() {
