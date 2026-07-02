@@ -1,8 +1,8 @@
 <style>
-  /* --- PRINT SETUP --- */
+  /* --- PRINT SETUP A4 PORTRAIT --- */
   @page { 
     size: A4 portrait; 
-    margin: 10mm 15mm 20mm 15mm; /* Margin bawah lebih besar untuk ruang footer */
+    margin: 0; /* Margins handled by .pal-page padding for better control */
   }
 
   @media print {
@@ -12,124 +12,105 @@
       position: absolute !important; 
       left: 0 !important; 
       top: 0 !important; 
-      width: 100% !important; 
+      width: 210mm !important; 
       background: white !important; 
       display: block !important; 
     }
     .no-print { display: none !important; }
-    .pal-doc { 
+    
+    .pal-page { 
       margin: 0 !important; 
       box-shadow: none !important; 
-      width: 100% !important; 
-      display: block !important;
+      width: 210mm !important; 
+      height: 297mm !important; 
+      page-break-after: always !important;
+      display: flex !important;
+      flex-direction: column !important;
+      position: relative !important;
     }
-    
-    /* Memastikan table header berulang di setiap halaman */
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
+
+    /* Standardized Print Footer */
+    .meta-footer-fixed { 
+      position: absolute; 
+      bottom: 10mm; 
+      left: 15mm; 
+      right: 15mm; 
+      display: flex; 
+      justify-content: space-between; 
+      font-size: 10px; 
+      visibility: visible !important; 
+    }
+    .page-counter:after { content: "Page " counter(page) " of " counter(pages); }
   }
 
   /* --- SCREEN VIEW STYLES --- */
-  .pal-doc { 
+  #palPrintArea { background: #525659; padding: 20px 0; }
+  
+  .pal-page { 
     background: white; 
     width: 210mm; 
-    min-height: 297mm; 
+    height: 297mm; 
     padding: 15mm; 
-    margin: 20px auto; 
+    margin: 0 auto 20px auto; 
     color: #000; 
     font-family: Arial, sans-serif; 
-    box-shadow: 0 0 15px rgba(0,0,0,0.3); 
+    display: flex; 
+    flex-direction: column;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5); 
     box-sizing: border-box; 
+    position: relative;
+    overflow: hidden;
   }
 
-  /* Header Components */
-  .logo-container { text-align: center; padding-bottom: 10px; }
+  .logo-container { text-align: center; margin-bottom: 10px; }
   .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
+  
   .title-section { 
-    text-align: center; 
-    font-weight: bold; 
-    font-size: 14px; 
-    text-decoration: underline; 
-    margin-bottom: 20px; 
-    text-transform: uppercase; 
+    text-align: center; font-weight: bold; font-size: 14px; 
+    text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; 
   }
-  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; text-align: left; }
-  .info-table td { padding: 2px 0; border: none !important; }
+  
+  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; }
+  .info-table td { padding: 2px 0; }
 
-  /* Main Table */
-  .main-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    table-layout: fixed; 
-  }
+  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
   .main-table th { 
-    border: 1px solid black; padding: 8px 4px; background: #f2f2f2; 
+    border: 1px solid black; padding: 6px 4px; background: #f2f2f2; 
     text-transform: uppercase; font-size: 10px; font-weight: bold; 
   }
   .main-table td { 
-    border: 1px solid black; padding: 6px; font-size: 10px; 
+    border: 1px solid black; padding: 5px; font-size: 10px; 
     vertical-align: top; word-wrap: break-word; 
   }
 
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-  /* --- FOOTER SIGNATURE (Only Last Page) --- */
+  /* --- FOOTER SIGNATURE TABLE --- */
   .footer-sig-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    border: 1px solid black; 
-    margin-top: 20px; 
-    table-layout: fixed; 
-    break-inside: avoid; /* Mencegah terpotong antar halaman */
+    width: 100%; border-collapse: collapse; border: 1px solid black; 
+    margin-top: 15px; table-layout: fixed; 
   }
-  .footer-sig-table td { 
-    border: 1px solid black; 
-    height: 110px; 
-    vertical-align: top; 
-    padding: 10px; 
-    font-size: 11px; 
-  }
+  .footer-sig-table td { border: 1px solid black; height: 90px; vertical-align: top; padding: 10px; font-size: 11px; }
   
-  #col_1 { width: 35.59%; }
-  #col_2 { width: 33.68%; }
-  #col_3 { width: 30.73%; }
+  /* Your Adjusted Widths */
+  .col-sig-1 { width: 35.59%; }
+  .col-sig-2 { width: 33.68%; }
+  .col-sig-3 { width: 30.73%; }
 
-  .sig-inner-flex { 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: space-between; 
-    height: 100%; 
-    text-align: center; 
-  }
+  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
 
-  /* --- STICKY PAGE INFO (Form No & Page Counter) --- */
-  .meta-footer { 
-    display: flex; 
-    justify-content: space-between; 
-    font-size: 10px; 
-    margin-top: 10px;
-    width: 100%;
+  /* Screen Meta Footer */
+  .meta-footer-screen { 
+    margin-top: auto; display: flex; justify-content: space-between; 
+    font-size: 10px; padding-top: 10px; 
   }
-
-  @media print {
-    .meta-footer-print {
-      position: fixed;
-      bottom: 5mm;
-      left: 15mm;
-      right: 15mm;
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      border-top: 0.5px solid #ccc;
-      padding-top: 3px;
-    }
-    .page-counter:after { content: "Page " counter(page) " of " counter(pages); }
-  }
+  .meta-footer-fixed { display: none; }
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
   
+  <!-- Navigation Header -->
   <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
      <div style="display:flex; gap: 12px;">
        <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
@@ -138,92 +119,24 @@
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
-  <div id="palPrintArea" class="pal-doc">
-    <table class="main-table">
-      <!-- THEAD ini akan diulang otomatis oleh browser di setiap halaman baru -->
-      <thead>
-        <tr>
-          <th colspan="5" style="background: white; border: none; padding: 0;">
-            <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
-            <div class="title-section">PERSONAL ABILITY LIST</div>
-
-            <table class="info-table">
-              <tr><td width="130">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
-              <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
-              <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
-            </table>
-          </th>
-        </tr>
-        <!-- Baris Header Tabel -->
-        <tr>
-          <th width="35">No.</th>
-          <th width="180">DESCRIPTION</th>
-          <th>PART NUMBER</th>
-          <th width="90">ATA</th>
-          <th width="90">RELATED AUTH</th>
-        </tr>
-      </thead>
-
-      <!-- Isi Data -->
-      <tbody id="pal_items_body"></tbody>
-
-      <!-- Footer Table untuk Signature (Hanya muncul di halaman terakhir di akhir table) -->
-      <tfoot>
-        <tr>
-          <td colspan="5" style="border: none; padding: 0;">
-             <table class="footer-sig-table">
-                <tr>
-                  <td id="col_1">
-                    Date : <br><br>
-                    <span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span>
-                  </td>
-                  <td id="col_2"></td>
-                  <td id="col_3">
-                    <div class="sig-inner-flex">
-                      <div>Approved by<br>SM Structure Workshop</div>
-                      <div>
-                        ( ___________________________ )<br>
-                        <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
-
-    <!-- Meta Footer untuk tampilan di layar -->
-    <div class="meta-footer no-print">
-      <div>Form No.: GMF/Q-364 R1</div>
-      <div>Page 1 of 1</div>
-    </div>
-
-    <!-- Meta Footer untuk Print (Fixed di bawah setiap halaman) -->
-    <div class="meta-footer-print" style="display: none;">
-      <div>Form No.: GMF/Q-364 R1</div>
-      <div class="page-counter"></div>
-    </div>
+  <!-- Document Area -->
+  <div id="palPrintArea">
+    <!-- Pages will be dynamically injected here -->
   </div>
 </div>
 
 <script>
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
-  if (!modal) return;
+  const printArea = document.getElementById('palPrintArea');
+  if (!modal || !printArea) return;
 
-  document.getElementById('pal_name').textContent = name;
-  document.getElementById('pal_id').textContent = empId;
-  document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
-  
-  const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
-  document.getElementById('pal_today_date').textContent = today;
-
+  printArea.innerHTML = ''; // Clear previous content
   modal.style.display = 'block';
   document.body.style.overflow = 'hidden'; 
 
   if (typeof showLoader === 'function') showLoader();
+  
   try {
     const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
     const data = await res.json();
@@ -236,13 +149,63 @@ window.openPALDocument = async function(empId, name, title) {
       return acc;
     }, {});
 
-    const body = document.getElementById('pal_items_body');
-    body.innerHTML = '';
-    Object.values(aggregated).forEach((group, idx) => {
+    const itemsList = Object.values(aggregated);
+    const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+    
+    // --- DYNAMIC PAGE GENERATION LOGIC ---
+    let currentPageNum = 1;
+    
+    const createNewPageShell = (pageNum) => {
+      const pageDiv = document.createElement('div');
+      pageDiv.className = 'pal-page';
+      pageDiv.innerHTML = `
+        <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
+        <div class="title-section">PERSONAL ABILITY LIST</div>
+        <table class="info-table">
+          <tr><td width="120">Name</td><td width="10">:</td><td><strong style="text-transform: uppercase;">${name}</strong></td></tr>
+          <tr><td>Personnel Number</td><td>:</td><td><strong>${empId}</strong></td></tr>
+          <tr><td>Present Title</td><td>:</td><td><span>${title || "Aircraft Structure Engineer"}</span></td></tr>
+        </table>
+        <table class="main-table">
+          <thead>
+            <tr>
+              <th width="35">No.</th>
+              <th width="160">DESCRIPTION</th>
+              <th>PART NUMBER</th>
+              <th width="70">ATA</th>
+              <th width="80">RELATED AUTH</th>
+            </tr>
+          </thead>
+          <tbody class="page-tbody"></tbody>
+        </table>
+        <!-- Placeholder for signature (only on last page) -->
+        <div class="sig-container"></div>
+        <!-- Meta Footer (Screen Only) -->
+        <div class="meta-footer-screen no-print">
+          <div>Form No.: GMF/Q-364 R1</div>
+          <div class="screen-page-counter">Page ${pageNum}</div>
+        </div>
+        <!-- Meta Footer (Print Only) -->
+        <div class="meta-footer-fixed">
+          <div>Form No.: GMF/Q-364 R1</div>
+          <div class="page-counter"></div>
+        </div>
+      `;
+      return pageDiv;
+    };
+
+    let currentPage = createNewPageShell(currentPageNum);
+    printArea.appendChild(currentPage);
+    let currentTbody = currentPage.querySelector('.page-tbody');
+    
+    // Limits (pixels) - A4 is ~1122px high. Content limit ~980px.
+    const PAGE_HEIGHT_LIMIT = 960; 
+
+    itemsList.forEach((group, idx) => {
+      // Create Row
       const mid = Math.ceil(group.pns.length / 2);
       const col1 = group.pns.slice(0, mid);
       const col2 = group.pns.slice(mid);
-
       let pnHtml = `<div class="pn-grid"><div>`;
       col1.forEach(p => pnHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
       pnHtml += `</div><div>`;
@@ -257,8 +220,53 @@ window.openPALDocument = async function(empId, name, title) {
         <td style="text-align:center;"><strong>${group.ata}</strong></td>
         <td style="text-align:center; font-size: 9px; font-weight: bold;">${group.auth}</td>
       `;
-      body.appendChild(tr);
+
+      currentTbody.appendChild(tr);
+
+      // Check height - If overflow, move to new page
+      if (currentPage.scrollHeight > PAGE_HEIGHT_LIMIT) {
+        currentTbody.removeChild(tr); // Remove from full page
+        
+        currentPageNum++;
+        currentPage = createNewPageShell(currentPageNum);
+        printArea.appendChild(currentPage);
+        currentTbody = currentPage.querySelector('.page-tbody');
+        currentTbody.appendChild(tr); // Add to new page
+      }
     });
+
+    // --- ADD SIGNATURE TO LAST PAGE ---
+    const lastPageSigContainer = currentPage.querySelector('.sig-container');
+    const sigTable = document.createElement('table');
+    sigTable.className = 'footer-sig-table';
+    sigTable.innerHTML = `
+      <tr>
+        <td class="col-sig-1">Date : <br><br> <span style="font-weight:bold; font-size: 12px;">${today}</span></td>
+        <td class="col-sig-2"></td>
+        <td class="col-sig-3">
+          <div class="sig-inner-flex">
+            <div>Approved by<br>SM Structure Workshop</div>
+            <div>( ___________________________ )<br><span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span></div>
+          </div>
+        </td>
+      </tr>
+    `;
+    
+    // Check if adding signature pushes to new page
+    lastPageSigContainer.appendChild(sigTable);
+    if (currentPage.scrollHeight > PAGE_HEIGHT_LIMIT) {
+        lastPageSigContainer.removeChild(sigTable);
+        currentPageNum++;
+        currentPage = createNewPageShell(currentPageNum);
+        printArea.appendChild(currentPage);
+        currentPage.querySelector('.sig-container').appendChild(sigTable);
+    }
+
+    // Update screen counters with total
+    document.querySelectorAll('.screen-page-counter').forEach(el => {
+        el.textContent = `${el.textContent} of ${currentPageNum}`;
+    });
+
   } catch(e) { console.error(e); }
   finally { if (typeof hideLoader === 'function') hideLoader(); }
 }
