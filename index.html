@@ -963,10 +963,10 @@
       };
     }
 
-   /**
-     * FINAL MERGED: switchView
-     * Menggabungkan Robust Sidebar Guard dengan Adaptive Filter Injection.
-     * Memastikan filter direset dan dibangun ulang sesuai konteks view (Submissions vs DB).
+  /**
+     * FINAL MERGED: switchView with Personnel Integration
+     * Menggabungkan Sidebar Guard, Adaptive Filter Injection, dan Module Injection.
+     * Memastikan filter direset dan dibangun ulang sesuai konteks view (Submissions vs Personnel vs DB).
      */
     async function switchView(view) {
       currentView = view;
@@ -992,7 +992,7 @@
       filtersVisible = false;
       if (searchInput) searchInput.value = "";
     
-      // --- BRANCHING LOGIC (Isolated with else-if) ---
+      // --- BRANCHING LOGIC ---
       if (view === "submissions") {
         if (title) title.textContent = "Submission Tracking";
         if (searchInput) searchInput.placeholder = "Search by Part Number, Name, or ID...";
@@ -1013,9 +1013,9 @@
         
         loadSubmissions(); 
         
-      } else if (view === 'personnel') {
+      } else if (view === "personnel") {
         if (title) title.textContent = "Personnel Ability List Dashboard";
-        if (searchInput) searchInput.placeholder = "Search by Employee Name or ID...";
+        if (searchInput) searchInput.placeholder = "Search by Employee Name, ID, or Unit...";
         
         // Sidebar Guard Logic
         if (subSidebar) subSidebar.style.display = "none";
@@ -1029,7 +1029,7 @@
         loadPersonnelDashboard();
     
       } else {
-        // DEFAULT: Main Database
+        // DEFAULT: Main Database (database)
         if (title) title.textContent = "Enterprise Capability Web";
         if (searchInput) searchInput.placeholder = "Search components, part numbers, or descriptions...";
         
@@ -1083,6 +1083,7 @@
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = html;
         
+        // Pastikan script di dalam module dieksekusi
         const scripts = tempDiv.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -1091,8 +1092,8 @@
         });
         console.log("Personnel Module Injected.");
       } catch (err) {
-        console.error("Personnel Injection Error:", err);
-        Swal.fire("Error", "Gagal memuat modul Personel.", "error");
+        console.error("PAL Injection Error:", err);
+        Swal.fire("Error", "Gagal memuat modul Personnel.", "error");
       }
     }
 
@@ -1475,12 +1476,20 @@
     
     /**
      * FINAL MERGED & OPTIMIZED: applyAllFilters
-     * Mendukung filter ganda untuk Main Database (Array) dan Submissions (Object).
+     * Mendukung filter ganda untuk Main Database (Array), Submissions (Object), dan Personnel (Object).
      * Menggunakan short-circuit logic dan try-catch untuk stabilitas data masif.
      */
     function applyAllFilters() {
-      // 1. Loader Guard: Hanya tampilkan jika data besar agar tetap responsif
-      const dataSize = (currentView === "submissions") ? allSubmissions.length : rawData.length;
+      // 1. Loader Guard: Tentukan ukuran data berdasarkan view aktif
+      let dataSize = 0;
+      if (currentView === "submissions") {
+        dataSize = allSubmissions ? allSubmissions.length : 0;
+      } else if (currentView === "personnel") {
+        dataSize = (typeof allPersonnel !== 'undefined') ? allPersonnel.length : 0;
+      } else {
+        dataSize = rawData ? rawData.length : 0;
+      }
+    
       if (dataSize > 5000) showLoader();
     
       setTimeout(() => {
@@ -1490,13 +1499,20 @@
           const globalKeyword = searchInput ? searchInput.value.trim().toLowerCase() : "";
           
           // 2. Tentukan Sumber Data Berdasarkan Context View
-          let sourceData = (currentView === "submissions") ? allSubmissions : rawData;
+          let sourceData = [];
+          if (currentView === "submissions") {
+            sourceData = allSubmissions || [];
+          } else if (currentView === "personnel") {
+            sourceData = allPersonnel || [];
+          } else {
+            sourceData = rawData || [];
+          }
     
           // 3. PROSES FILTERING (Adaptive Logic)
           const result = sourceData.filter(row => {
-            // A. Global Search Short-circuit
+            // A. Global Search Short-circuit (Handle both Array and Object)
             if (globalKeyword) {
-              const rowValues = (currentView === "submissions") ? Object.values(row) : row;
+              const rowValues = (typeof row === 'object' && !Array.isArray(row)) ? Object.values(row) : row;
               const matchesGlobal = rowValues.some(cell => String(cell).toLowerCase().includes(globalKeyword));
               if (!matchesGlobal) return false;
             }
@@ -1506,12 +1522,14 @@
               const selected = activeFilters[colIdx];
               if (!selected || selected.size === 0) return true;
     
-              // Mapping nilai: Submissions menggunakan Keys, Main DB menggunakan Index
+              // Mapping nilai berdasarkan struktur data view
               let cellValue;
-              if (currentView === "submissions") {
+              if (currentView === "submissions" || currentView === "personnel") {
+                // Akses property object berdasarkan urutan keys (untuk sinkronisasi dengan dropdown index)
                 const keys = Object.keys(row);
                 cellValue = String(row[keys[colIdx]] || "").trim() || "(Blanks)";
               } else {
+                // Main DB menggunakan index array
                 cellValue = String(row[colIdx] || "").trim() || "(Blanks)";
               }
               return selected.has(cellValue);
@@ -1521,9 +1539,10 @@
           // 4. BRANCH RENDERING & ASSIGNMENT
           if (currentView === "submissions") {
             filteredSubmissions = result;
-            if (typeof renderSubmissionCards === "function") {
-              renderSubmissionCards();
-            }
+            if (typeof renderSubmissionCards === "function") renderSubmissionCards();
+          } else if (currentView === "personnel") {
+            filteredPersonnel = result; // Global variable defined in PAL module
+            if (typeof renderPersonnelCards === "function") renderPersonnelCards();
           } else {
             viewData = result;
             renderCards(viewData);
@@ -1531,6 +1550,7 @@
           
           // 5. Update UI & Dropdown State
           updateDataStatus();
+          updatePaginationInfo(result.length); // Sync pagination numbers
           if (typeof refreshAllDropdowns === "function") {
             refreshAllDropdowns();
           }
@@ -1755,36 +1775,48 @@
     
     /**
      * REPAIRED: updateDataStatus
-     * Menampilkan status data yang sinkron untuk Database Utama dan Tracking Pengajuan.
+     * Synchronized data status for Main Database, Submissions, and Personnel.
      */
     function updateDataStatus() {
-      // 1. Tentukan total data dan data terfilter berdasarkan View yang aktif
-      const totalInSheet = (currentView === "submissions") ? (allSubmissions ? allSubmissions.length : 0) : rawData.length;
-      const filteredCount = (currentView === "submissions") ? (filteredSubmissions ? filteredSubmissions.length : 0) : viewData.length;
-      
-      // 2. Cek apakah ada filter atau pencarian yang aktif
-      const hasActiveFilters = (currentView === "submissions") 
-        ? document.getElementById("globalSearch").value.trim() !== "" 
-        : (globalKeyword || Object.values(activeFilters).some(set => set.size > 0));
-
       const statusEl = document.getElementById("dataStatus");
       if (!statusEl) return; // Guard clause
-      
+
+      let total = 0;
+      let filtered = 0;
+      let viewLabel = "Database";
+
+      // 1. Determine total and filtered counts based on the active View
+      if (currentView === "submissions") {
+        total = (typeof allSubmissions !== 'undefined') ? allSubmissions.length : 0;
+        filtered = (typeof filteredSubmissions !== 'undefined') ? filteredSubmissions.length : 0;
+        viewLabel = "Submissions";
+      } else if (currentView === "personnel") {
+        total = (typeof allPersonnel !== 'undefined') ? allPersonnel.length : 0;
+        filtered = (typeof filteredPersonnel !== 'undefined') ? filteredPersonnel.length : 0;
+        viewLabel = "Personnel";
+      } else {
+        total = rawData.length;
+        filtered = viewData.length;
+        viewLabel = "Database";
+      }
+
+      // 2. Check if any filter or search is currently active
+      const searchInput = document.getElementById("globalSearch");
+      const hasActiveFilters = (searchInput && searchInput.value.trim() !== "") || 
+                               (activeFilters && Object.values(activeFilters).some(set => set.size > 0));
+
       const lastSync = new Date().toLocaleTimeString();
 
-      // 3. Render Teks Status
-      if (currentView === "submissions") {
-        // Tampilan khusus untuk Dashboard Pengajuan
-        statusEl.innerHTML = `Total Submissions: ${totalInSheet.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
+      // 3. Render Status Text
+      if (filtered !== total || hasActiveFilters) {
+        // Display result count when searching/filtering
+        statusEl.innerHTML = `Found ${filtered.toLocaleString()} results (from ${total.toLocaleString()} total) | <small>Sync: ${lastSync}</small>`;
       } else {
-        // Tampilan untuk Main Database
-        if (hasActiveFilters) {
-          statusEl.innerHTML = `Found ${filteredCount.toLocaleString()} results (from ${totalInSheet.toLocaleString()} total) | <small>Sync: ${lastSync}</small>`;
-        } else {
-          statusEl.innerHTML = `Total Database: ${totalInSheet.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
-        }
+        // Display total record count when in default state
+        statusEl.innerHTML = `Total ${viewLabel}: ${total.toLocaleString()} records | <small>Sync: ${lastSync}</small>`;
       }
     }
+    
     
     function formatStatus(val, auth, pn) {
       const status = String(val || "ACTIVE").trim().toUpperCase();
