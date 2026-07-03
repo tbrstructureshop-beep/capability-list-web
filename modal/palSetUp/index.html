@@ -1,36 +1,62 @@
 <style>
     /* --- PRINT SETUP A4 PORTRAIT --- */
-    @page { size: A4 portrait; margin: 0; }
+    @page { 
+        size: A4 portrait; 
+        margin: 0; /* Margin 0 agar kita bisa kontrol via CSS Padding */
+    }
 
     @media print {
-        body { background: none !important; padding: 0 !important; }
-        /* Hide everything except the modal content */
+        /* Kill Scrollbars and Backgrounds */
+        html, body { 
+            overflow: hidden !important; 
+            height: 100% !important; 
+            margin: 0 !important; 
+            padding: 0 !important; 
+            background: #fff !important;
+        }
+        
+        /* Hide everything else */
         body * { visibility: hidden !important; }
         #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
         
+        /* Modal container cleanup */
         #palDocumentModal { 
-            position: absolute !important; left: 0 !important; top: 0 !important; 
-            width: 100% !important; background: white !important; display: block !important;
+            position: absolute !important; 
+            left: 0 !important; 
+            top: 0 !important; 
+            width: 210mm !important; 
+            height: 297mm !important;
+            background: white !important; 
+            display: block !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
         }
+        
         .no-print { display: none !important; }
         
         .pal-page { 
-            margin: 0 !important; box-shadow: none !important; 
+            margin: 0 !important; 
+            padding: 5mm !important; /* Margin 5mm all sides */
+            box-shadow: none !important; 
             page-break-after: always !important;
             border: none !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            box-sizing: border-box !important;
+            background: white !important;
         }
     }
 
     /* --- SCREEN VIEW STYLES --- */
     #palDocumentModal {
-        background: #525659; /* Matching PIR Report background */
+        background: #525659; 
     }
 
     .pal-page { 
         background: white; 
         width: 210mm; 
         height: 297mm; 
-        padding: 15mm; 
+        padding: 15mm; /* Screen view matches print better with 5-15mm */
         margin: 20px auto; 
         color: #000; 
         font-family: Arial, sans-serif; 
@@ -41,14 +67,12 @@
         position: relative;
     }
 
-    /* Local Loader Overlay */
     .pal-loader-overlay {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(255,255,255,0.8); z-index: 100;
         display: none; flex-direction: column; justify-content: center; align-items: center;
     }
 
-    /* Standard Elements */
     .logo-container { text-align: center; margin-bottom: 10px; }
     .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
     .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
@@ -63,7 +87,6 @@
     .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
     .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-    /* Signature Table */
     .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 15px; table-layout: fixed; }
     .footer-sig-table td { border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; font-size: 11px; }
     #col_1 { width: 35.59%; } #col_2 { width: 33.68%; } #col_3 { width: 30.73%; }
@@ -71,9 +94,15 @@
 
     /* Footer Pagination */
     .pal-footer {
-        position: absolute; bottom: 10mm; left: 15mm; right: 15mm;
-        display: flex; justify-content: space-between; font-size: 10px;
-        border-top: 1px solid #000; padding-top: 5px;
+        position: absolute; 
+        bottom: 2.5mm; /* Jarak 2.5mm dari paper edge */
+        left: 5mm; 
+        right: 5mm;
+        display: flex; 
+        justify-content: space-between; 
+        font-size: 10px;
+        border-top: 1px solid #000; 
+        padding-top: 3px;
     }
 
     .dynamic-content { flex-grow: 1; overflow: hidden; }
@@ -82,7 +111,6 @@
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500; overflow-y: auto;">
   
-    <!-- Header Toolbar -->
     <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
         <div style="display:flex; gap: 12px;">
             <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
@@ -91,21 +119,18 @@
         <button class="close-x" onclick="closePALModal()" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
     </div>
 
-    <!-- Wrapper for generated pages -->
     <div id="pal-report-wrapper"></div>
-
-    <!-- Ghost element for height calculation -->
     <div id="pal-ghost"></div>
 </div>
 
 <script>
 const PALEngine = {
-    maxHeight: 850, // Available height in pixels for dynamic content area
+    maxHeight: 900, // Adjusted for 5mm margins
     currentEmp: null,
 
     async init(empId, name, title) {
         this.currentEmp = { id: empId, name: name, title: title };
-        window.currentPalEmpId = empId; // For Add Items sync
+        window.currentPalEmpId = empId; 
         
         const wrapper = document.getElementById('pal-report-wrapper');
         wrapper.innerHTML = `
@@ -119,7 +144,6 @@ const PALEngine = {
             const data = await res.json();
             if(!data.success) throw new Error(data.error);
 
-            // Grouping logic
             const aggregated = data.items.reduce((acc, item) => {
                 const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
                 if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
@@ -129,7 +153,6 @@ const PALEngine = {
 
             this.render(Object.values(aggregated));
         } catch(e) {
-            console.error(e);
             wrapper.innerHTML = `<div style="color:white; text-align:center; padding:50px;">Error: ${e.message}</div>`;
         }
     },
@@ -142,25 +165,19 @@ const PALEngine = {
         let contentDiv = currentPage.querySelector('.dynamic-content');
         let currentH = 0;
 
-        // 1. Render Main Table
         let tableHtml = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">AUTH</th></tr></thead><tbody>`;
         contentDiv.insertAdjacentHTML('beforeend', tableHtml);
         let tbody = contentDiv.querySelector('tbody');
-        currentH += 40; // Approx header height
+        currentH += 40; 
 
         items.forEach((group, idx) => {
             const row = this.createRow(group, idx + 1);
             const rowH = this.measureElement(row);
 
             if (currentH + rowH > this.maxHeight) {
-                // Close current table and page
                 contentDiv.insertAdjacentHTML('beforeend', `</tbody></table>`);
-                
-                // Create New Page
                 currentPage = this.createNewPage();
                 contentDiv = currentPage.querySelector('.dynamic-content');
-                
-                // Restart Table on new page
                 const contHeader = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION (CONT.)</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">AUTH</th></tr></thead><tbody>`;
                 contentDiv.insertAdjacentHTML('beforeend', contHeader);
                 tbody = contentDiv.querySelector('tbody');
@@ -170,13 +187,9 @@ const PALEngine = {
             currentH += rowH;
         });
 
-        // Close table
         contentDiv.insertAdjacentHTML('beforeend', `</tbody></table>`);
-
-        // 2. Add Signature Block (Atomic Check)
         this.addSignature(contentDiv, currentH);
 
-        // 3. Finalize Pagination
         const totalPages = wrapper.querySelectorAll('.pal-page').length;
         wrapper.querySelectorAll('.page-num-label').forEach((el, i) => {
             el.innerText = `Page ${i + 1} of ${totalPages}`;
@@ -221,7 +234,7 @@ const PALEngine = {
         return tr;
     },
 
-    addSignature(container, h) {
+    addSignature(contentDiv, h) {
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
         const sigHtml = `
             <table class="footer-sig-table">
@@ -242,7 +255,7 @@ const PALEngine = {
             const p = this.createNewPage();
             p.querySelector('.dynamic-content').insertAdjacentHTML('beforeend', sigHtml);
         } else {
-            container.insertAdjacentHTML('beforeend', sigHtml);
+            contentDiv.insertAdjacentHTML('beforeend', sigHtml);
         }
     },
 
@@ -259,9 +272,6 @@ const PALEngine = {
     }
 };
 
-/**
- * Global Bridge
- */
 window.openPALDocument = function(empId, name, title) {
     document.getElementById('palDocumentModal').style.display = 'block';
     document.body.style.overflow = 'hidden';
