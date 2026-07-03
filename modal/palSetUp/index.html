@@ -7,6 +7,10 @@
 
   @media print {
 
+      body > *:not(#palDocumentModal) {
+          display: none !important;
+      }
+
       /* 2. Reset Body: Gunakan height auto agar tidak memicu blank page */
       html, body { 
           background: #fff !important; 
@@ -17,9 +21,7 @@
           print-color-adjust: exact !important;
       }
   
-      /* 3. Sembunyikan elemen dashboard */
-      body * { visibility: hidden !important; }
-  
+
       /* 4. Tampilkan Modal sebagai Wrapper Utama */
       #palDocumentModal, #palDocumentModal * { 
           visibility: visible !important; 
