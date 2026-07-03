@@ -2254,7 +2254,8 @@
 
     // Bridge untuk muat Modal Bulk Add
     async function injectBulkAddModule() {
-      if (document.getElementById('bulkAddModalOverlay')) return true; // Sudah ada
+      // If already injected, don't do it again
+      if (document.getElementById('bulkAddModalOverlay')) return true; 
       
       const targetPath = "modal/palSetUp/addNewItem/index.html";
       try {
@@ -2266,7 +2267,7 @@
         container.innerHTML = html;
         document.body.appendChild(container);
     
-        // Jalankan scripts di dalamnya
+        // Execute scripts inside the module
         const scripts = container.querySelectorAll("script");
         scripts.forEach(s => {
           const newS = document.createElement("script");
@@ -2275,7 +2276,7 @@
         });
         return true;
       } catch (e) {
-        console.error("Gagal load Bulk Module:", e);
+        console.error("Failed to load Bulk Module:", e);
         return false;
       }
     }
@@ -2287,9 +2288,13 @@
       hideLoader();
       
       if (loaded) {
-        // Panggil fungsi asli yang baru saja di-inject
-        if (typeof window.openBulkAddModal === 'function') {
-           window.openBulkAddModal(); 
+        // The injected HTML should define a function named 'showBulkAddUI' 
+        // to avoid conflict with this bridge function name.
+        if (typeof showBulkAddUI === 'function') {
+           showBulkAddUI(); 
+        } else {
+           // Fallback if you used the same name in the module
+           console.log("Module loaded. Ensure it has a trigger function.");
         }
       }
     };
