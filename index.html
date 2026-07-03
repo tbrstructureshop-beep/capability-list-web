@@ -2262,6 +2262,48 @@
         if(typeof initFindPersonnel === 'function') initFindPersonnel(staffData, existingIds);
       } catch (e) { console.error(e); }
     }
+
+    // Bridge untuk muat Modal Bulk Add
+    async function injectBulkAddModule() {
+      if (document.getElementById('bulkAddModalOverlay')) return true; // Sudah ada
+      
+      const targetPath = "modal/palSetUp/addNewItem/index.html";
+      try {
+        const response = await fetch(targetPath);
+        const html = await response.text();
+        
+        const container = document.createElement("div");
+        container.id = "bulkAddModuleContainer";
+        container.innerHTML = html;
+        document.body.appendChild(container);
+    
+        // Jalankan scripts di dalamnya
+        const scripts = container.querySelectorAll("script");
+        scripts.forEach(s => {
+          const newS = document.createElement("script");
+          newS.text = s.innerHTML;
+          document.body.appendChild(newS);
+        });
+        return true;
+      } catch (e) {
+        console.error("Gagal load Bulk Module:", e);
+        return false;
+      }
+    }
+    
+    // Override fungsi openBulkAddModal di index.html
+    window.openBulkAddModal = async function() {
+      showLoader();
+      const loaded = await injectBulkAddModule();
+      hideLoader();
+      
+      if (loaded) {
+        // Panggil fungsi asli yang baru saja di-inject
+        if (typeof window.openBulkAddModal === 'function') {
+           window.openBulkAddModal(); 
+        }
+      }
+    };
     
     // Opsional: Muat modal di awal (Background load) agar saat klik tombol terasa instan
     window.addEventListener('DOMContentLoaded', loadExternalModal);
