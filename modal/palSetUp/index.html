@@ -6,6 +6,11 @@
   }
 
   @media print {
+
+      [contenteditable="true"] {
+        border: none !important;
+        outline: none !important;
+      }
       /* 1. Paksa Root agar tidak punya scrollbar sama sekali */
       html, body { 
           background: #fff !important; 
@@ -114,7 +119,7 @@
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
   .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 10px; table-layout: fixed; }
-  .footer-sig-table td { border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; font-size: 11px; }
+  .footer-sig-table td { border: 1px solid black; height: 135px; vertical-align: top; padding: 10px; font-size: 11px; }
   #col_1 { width: 35%; } #col_2 { width: 34%; } #col_3 { width: 31%; }
   .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
   .meta-footer-wrap { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10px; border-top: none; padding-top: 2px; }
@@ -178,8 +183,17 @@
                 <td id="col_2"></td>
                 <td id="col_3">
                   <div class="sig-inner-flex">
-                    <div>Approved by<br>SM Structure Workshop</div>
-                    <div>( _____________________ )<br><span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span></div>
+                    <div>
+                      Approved by<br>
+                      <!-- contenteditable membuat teks ini bisa diklik dan diketik langsung di browser -->
+                      <span id="pal_approver_dept" contenteditable="true" style="font-weight: bold; cursor: edit; border-bottom: 1px dashed #ccc;">
+                        SM Structure Workshop
+                      </span>
+                    </div>
+                    <div>
+                      ( _____________________ )<br>
+                      <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
+                    </div>
                   </div>
                 </td>
               </tr>
