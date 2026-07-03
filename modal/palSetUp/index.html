@@ -1,42 +1,41 @@
 <style>
-  /* --- PRINT CORE: A4 PORTRAIT --- */
-  @page { 
-    size: A4 portrait; 
-    margin: 10mm 15mm 15mm 15mm; 
-  }
-
+  /* --- 1. LEARNING FROM PLACARD: PRINT ENGINE --- */
   @media print {
-    /* Hide everything on the website except the PAL Document */
-    body * { visibility: hidden !important; background: none !important; }
+    @page { 
+      size: A4 portrait; 
+      margin: 0; /* Let the container handle the padding for precision */
+    }
+    body { background: white !important; }
+    
+    /* Hide EVERYTHING except the modal and its content */
+    body * { visibility: hidden !important; }
     #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
     
     #palDocumentModal { 
       position: absolute !important; 
-      left: 0 !important; top: 0 !important; 
-      width: 100% !important; 
+      left: 0; top: 0; 
+      width: 100%; 
       background: white !important;
       display: block !important;
     }
-
+    
     .no-print { display: none !important; }
-
+    
     .pal-doc { 
       box-shadow: none !important; 
       margin: 0 !important; 
-      padding: 0 !important;
-      width: 100% !important;
+      padding: 15mm !important; /* Standard A4 Margin */
+      width: 210mm; 
+      min-height: 297mm;
+      box-sizing: border-box;
     }
 
-    /* THE TRICK: Repeat headers and footers on every page */
-    .master-layout thead { display: table-header-group; }
-    .master-layout tfoot { display: table-footer-group; }
-    
-    /* Avoid cutting rows or signature blocks across pages */
-    tr { page-break-inside: avoid; break-inside: avoid; }
-    .footer-sig-table { page-break-inside: avoid; break-inside: avoid; }
+    /* Logic for repeating headers on every page */
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
   }
 
-  /* --- SCREEN UI --- */
+  /* --- 2. SCREEN PREVIEW STYLES --- */
   .pal-doc { 
     background: white; 
     width: 210mm; 
@@ -45,98 +44,70 @@
     margin: 30px auto; 
     color: #000; 
     font-family: Arial, sans-serif; 
-    display: block;
     box-shadow: 0 0 30px rgba(0,0,0,0.5); 
-    box-sizing: border-box; 
-    position: relative;
+    box-sizing: border-box;
   }
 
-  .master-layout {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
+  .layout-table { width: 100%; border-collapse: collapse; }
 
-  .logo-container { text-align: center; padding-bottom: 5px; }
-  .logo-img { height: 48px; width: auto; }
-  
+  /* Logo & Title Header */
+  .header-logo-section { text-align: center; margin-bottom: 5px; }
+  .logo-img { height: 40px; width: auto; }
   .title-section { 
-    text-align: center; 
-    font-weight: bold; 
-    font-size: 16px; 
-    text-decoration: underline; 
-    margin-bottom: 20px; 
-    text-transform: uppercase; 
+    text-align: center; font-weight: 800; font-size: 15px; 
+    text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; 
   }
   
-  .info-table { width: 75%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
-  .info-table td { padding: 4px 0; vertical-align: top; }
+  /* Employee Info */
+  .info-table { width: 60%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
+  .info-table td { padding: 3px 0; }
 
-  /* Data Table Styling */
-  .data-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    border: 1.5px solid black; 
+  /* Main Data Table */
+  .main-table { width: 100%; border-collapse: collapse; border: 1.5px solid black; }
+  .main-table th { 
+    border: 1.5px solid black; padding: 8px 4px; background: #f2f2f2; 
+    text-transform: uppercase; font-size: 10px; font-weight: bold; 
   }
-  .data-table th { 
-    border: 1px solid black; padding: 10px 5px; background: #f2f2f2; 
-    text-transform: uppercase; font-size: 11px; font-weight: bold; 
-    -webkit-print-color-adjust: exact;
-  }
-  .data-table td { 
-    border: 1px solid black; padding: 6px; font-size: 11px; 
-    vertical-align: top; word-wrap: break-word; 
+  .main-table td { 
+    border: 1.5px solid black; padding: 10px 6px; font-size: 10px; 
+    vertical-align: top; 
   }
 
-  /* P/N Grid Display (2-Column as per Image) */
-  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
-  .pn-item { display: flex; gap: 5px; line-height: 1.2; font-family: monospace; font-size: 10px; }
+  /* P/N List Handling */
+  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pn-item { display: flex; gap: 5px; line-height: 1.2; white-space: nowrap; }
 
-  /* Signature Block */
-  .footer-sig-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    border: 1.5px solid black; 
-    margin-top: 15px; 
-    table-layout: fixed; 
+  /* Signature Table (Last Page Only) */
+  .sig-table { 
+    width: 100%; border-collapse: collapse; border: 1.5px solid black; 
+    margin-top: 15px; table-layout: fixed; page-break-inside: avoid;
   }
-  .footer-sig-table td { 
-    border: 1.5px solid black; height: 110px; 
-    vertical-align: top; padding: 12px; font-size: 12px; 
+  .sig-table td { border: 1.5px solid black; height: 95px; padding: 10px; vertical-align: top; font-size: 11px; }
+  
+  .form-footer-meta { 
+    display: flex; justify-content: space-between; font-size: 9px; padding-top: 10px; 
   }
-  #col_1 { width: 35.59%; }
-  #col_2 { width: 33.68%; }
-  #col_3 { width: 30.73%; }
 
-  .sig-inner { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
-
-  .form-footer-text {
-    font-size: 10px;
-    padding-top: 10px;
-    display: flex;
-    justify-content: space-between;
-  }
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
   
-  <!-- Toolbar -->
-  <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #2c3e50; padding: 15px 30px; border-bottom: 2px solid #34495e; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
-     <div style="display:flex; gap: 15px;">
-       <button class="btn btn-primary" onclick="triggerSmartPrint()" style="background:#27ae60; border:none; padding: 10px 25px; color:white; font-weight: 800; border-radius: 6px; cursor:pointer; box-shadow: 0 4px 0 #1e8449;">PRINT DOCUMENT</button>
-       <button class="btn" onclick="openBulkAddModal()" style="background:white; color:#2c3e50; border:none; padding: 10px 20px; cursor:pointer; font-weight: 700; border-radius: 6px;">+ ADD ITEMS</button>
+  <!-- UI CONTROLS (Learning from placard) -->
+  <div class="no-print" style="position: sticky; top: 0; background: #222; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; z-index: 16000; border-bottom: 1px solid #444;">
+     <div style="display:flex; gap: 10px;">
+       <button class="btn" style="background:#3c92a6; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold;" onclick="window.print()">Print A4 PDF</button>
+       <button class="btn" style="background:#444; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;" onclick="openBulkAddModal()">+ Add Item</button>
      </div>
-     <span style="color:white; font-weight: 600;">PREVIEW MODE (A4 PORTRAIT)</span>
-     <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:35px; border:none; background:none; cursor:pointer;">&times;</button>
+     <button onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="background:none; border:none; color:white; font-size:30px; cursor:pointer;">&times;</button>
   </div>
 
   <div id="palPrintArea" class="pal-doc">
-    <table class="master-layout">
-      <!-- THIS REPEATS ON EVERY PAGE -->
+    <table class="layout-table">
       <thead>
         <tr>
           <td>
-            <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
+            <!-- REPEATING HEADER -->
+            <div class="header-logo-section"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
             <div class="title-section">PERSONAL ABILITY LIST</div>
 
             <table class="info-table">
@@ -145,14 +116,15 @@
               <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
             </table>
 
-            <table class="data-table" style="border-bottom:none;">
+            <!-- Repeating Th -->
+            <table class="main-table" style="border-bottom: none;">
               <thead>
                 <tr>
-                  <th width="40">NO.</th>
-                  <th width="200">DESCRIPTION</th>
+                  <th width="35">NO.</th>
+                  <th width="180">DESCRIPTION</th>
                   <th>PART NUMBER</th>
-                  <th width="85">ATA</th>
-                  <th width="85">AUTH</th>
+                  <th width="70">ATA</th>
+                  <th width="70">AUTH</th>
                 </tr>
               </thead>
             </table>
@@ -160,30 +132,29 @@
         </tr>
       </thead>
 
-      <!-- DYNAMIC CONTENT -->
       <tbody>
         <tr>
           <td>
-            <table class="data-table">
-              <tbody id="pal_items_body"></tbody>
+            <table class="main-table">
+              <tbody id="pal_items_body">
+                <!-- Data rows injected by JS -->
+              </tbody>
             </table>
 
-            <!-- SIGNATURE (Only at the very end) -->
-            <table class="footer-sig-table">
+            <!-- SIGNATURE (Last page) -->
+            <table class="sig-table">
               <tr>
-                <td id="col_1">
+                <td style="width: 35.59%;">
                   Date : <br><br>
-                  <span id="pal_today_date" style="font-weight:bold; font-size: 14px;">-</span>
+                  <strong id="pal_today_date" style="font-size:14px;">-</strong>
                 </td>
-                <td id="col_2"></td>
-                <td id="col_3">
-                  <div class="sig-inner">
-                    <div>Approved by<br>SM Structure Workshop</div>
-                    <div>
-                      ( ___________________________ )<br>
-                      <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
-                    </div>
-                  </div>
+                <td style="width: 33.68%;"></td>
+                <td style="width: 30.73%; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+                   <div>Approved by<br>SM Structure Workshop</div>
+                   <div style="margin-top: auto;">
+                     ( ___________________________ )<br>
+                     <small>Name & Signature</small>
+                   </div>
                 </td>
               </tr>
             </table>
@@ -191,13 +162,12 @@
         </tr>
       </tbody>
 
-      <!-- FORM NO (Bottom of Every Page) -->
       <tfoot>
         <tr>
           <td>
-            <div class="form-footer-text">
-              <span>Form No.: GMF/Q-364 R1</span>
-              <span class="no-print">Page Page X of Y</span>
+            <div class="form-footer-meta">
+              <span>Form No: GMF/Q-364 R1</span>
+              <span>Page 1 of 1</span>
             </div>
           </td>
         </tr>
@@ -208,17 +178,7 @@
 
 <script>
 /**
- * REPAIRED: triggerSmartPrint
- * Ensures the document is prepared for high-quality printing
- */
-function triggerSmartPrint() {
-  // Briefly add a print-active class if needed for transitions
-  window.print();
-}
-
-/**
- * REPAIRED: openPALDocument
- * Standardizes grouping and injected content
+ * RENDER LOGIC
  */
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
@@ -227,9 +187,7 @@ window.openPALDocument = async function(empId, name, title) {
   document.getElementById('pal_name').textContent = name;
   document.getElementById('pal_id').textContent = empId;
   document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
-  
-  const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
-  document.getElementById('pal_today_date').textContent = today;
+  document.getElementById('pal_today_date').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 
   modal.style.display = 'block';
   document.body.style.overflow = 'hidden'; 
@@ -238,21 +196,17 @@ window.openPALDocument = async function(empId, name, title) {
   try {
     const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
     const data = await res.json();
-    if(!data.success) throw new Error(data.error);
-
-    // Grouping by Description + Auth + ATA Reference
+    
     const aggregated = data.items.reduce((acc, item) => {
-      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
-      if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
+      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ata.trim()}`;
+      if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ata, pns: [item.pn] };
       else if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
       return acc;
     }, {});
 
     const body = document.getElementById('pal_items_body');
     body.innerHTML = '';
-    
     Object.values(aggregated).forEach((group, idx) => {
-      // 2-Column Logic for P/N
       const mid = Math.ceil(group.pns.length / 2);
       const col1 = group.pns.slice(0, mid);
       const col2 = group.pns.slice(mid);
@@ -265,19 +219,15 @@ window.openPALDocument = async function(empId, name, title) {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td width="40" style="text-align:center; font-weight:bold;">${idx + 1}</td>
-        <td width="200" style="text-transform: uppercase; font-weight:bold;">${group.desc}</td>
+        <td width="35" style="text-align:center;">${idx + 1}</td>
+        <td width="180" style="text-transform: uppercase; font-weight:bold;">${group.desc}</td>
         <td>${pnHtml}</td>
-        <td width="85" style="text-align:center;"><strong>${group.ata}</strong></td>
-        <td width="85" style="text-align:center; font-weight: bold; color: #333;">${group.auth}</td>
+        <td width="70" style="text-align:center; font-weight:bold;">${group.ata}</td>
+        <td width="70" style="text-align:center; font-weight:bold;">${group.auth}</td>
       `;
       body.appendChild(tr);
     });
-  } catch(e) { 
-    console.error(e); 
-    Swal.fire("Data Error", "Unable to load authorized items list.", "error");
-  } finally { 
-    if (typeof hideLoader === 'function') hideLoader(); 
-  }
+  } catch(e) { console.error(e); }
+  finally { if (typeof hideLoader === 'function') hideLoader(); }
 }
 </script>
