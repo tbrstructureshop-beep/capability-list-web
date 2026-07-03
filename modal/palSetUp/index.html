@@ -82,6 +82,12 @@
       tfoot { display: table-footer-group !important; }
       tr { page-break-inside: avoid !important; }
   }
+
+  [contenteditable="true"]:hover {
+    background: rgba(60, 146, 166, 0.05);
+    cursor: edit;
+    outline: 1px dashed #3c92a6;
+  }
   
   /* --- 2. SCREEN VIEW STYLES (PREVIEW PDF MODE) --- */
   #palDocumentModal {
@@ -185,14 +191,15 @@
                   <div class="sig-inner-flex">
                     <div>
                       Approved by<br>
-                      <!-- contenteditable membuat teks ini bisa diklik dan diketik langsung di browser -->
-                      <span id="pal_approver_dept" contenteditable="true" style="font-weight: bold; cursor: edit; border-bottom: 1px dashed #ccc;">
-                        SM Structure Workshop
-                      </span>
+                      <!-- Klik teks di bawah ini untuk mengganti Department -->
+                      <span contenteditable="true" style="font-weight: bold;">SM Structure Workshop</span>
                     </div>
                     <div>
-                      ( _____________________ )<br>
-                      <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
+                      <!-- Klik di dalam kurung untuk mengetik Nama, atau ganti label bawahnya -->
+                      ( <span contenteditable="true">_____________________</span> )<br>
+                      <span contenteditable="true" style="font-size: 10px; margin-top: 5px; display: block;">
+                        Name & Signature
+                      </span>
                     </div>
                   </div>
                 </td>
