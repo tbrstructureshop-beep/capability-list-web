@@ -6,11 +6,26 @@
   }
 
   @media print {
-      /* 1. KUNCI UTAMA: Hilangkan dashboard asli dari perhitungan tinggi, bukan cuma disembunyikan */
-      body > *:not(#palDocumentModal) {
+      /* 
+         FIX UTAMA: 
+         Kenapa "Blank"? Karena #palDocumentModal dibungkus div lain. 
+         Jika div pembungkusnya kena "display: none", maka modal di dalamnya ikut hilang.
+      */
+      
+      /* Sembunyikan semua anak langsung body... */
+      body > * {
           display: none !important;
       }
   
+      /* ...KECUALI kontainer yang membungkus Modal PAL */
+      #palDocumentModal, 
+      #palModalContainer, 
+      #modalUpdateSourceContainer {
+          display: block !important;
+          visibility: visible !important;
+          position: static !important;
+      }
+
       html, body { 
           background: #fff !important; 
           margin: 0 !important; 
@@ -21,16 +36,12 @@
           print-color-adjust: exact !important;
       }
   
-      /* 2. Ubah modal menjadi elemen statis agar mengikuti flow printer */
       #palDocumentModal {
-          position: static !important; 
-          display: block !important; 
           width: 210mm !important; 
-          background: white !important;
           margin: 0 auto !important;
+          background: white !important;
       }
 
-      /* Hilangkan overlay gelap saat print */
       #palDocumentModal.modal-overlay {
           background: none !important;
           backdrop-filter: none !important;
@@ -44,13 +55,12 @@
           padding: 15mm !important; 
           box-shadow: none !important;
           background: white !important;
-          
-          /* Mencegah 1px sisa memicu halaman baru */
           height: auto !important;
           min-height: 0 !important;
           overflow: hidden !important; 
           display: block !important;
           box-sizing: border-box !important;
+          border: 0.1px solid transparent; /* Mencegah margin sisa */
       }
   
       .layout-table { 
@@ -63,14 +73,12 @@
       thead { display: table-header-group !important; }
       tfoot { display: table-footer-group !important; }
   
-      tr {
-          page-break-inside: avoid !important;
-      }
+      tr { page-break-inside: avoid !important; }
   }
 
   /* --- 2. SCREEN VIEW STYLES (PREVIEW PDF MODE) --- */
   #palDocumentModal {
-    background: rgba(82, 86, 89, 1); /* Dark gray ala PDF viewer */
+    background: rgba(82, 86, 89, 1);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -91,80 +99,22 @@
     position: relative;
   }
 
-  /* --- 3. ISI DOKUMEN (KONTEN TETAP TERJAGA) --- */
   .layout-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-
   .logo-container { text-align: center; padding-bottom: 10px; }
   .logo-img { height: 48px; width: auto; display: block; margin: 0 auto; }
-  
-  .title-section { 
-    text-align: center; 
-    font-weight: bold; 
-    font-size: 14px; 
-    text-decoration: underline; 
-    margin-bottom: 20px; 
-    text-transform: uppercase; 
-  }
-  
+  .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
   .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
   .info-table td { padding: 2px 0; }
-
-  .main-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    border: 1px solid black; 
-    table-layout: fixed; 
-  }
-  .main-table th { 
-    border: 1px solid black; padding: 8px 4px; background: #f2f2f2 !important; 
-    text-transform: uppercase; font-size: 10px; font-weight: bold; 
-    -webkit-print-color-adjust: exact;
-  }
-  .main-table td { 
-    border: 1px solid black; padding: 6px; font-size: 10px; 
-    vertical-align: top; word-wrap: break-word; 
-  }
-
+  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
+  .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2 !important; text-transform: uppercase; font-size: 10px; font-weight: bold; -webkit-print-color-adjust: exact; }
+  .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; }
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
-
-  /* FOOTER SIGNATURE */
-  .footer-sig-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    border: 1px solid black; 
-    margin-top: 10px; 
-    table-layout: fixed; 
-  }
-  .footer-sig-table td { 
-    border: 1px solid black; 
-    height: 110px; 
-    vertical-align: top; 
-    padding: 10px; 
-    font-size: 11px; 
-  }
-  
-  #col_1 { width: 35%; }
-  #col_2 { width: 34%; }
-  #col_3 { width: 31%; }
-
-  .sig-inner-flex { 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: space-between; 
-    height: 100%; 
-    text-align: center; 
-  }
-
-  .meta-footer-wrap { 
-    display: flex; 
-    justify-content: space-between; 
-    margin-top: 2px; /* Perkecil jarak */
-    font-size: 10px; 
-    border-top: none; /* Hilangkan garis agar tidak double dengan border tabel */
-    padding-top: 2px;
-  }
-
+  .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 10px; table-layout: fixed; }
+  .footer-sig-table td { border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; font-size: 11px; }
+  #col_1 { width: 35%; } #col_2 { width: 34%; } #col_3 { width: 31%; }
+  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
+  .meta-footer-wrap { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10px; border-top: none; padding-top: 2px; }
   .screen-page-info { font-size: 11px; color: #ccc; }
 </style>
 
