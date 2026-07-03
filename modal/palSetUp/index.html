@@ -1,233 +1,215 @@
 <style>
-  /* --- 1. LEARNING FROM PLACARD: PRINT ENGINE --- */
+  /* --- PRINT SETUP --- */
   @media print {
-    @page { 
-      size: A4 portrait; 
-      margin: 0; /* Let the container handle the padding for precision */
-    }
-    body { background: white !important; }
-    
-    /* Hide EVERYTHING except the modal and its content */
-    body * { visibility: hidden !important; }
-    #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
-    
+    /* Hide everything except the modal content */
+    body > * { display: none !important; }
     #palDocumentModal { 
-      position: absolute !important; 
-      left: 0; top: 0; 
-      width: 100%; 
-      background: white !important;
-      display: block !important;
+      display: block !important; 
+      position: absolute; 
+      left: 0; top: 0; width: 100%; 
+      background: white;
     }
-    
     .no-print { display: none !important; }
     
-    .pal-doc { 
-      box-shadow: none !important; 
-      margin: 0 !important; 
-      padding: 15mm !important; /* Standard A4 Margin */
-      width: 210mm; 
-      min-height: 297mm;
-      box-sizing: border-box;
+    .pal-doc {
+      margin: 0 !important;
+      box-shadow: none !important;
+      page-break-after: always; /* Force new page for each sheet */
     }
-
-    /* Logic for repeating headers on every page */
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
   }
 
-  /* --- 2. SCREEN PREVIEW STYLES --- */
-  .pal-doc { 
-    background: white; 
-    width: 210mm; 
-    min-height: 297mm; 
-    padding: 15mm; 
-    margin: 30px auto; 
-    color: #000; 
-    font-family: Arial, sans-serif; 
-    box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+  /* --- SCREEN PREVIEW --- */
+  #palDocumentModal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;
+  }
+
+  .pal-doc {
+    background: white;
+    width: 210mm;
+    height: 297mm; /* Standard A4 Height */
+    padding: 12mm 15mm;
+    margin: 20px auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    position: relative;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    color: #000;
+    font-family: Arial, sans-serif;
   }
 
-  .layout-table { width: 100%; border-collapse: collapse; }
-
-  /* Logo & Title Header */
-  .header-logo-section { text-align: center; margin-bottom: 5px; }
-  .logo-img { height: 40px; width: auto; }
-  .title-section { 
-    text-align: center; font-weight: 800; font-size: 15px; 
-    text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; 
-  }
+  /* Header & Info */
+  .logo-container { text-align: center; margin-bottom: 5px; }
+  .logo-img { height: 40px; }
+  .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; }
   
-  /* Employee Info */
-  .info-table { width: 60%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-  .info-table td { padding: 3px 0; }
+  .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11px; }
+  .info-table td { padding: 2px 0; }
+  .info-table .label { width: 130px; }
+  .info-table .colon { width: 15px; }
 
-  /* Main Data Table */
+  /* Data Table */
   .main-table { width: 100%; border-collapse: collapse; border: 1.5px solid black; }
-  .main-table th { 
-    border: 1.5px solid black; padding: 8px 4px; background: #f2f2f2; 
-    text-transform: uppercase; font-size: 10px; font-weight: bold; 
-  }
-  .main-table td { 
-    border: 1.5px solid black; padding: 10px 6px; font-size: 10px; 
-    vertical-align: top; 
-  }
+  .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2; text-transform: uppercase; font-size: 10px; font-weight: bold; }
+  .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: middle; word-wrap: break-word; }
 
-  /* P/N List Handling */
-  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .pn-item { display: flex; gap: 5px; line-height: 1.2; white-space: nowrap; }
+  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pn-item { display: flex; gap: 4px; }
 
-  /* Signature Table (Last Page Only) */
-  .sig-table { 
-    width: 100%; border-collapse: collapse; border: 1.5px solid black; 
-    margin-top: 15px; table-layout: fixed; page-break-inside: avoid;
-  }
-  .sig-table td { border: 1.5px solid black; height: 95px; padding: 10px; vertical-align: top; font-size: 11px; }
+  /* Signature Table (Last Page) */
+  .footer-sig-table { width: 100%; border-collapse: collapse; border: 1.5px solid black; margin-top: 15px; table-layout: fixed; }
+  .footer-sig-table td { border: 1px solid black; height: 90px; vertical-align: top; padding: 10px; font-size: 11px; }
   
-  .form-footer-meta { 
-    display: flex; justify-content: space-between; font-size: 9px; padding-top: 10px; 
-  }
+  .col-1 { width: 35.59%; }
+  .col-2 { width: 33.68%; }
+  .col-3 { width: 30.73%; }
 
+  .sig-inner { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
+
+  /* Bottom Bar (Every Page) */
+  .bottom-bar { 
+    position: absolute; bottom: 12mm; left: 15mm; right: 15mm;
+    display: flex; justify-content: space-between; font-size: 9px;
+    border-top: 0.5px solid #eee; padding-top: 5px;
+  }
 </style>
 
-<div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
-  
-  <!-- UI CONTROLS (Learning from placard) -->
-  <div class="no-print" style="position: sticky; top: 0; background: #222; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; z-index: 16000; border-bottom: 1px solid #444;">
-     <div style="display:flex; gap: 10px;">
-       <button class="btn" style="background:#3c92a6; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold;" onclick="window.print()">Print A4 PDF</button>
-       <button class="btn" style="background:#444; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;" onclick="openBulkAddModal()">+ Add Item</button>
+<div id="palDocumentModal" style="display:none;">
+  <!-- Sticky Toolbar -->
+  <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
+     <div style="display:flex; gap: 12px;">
+       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; font-weight: bold; border-radius: 4px; cursor:pointer;">Print to PDF</button>
+       <button class="btn" onclick="openBulkAddModal()" style="background:#fff; border:1px solid #ccc; padding: 8px 16px; font-weight: bold; border-radius: 4px; cursor:pointer;">+ Add Item</button>
      </div>
-     <button onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="background:none; border:none; color:white; font-size:30px; cursor:pointer;">&times;</button>
+     <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
-  <div id="palPrintArea" class="pal-doc">
-    <table class="layout-table">
-      <thead>
-        <tr>
-          <td>
-            <!-- REPEATING HEADER -->
-            <div class="header-logo-section"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
-            <div class="title-section">PERSONAL ABILITY LIST</div>
-
-            <table class="info-table">
-              <tr><td width="140">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
-              <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
-              <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
-            </table>
-
-            <!-- Repeating Th -->
-            <table class="main-table" style="border-bottom: none;">
-              <thead>
-                <tr>
-                  <th width="35">NO.</th>
-                  <th width="180">DESCRIPTION</th>
-                  <th>PART NUMBER</th>
-                  <th width="70">ATA</th>
-                  <th width="70">AUTH</th>
-                </tr>
-              </thead>
-            </table>
-          </td>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr>
-          <td>
-            <table class="main-table">
-              <tbody id="pal_items_body">
-                <!-- Data rows injected by JS -->
-              </tbody>
-            </table>
-
-            <!-- SIGNATURE (Last page) -->
-            <table class="sig-table">
-              <tr>
-                <td style="width: 35.59%;">
-                  Date : <br><br>
-                  <strong id="pal_today_date" style="font-size:14px;">-</strong>
-                </td>
-                <td style="width: 33.68%;"></td>
-                <td style="width: 30.73%; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
-                   <div>Approved by<br>SM Structure Workshop</div>
-                   <div style="margin-top: auto;">
-                     ( ___________________________ )<br>
-                     <small>Name & Signature</small>
-                   </div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </tbody>
-
-      <tfoot>
-        <tr>
-          <td>
-            <div class="form-footer-meta">
-              <span>Form No: GMF/Q-364 R1</span>
-              <span>Page 1 of 1</span>
-            </div>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+  <!-- This container will be filled by JS with multiple .pal-doc divs -->
+  <div id="palPagesContainer"></div>
 </div>
 
 <script>
-/**
- * RENDER LOGIC
- */
 window.openPALDocument = async function(empId, name, title) {
+  const container = document.getElementById('palPagesContainer');
   const modal = document.getElementById('palDocumentModal');
-  if (!modal) return;
-
-  document.getElementById('pal_name').textContent = name;
-  document.getElementById('pal_id').textContent = empId;
-  document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
-  document.getElementById('pal_today_date').textContent = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
-
-  modal.style.display = 'block';
-  document.body.style.overflow = 'hidden'; 
-
-  if (typeof showLoader === 'function') showLoader();
+  container.innerHTML = ''; // Clear previous
+  
+  showLoader();
   try {
     const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
     const data = await res.json();
-    
+    if(!data.success) throw new Error(data.error);
+
+    // 1. Group Data
     const aggregated = data.items.reduce((acc, item) => {
-      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ata.trim()}`;
-      if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ata, pns: [item.pn] };
+      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
+      if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
       else if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
       return acc;
     }, {});
+    const allRows = Object.values(aggregated);
 
-    const body = document.getElementById('pal_items_body');
-    body.innerHTML = '';
-    Object.values(aggregated).forEach((group, idx) => {
-      const mid = Math.ceil(group.pns.length / 2);
-      const col1 = group.pns.slice(0, mid);
-      const col2 = group.pns.slice(mid);
+    // 2. Paginate (Approx 12 items per page depending on P/N list length)
+    const rowsPerPage = 11; 
+    const totalPages = Math.ceil(allRows.length / rowsPerPage) || 1;
+    const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 
-      let pnHtml = `<div class="pn-grid"><div>`;
-      col1.forEach(p => pnHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
-      pnHtml += `</div><div>`;
-      col2.forEach(p => pnHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
-      pnHtml += `</div></div>`;
+    for (let p = 0; p < totalPages; p++) {
+      const pageNum = p + 1;
+      const isLastPage = (pageNum === totalPages);
+      const sliceRows = allRows.slice(p * rowsPerPage, (p + 1) * rowsPerPage);
+      
+      const pageDiv = document.createElement('div');
+      pageDiv.className = 'pal-doc';
+      
+      // Page HTML Structure
+      let html = `
+        <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
+        <div class="title-section">PERSONAL ABILITY LIST</div>
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td width="35" style="text-align:center;">${idx + 1}</td>
-        <td width="180" style="text-transform: uppercase; font-weight:bold;">${group.desc}</td>
-        <td>${pnHtml}</td>
-        <td width="70" style="text-align:center; font-weight:bold;">${group.ata}</td>
-        <td width="70" style="text-align:center; font-weight:bold;">${group.auth}</td>
+        <table class="info-table">
+          <tr><td class="label">Name</td><td class="colon">:</td><td><strong style="text-transform: uppercase;">${name}</strong></td></tr>
+          <tr><td class="label">Personnel Number</td><td class="colon">:</td><td><strong>${empId}</strong></td></tr>
+          <tr><td class="label">Present Title</td><td class="colon">:</td><td><span>${title || "Aircraft Structure Engineer"}</span></td></tr>
+        </table>
+
+        <table class="main-table">
+          <thead>
+            <tr>
+              <th width="35">NO.</th>
+              <th width="180">DESCRIPTION</th>
+              <th>PART NUMBER</th>
+              <th width="80">ATA</th>
+              <th width="70">AUTH</th>
+            </tr>
+          </thead>
+          <tbody>
       `;
-      body.appendChild(tr);
-    });
-  } catch(e) { console.error(e); }
-  finally { if (typeof hideLoader === 'function') hideLoader(); }
+
+      sliceRows.forEach((row, idx) => {
+        const rowNum = (p * rowsPerPage) + idx + 1;
+        const mid = Math.ceil(row.pns.length / 2);
+        const col1 = row.pns.slice(0, mid);
+        const col2 = row.pns.slice(mid);
+
+        let pnGrid = `<div class="pn-grid"><div>`;
+        col1.forEach(pn => pnGrid += `<div class="pn-item"><span>-</span><span>${pn}</span></div>`);
+        pnGrid += `</div><div>`;
+        col2.forEach(pn => pnGrid += `<div class="pn-item"><span>-</span><span>${pn}</span></div>`);
+        pnGrid += `</div></div>`;
+
+        html += `
+          <tr>
+            <td style="text-align:center;">${rowNum}</td>
+            <td style="text-transform:uppercase; font-weight:bold;">${row.desc}</td>
+            <td>${pnGrid}</td>
+            <td style="text-align:center; font-weight:bold;">${row.ata}</td>
+            <td style="text-align:center; font-weight:bold; font-size:9px;">${row.auth}</td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+
+      // 3. Signature Only on Last Page
+      if (isLastPage) {
+        html += `
+          <table class="footer-sig-table">
+            <tr>
+              <td class="col-1">Date : <br><br><strong>${today}</strong></td>
+              <td class="col-2"></td>
+              <td class="col-3">
+                <div class="sig-inner">
+                  <div>Approved by<br>SM Structure Workshop</div>
+                  <div>( ___________________________ )<br>Name & Signature</div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        `;
+      }
+
+      // 4. Bottom Metadata
+      html += `
+        <div class="bottom-bar">
+          <div>Form No.: GMF/Q-364 R1</div>
+          <div>Page ${pageNum} of ${totalPages}</div>
+        </div>
+      `;
+
+      pageDiv.innerHTML = html;
+      container.appendChild(pageDiv);
+    }
+
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+  } catch(e) {
+    console.error(e);
+    Swal.fire("Error", "Could not generate document", "error");
+  } finally {
+    hideLoader();
+  }
 }
 </script>
