@@ -1,119 +1,88 @@
 <style>
-    /* 1. FONT & PAGE BASE (Following PIR Style) */
-    #palDocumentModal {
-        background: #525659;
-        margin: 0;
-        padding: 0;
-        font-family: "Arial Narrow", Arial, sans-serif;
-        color: black;
-        overflow-y: auto;
-    }
+    /* --- PRINT SETUP A4 PORTRAIT --- */
+    @page { size: A4 portrait; margin: 0; }
 
-    /* 2. A4 PRINT SPECS */
-    .pal-page {
-        background: white;
-        width: 210mm;
-        height: 297mm;
-        margin: 20px auto;
-        padding: 10mm 10mm 10mm 12mm;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 0 10px rgba(0,0,0,0.5);
-        box-sizing: border-box;
-    }
-
-    /* 3. TABLE STYLES (Clean PIR Look) */
-    .pal-table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
-        margin-top: -1px;
-    }
-
-    .pal-table, .pal-table th, .pal-table td {
-        border: 1px solid black;
-        text-transform: uppercase;
-        font-size: 8.5pt;
-    }
-
-    .pal-table th { background: #f2f2f2; padding: 6px; font-weight: bold; }
-    .pal-table td { padding: 4px; vertical-align: top; }
-
-    /* Header Specifics */
-    .pal-logo-box { height: 60px; width: 30%; text-align: center; border-bottom: none; }
-    .pal-logo-box img { max-width: 130px; margin-top: 5px; }
-    .pal-title-box { width: 70%; text-align: center; font-weight: bold; font-size: 14pt; border-bottom: none; }
-
-    .pal-info-td { padding: 3px 6px; border: none !important; }
-    .pal-lbl { font-weight: bold; width: 140px; }
-
-    /* PN Grid Inside Cell */
-    .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border:none; }
-    .pn-item { display: flex; gap: 5px; font-size: 8pt; border:none; }
-
-    /* 4. DYNAMIC CONTENT AREA */
-    .pal-dynamic-content {
-        flex-grow: 1;
-        overflow: hidden;
-        margin-top: 10px;
-    }
-
-    /* 5. SIGNATURE BLOCK (Atomic) */
-    .sig-table { width: 100%; table-layout: fixed; margin-top: 15px; border-collapse: collapse; }
-    .sig-table td { border: 1px solid black; height: 100px; vertical-align: top; padding: 8px; }
-    
-    /* Your requested column widths */
-    .col-sig-1 { width: 35.59%; }
-    .col-sig-2 { width: 33.68%; }
-    .col-sig-3 { width: 30.73%; }
-
-    /* 6. FOOTER (PIR Triple-Column Style) */
-    .pal-footer {
-        position: absolute;
-        bottom: 10mm;
-        left: 12mm;
-        right: 10mm;
-    }
-
-    .footer-table {
-        width: 100%;
-        border-collapse: collapse !important;
-        border: 1px solid black !important;
-    }
-
-    .footer-table td {
-        border: none !important;
-        padding: 4px 8px;
-        font-size: 8.5pt;
-    }
-
-    .footer-center {
-        border-left: 1px solid black !important;
-        border-right: 1px solid black !important;
-        text-align: center;
-    }
-
-    /* 7. UTILITIES */
-    #pal-ghost { position: absolute; visibility: hidden; top: -10000px; width: 188mm; }
-    
     @media print {
         body { background: none !important; padding: 0 !important; }
-        #palDocumentModal { background: white !important; position: absolute; left: 0; top: 0; width: 100%; }
-        .pal-page { margin: 0; box-shadow: none; page-break-after: always; }
+        /* Hide everything except the modal content */
+        body * { visibility: hidden !important; }
+        #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
+        
+        #palDocumentModal { 
+            position: absolute !important; left: 0 !important; top: 0 !important; 
+            width: 100% !important; background: white !important; display: block !important;
+        }
         .no-print { display: none !important; }
-        @page { size: A4; margin: 0; }
+        
+        .pal-page { 
+            margin: 0 !important; box-shadow: none !important; 
+            page-break-after: always !important;
+            border: none !important;
+        }
     }
 
-    .pal-loader {
-        position: fixed; top:0; left:0; width:100%; height:100%;
-        background: rgba(255,255,255,0.7); z-index: 20000;
-        display: flex; align-items: center; justify-content: center;
+    /* --- SCREEN VIEW STYLES --- */
+    #palDocumentModal {
+        background: #525659; /* Matching PIR Report background */
     }
+
+    .pal-page { 
+        background: white; 
+        width: 210mm; 
+        height: 297mm; 
+        padding: 15mm; 
+        margin: 20px auto; 
+        color: #000; 
+        font-family: Arial, sans-serif; 
+        display: flex; 
+        flex-direction: column;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5); 
+        box-sizing: border-box; 
+        position: relative;
+    }
+
+    /* Local Loader Overlay */
+    .pal-loader-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255,255,255,0.8); z-index: 100;
+        display: none; flex-direction: column; justify-content: center; align-items: center;
+    }
+
+    /* Standard Elements */
+    .logo-container { text-align: center; margin-bottom: 10px; }
+    .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
+    .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
+    
+    .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; border: none !important;}
+    .info-table td { padding: 2px 0; border: none !important; text-transform: uppercase;}
+
+    .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
+    .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2; text-transform: uppercase; font-size: 10px; font-weight: bold; }
+    .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; }
+
+    .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .pn-item { display: flex; gap: 5px; line-height: 1.2; }
+
+    /* Signature Table */
+    .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 15px; table-layout: fixed; }
+    .footer-sig-table td { border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; font-size: 11px; }
+    #col_1 { width: 35.59%; } #col_2 { width: 33.68%; } #col_3 { width: 30.73%; }
+    .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
+
+    /* Footer Pagination */
+    .pal-footer {
+        position: absolute; bottom: 10mm; left: 15mm; right: 15mm;
+        display: flex; justify-content: space-between; font-size: 10px;
+        border-top: 1px solid #000; padding-top: 5px;
+    }
+
+    .dynamic-content { flex-grow: 1; overflow: hidden; }
+    #pal-ghost { position: absolute; visibility: hidden; top: -10000px; width: 180mm; }
 </style>
 
-<div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500;">
-    <!-- Toolbar -->
+<div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500; overflow-y: auto;">
+  
+    <!-- Header Toolbar -->
     <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
         <div style="display:flex; gap: 12px;">
             <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
@@ -122,43 +91,35 @@
         <button class="close-x" onclick="closePALModal()" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
     </div>
 
+    <!-- Wrapper for generated pages -->
     <div id="pal-report-wrapper"></div>
-    <div id="pal-ghost"></div>
 
-    <div id="pal-loading" class="pal-loader" style="display:none;">
-        <div class="spinner"></div>
-    </div>
+    <!-- Ghost element for height calculation -->
+    <div id="pal-ghost"></div>
 </div>
 
 <script>
-window.currentPalEmpId = null;
-
 const PALEngine = {
-    maxHeight: 0,
+    maxHeight: 850, // Available height in pixels for dynamic content area
+    currentEmp: null,
 
     async init(empId, name, title) {
-        window.currentPalEmpId = empId;
-        const wrapper = document.getElementById('pal-report-wrapper');
-        const loader = document.getElementById('pal-loading');
+        this.currentEmp = { id: empId, name: name, title: title };
+        window.currentPalEmpId = empId; // For Add Items sync
         
-        wrapper.innerHTML = '';
-        loader.style.display = 'flex';
-        document.getElementById('palDocumentModal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
-
+        const wrapper = document.getElementById('pal-report-wrapper');
+        wrapper.innerHTML = `
+            <div class="pal-loader-overlay" style="display:flex">
+                <div class="spinner"></div>
+                <div style="margin-top:15px; font-weight:bold; color:#3c92a6">Generating Document...</div>
+            </div>`;
+        
         try {
-            // Measure Max Height from a template page
-            const tempPage = this.createNewPage({ name: 'T', empId: 'T', title: 'T' });
-            const contentArea = tempPage.querySelector('.pal-dynamic-content');
-            this.maxHeight = contentArea.clientHeight - 10;
-            tempPage.remove();
-
             const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
             const data = await res.json();
-            
             if(!data.success) throw new Error(data.error);
 
-            // Aggregate PN Data
+            // Grouping logic
             const aggregated = data.items.reduce((acc, item) => {
                 const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
                 if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
@@ -166,140 +127,149 @@ const PALEngine = {
                 return acc;
             }, {});
 
-            this.render(Object.values(aggregated), { empId, name, title });
-        } catch (e) {
+            this.render(Object.values(aggregated));
+        } catch(e) {
             console.error(e);
-            wrapper.innerHTML = `<div style="color:white; text-align:center; padding:50px;"><h2>Error: ${e.message}</h2></div>`;
-        } finally {
-            loader.style.display = 'none';
+            wrapper.innerHTML = `<div style="color:white; text-align:center; padding:50px;">Error: ${e.message}</div>`;
         }
     },
 
-    render(items, info) {
+    render(items) {
         const wrapper = document.getElementById('pal-report-wrapper');
-        let currentPage = this.createNewPage(info);
-        let contentDiv = currentPage.querySelector('.pal-dynamic-content');
+        wrapper.innerHTML = '';
+
+        let currentPage = this.createNewPage();
+        let contentDiv = currentPage.querySelector('.dynamic-content');
         let currentH = 0;
 
-        let table = this.createMainTable();
-        contentDiv.appendChild(table);
-        let tbody = table.querySelector('tbody');
-        currentH += 35; // Header height
+        // 1. Render Main Table
+        let tableHtml = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">AUTH</th></tr></thead><tbody>`;
+        contentDiv.insertAdjacentHTML('beforeend', tableHtml);
+        let tbody = contentDiv.querySelector('tbody');
+        currentH += 40; // Approx header height
 
         items.forEach((group, idx) => {
-            const row = this.createItemRow(group, idx + 1);
+            const row = this.createRow(group, idx + 1);
             const rowH = this.measureElement(row);
 
             if (currentH + rowH > this.maxHeight) {
-                currentPage = this.createNewPage(info);
-                contentDiv = currentPage.querySelector('.pal-dynamic-content');
-                table = this.createMainTable();
-                contentDiv.appendChild(table);
-                tbody = table.querySelector('tbody');
-                currentH = 35;
+                // Close current table and page
+                contentDiv.insertAdjacentHTML('beforeend', `</tbody></table>`);
+                
+                // Create New Page
+                currentPage = this.createNewPage();
+                contentDiv = currentPage.querySelector('.dynamic-content');
+                
+                // Restart Table on new page
+                const contHeader = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION (CONT.)</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">AUTH</th></tr></thead><tbody>`;
+                contentDiv.insertAdjacentHTML('beforeend', contHeader);
+                tbody = contentDiv.querySelector('tbody');
+                currentH = 45;
             }
             tbody.appendChild(row);
             currentH += rowH;
         });
 
-        this.addSignature(contentDiv, currentH, info);
-        this.finalize(wrapper.querySelectorAll('.pal-page').length);
+        // Close table
+        contentDiv.insertAdjacentHTML('beforeend', `</tbody></table>`);
+
+        // 2. Add Signature Block (Atomic Check)
+        this.addSignature(contentDiv, currentH);
+
+        // 3. Finalize Pagination
+        const totalPages = wrapper.querySelectorAll('.pal-page').length;
+        wrapper.querySelectorAll('.page-num-label').forEach((el, i) => {
+            el.innerText = `Page ${i + 1} of ${totalPages}`;
+        });
     },
 
-    createNewPage(info) {
+    createNewPage() {
         const p = document.createElement('div');
         p.className = 'pal-page';
         p.innerHTML = `
-            <table class="pal-table" style="border-bottom:none">
-                <tr>
-                    <td class="pal-logo-box"><img src="pricing/assets/GMF_Logo.png"></td>
-                    <td class="pal-title-box">PERSONAL ABILITY LIST</td>
-                </tr>
+            <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
+            <div class="title-section">PERSONAL ABILITY LIST</div>
+            <table class="info-table">
+                <tr><td width="150">Name</td><td width="10">:</td><td><strong>${this.currentEmp.name}</strong></td></tr>
+                <tr><td>Personnel Number</td><td>:</td><td><strong>${this.currentEmp.id}</strong></td></tr>
+                <tr><td>Present Title</td><td>:</td><td><span>${this.currentEmp.title}</span></td></tr>
             </table>
-            <table class="pal-table" style="border-top:none; border-bottom:none">
-                <tr><td class="pal-lbl pal-info-td">NAME</td><td class="pal-info-td">: <b>${info.name}</b></td></tr>
-                <tr><td class="pal-lbl pal-info-td">PERSONNEL NUMBER</td><td class="pal-info-td">: <b>${info.empId}</b></td></tr>
-                <tr><td class="pal-lbl pal-info-td">PRESENT TITLE</td><td class="pal-info-td">: ${info.title || 'AIRCRAFT STRUCTURE ENGINEER'}</td></tr>
-            </table>
-            <div class="pal-dynamic-content"></div>
+            <div class="dynamic-content"></div>
             <div class="pal-footer">
-                <table class="footer-table">
-                    <tr>
-                        <td style="width:25%">Form No. GMF/Q-364 R1</td>
-                        <td class="footer-center">&nbsp;</td>
-                        <td style="width:20%; text-align:right;" class="pal-pg-num"></td>
-                    </tr>
-                </table>
+                <div>Form No.: GMF/Q-364 R1</div>
+                <div class="page-num-label">Page 1 of 1</div>
             </div>`;
         document.getElementById('pal-report-wrapper').appendChild(p);
         return p;
     },
 
-    createMainTable() {
-        const t = document.createElement('table');
-        t.className = 'pal-table';
-        t.innerHTML = `<thead><tr><th width="35">NO</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">AUTH</th></tr></thead><tbody></tbody>`;
-        return t;
-    },
-
-    createItemRow(group, idx) {
+    createRow(group, no) {
         const tr = document.createElement('tr');
         const mid = Math.ceil(group.pns.length / 2);
-        const col1 = group.pns.slice(0, mid);
-        const col2 = group.pns.slice(mid);
-
         let pnHtml = `<div class="pn-grid"><div>` + 
-            col1.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
+            group.pns.slice(0, mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
             `</div><div>` + 
-            col2.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
+            group.pns.slice(mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
             `</div></div>`;
 
-        tr.innerHTML = `<td align="center">${idx}</td><td style="font-weight:bold">${group.desc}</td><td>${pnHtml}</td><td align="center"><b>${group.ata}</b></td><td align="center">${group.auth}</td>`;
+        tr.innerHTML = `
+            <td align="center">${no}</td>
+            <td style="text-transform:uppercase"><b>${group.desc}</b></td>
+            <td>${pnHtml}</td>
+            <td align="center"><b>${group.ata}</b></td>
+            <td align="center">${group.auth}</td>`;
         return tr;
     },
 
-    addSignature(container, h, info) {
+    addSignature(container, h) {
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
         const sigHtml = `
-            <table class="sig-table">
+            <table class="footer-sig-table">
                 <tr>
-                    <td class="col-sig-1">DATE : <br><br><b>${today}</b></td>
-                    <td class="col-sig-2"></td>
-                    <td class="col-sig-3">
-                        <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%; text-align:center;">
-                            <div>APPROVED BY<br>SM STRUCTURE WORKSHOP</div>
-                            <div>( ___________________________ )<br><span style="font-size:7pt">NAME & SIGNATURE</span></div>
+                    <td id="col_1">Date : <br><br><strong>${today}</strong></td>
+                    <td id="col_2"></td>
+                    <td id="col_3">
+                        <div class="sig-inner-flex">
+                            <div>Approved by<br>SM Structure Workshop</div>
+                            <div>( ___________________________ )<br><span style="font-size:9px">Name & Signature</span></div>
                         </div>
                     </td>
                 </tr>
             </table>`;
         
-        const sigH = 120;
+        const sigH = this.measureHtml(sigHtml);
         if (h + sigH > this.maxHeight) {
-            const p = this.createNewPage(info);
-            p.querySelector('.pal-dynamic-content').insertAdjacentHTML('beforeend', sigHtml);
+            const p = this.createNewPage();
+            p.querySelector('.dynamic-content').insertAdjacentHTML('beforeend', sigHtml);
         } else {
             container.insertAdjacentHTML('beforeend', sigHtml);
         }
     },
 
-    measureElement(rowEl) {
+    measureHtml(html) {
         const g = document.getElementById('pal-ghost');
-        g.innerHTML = `<table class="pal-table"><tbody>${rowEl.outerHTML}</tbody></table>`;
+        g.innerHTML = html;
         return g.offsetHeight;
     },
 
-    finalize(total) {
-        document.querySelectorAll('.pal-page').forEach((p, i) => {
-            p.querySelector('.pal-pg-num').innerText = `PAGE ${i + 1} OF ${total}`;
-        });
+    measureElement(el) {
+        const g = document.getElementById('pal-ghost');
+        g.innerHTML = `<table class="main-table">${el.outerHTML}</table>`;
+        return g.offsetHeight;
     }
 };
 
-window.openPALDocument = (id, name, title) => PALEngine.init(id, name, title);
+/**
+ * Global Bridge
+ */
+window.openPALDocument = function(empId, name, title) {
+    document.getElementById('palDocumentModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    PALEngine.init(empId, name, title);
+};
 
-function closePALModal() {
+window.closePALModal = function() {
     document.getElementById('palDocumentModal').style.display = 'none';
     document.body.style.overflow = 'auto';
-}
+};
 </script>
