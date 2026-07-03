@@ -6,61 +6,78 @@
   }
 
   @media print {
-    /* Reset Global untuk Print */
-    html, body {
-      background: #fff !important;
-      width: 210mm;
-      height: 297mm;
-      margin: 0 auto !important;
-      padding: 0 !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-
-    /* Sembunyikan Dashboard Utama */
-    body * { visibility: hidden !important; }
-    
-    /* Tampilkan hanya Modal Dokumen */
-    #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
-    
-    #palDocumentModal { 
-      position: absolute !important; 
-      left: 0 !important; 
-      top: 0 !important; 
-      width: 210mm !important; 
-      background: white !important; 
-      display: block !important; 
-      overflow: visible !important;
-      margin: 0 auto !important;
-    }
-
-    .no-print { display: none !important; }
-    
-    .pal-doc { 
-      margin: 0 !important; 
-      padding: 15mm !important; 
-      width: 210mm !important; 
-      min-height: 0 !important; 
-      display: block !important;
-      border: none !important; /* Pastikan tidak ada border yang menambah tinggi */
-      overflow: hidden !important; /* Mencegah bleed 1px yang memicu halaman baru */
-    }
-
-    /* Table Logic for Repeating Headers/Footers */
-    .layout-table { 
-      width: 100% !important; 
-      border-collapse: collapse; 
-      table-layout: fixed;
-      margin: 0 !important; /* Pastikan tabel tidak punya margin-top/bottom */
-    }
-    
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
-
-    /* Page Counter */
-    .page-counter {
-      font-weight: normal;
-    }
+      /* 1. Paksa kertas A4 dan hilangkan margin browser */
+      @page { 
+          size: A4 portrait; 
+          margin: 0; 
+      }
+  
+      /* 2. Reset Body: Gunakan height auto agar tidak memicu blank page */
+      html, body { 
+          background: #fff !important; 
+          margin: 0 !important; 
+          padding: 0 !important;
+          height: auto !important; 
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+      }
+  
+      /* 3. Sembunyikan elemen dashboard */
+      body * { visibility: hidden !important; }
+  
+      /* 4. Tampilkan Modal sebagai Wrapper Utama */
+      #palDocumentModal, #palDocumentModal * { 
+          visibility: visible !important; 
+      }
+  
+      /* 5. Logic Centering: Menggunakan Flexbox agar pas di tengah preview */
+      #palDocumentModal {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important; 
+          display: flex !important;
+          justify-content: center !important; 
+          background: white !important;
+          overflow: visible !important;
+      }
+  
+      /* 6. Kontainer Kertas (The Paper) */
+      .pal-doc {
+          width: 210mm !important; 
+          margin: 0 auto !important; 
+          padding: 15mm !important; /* Jarak aman konten dari tepi kertas */
+          box-shadow: none !important;
+          background: white !important;
+          min-height: 0 !important;
+          height: auto !important;
+          page-break-after: avoid !important; 
+          page-break-before: avoid !important;
+          box-sizing: border-box !important;
+      }
+  
+      /* 7. Logic Tabel: Menggabungkan Repeating Header + Row Integrity */
+      .layout-table { 
+          width: 100% !important; 
+          border-collapse: collapse !important; 
+          table-layout: fixed !important;
+          margin: 0 !important;
+          page-break-inside: auto !important;
+      }
+      
+      /* Supaya logo & tanda tangan muncul di tiap halaman jika data panjang */
+      thead { display: table-header-group !important; }
+      tfoot { display: table-footer-group !important; }
+  
+      /* Mencegah satu baris terpotong menjadi dua halaman */
+      tr {
+          page-break-inside: avoid !important;
+          page-break-after: auto !important;
+      }
+  
+      .no-print { display: none !important; }
+      
+      .page-counter { font-weight: normal; }
   }
 
   /* --- 2. SCREEN VIEW STYLES (PREVIEW PDF MODE) --- */
@@ -310,27 +327,24 @@ window.openPALDocument = async function(empId, name, title) {
 
     // --- MANUALLY CALCULATE PAGE TOTALS ---
     setTimeout(() => {
-      const printArea = document.getElementById('palPrintArea');
-      if (printArea) {
-        /**
-         * Penjelasan Perbaikan:
-         * 1. Gunakan 1125 sebagai pembagi (sedikit lebih longgar untuk A4).
-         * 2. Kurangi scrollHeight dengan buffer (misal 10px) sebelum membagi.
-         *    Ini mencegah konten yang "nyaris" 1 halaman tidak dianggap 2 halaman.
-         */
-        const buffer = 15; // pixel toleransi
-        const a4Height = 1122; // Standar pixel A4 96 DPI
-        
-        const totalPages = Math.ceil((printArea.scrollHeight - buffer) / a4Height) || 1;
-        
-        const totalElements = document.querySelectorAll('.total-p');
-        totalElements.forEach(el => el.textContent = totalPages);
-        
-        // Debugging (opsional): console.log("Height:", printArea.scrollHeight, "Total Pages:", totalPages);
-      }
-    }, 250);
-    // --- END CALCULATION ---
-
+        const printArea = document.getElementById('palPrintArea');
+        if (printArea) {
+            const h = printArea.scrollHeight;
+            const pageH = 1120; // Tinggi A4 dalam pixel
+            const buffer = 50;  // Toleransi 50px (jika cuma sisa segini, jangan anggap halaman baru)
+            
+            let totalPages;
+            if (h <= pageH + buffer) {
+                totalPages = 1;
+            } else {
+                totalPages = Math.ceil((h - buffer) / pageH);
+            }
+            
+            const totalElements = document.querySelectorAll('.total-p');
+            totalElements.forEach(el => el.textContent = totalPages);
+        }
+    }, 300);
+  
   } catch(e) { 
     console.error(e); 
   } finally { 
