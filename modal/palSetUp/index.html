@@ -111,7 +111,7 @@
 <script>
 /**
  * INA: Apply with No Ruin
- * Logic to generate grouped data and paginate across A4 pages.
+ * Improved with Error Catching for HTML responses and defensive data mapping.
  */
 
 function closePALModal() {
@@ -121,42 +121,54 @@ function closePALModal() {
 
 window.openPALDocument = async function(empId, name, title) {
   const container = document.getElementById('palPrintContainer');
-  container.innerHTML = ''; // Clear previous
+  container.innerHTML = ''; 
   document.getElementById('palDocumentModal').style.display = 'block';
   document.body.style.overflow = 'hidden';
 
   if (typeof showLoader === 'function') showLoader();
 
   try {
-    const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
+    const fetchUrl = `${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`;
+    const res = await fetch(fetchUrl);
+    
+    // 1. Check if response is valid
+    const responseText = await res.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Raw Response:", responseText);
+      throw new Error("Server returned HTML instead of JSON. This usually means the Apps Script crashed or permissions are incorrect.");
+    }
 
-    // 1. Group Data: Same Desc + ATA + Auth = One Row
+    if (!data.success) throw new Error(data.error || "Unknown server error");
+
+    // 2. Defensive Grouping Logic (Prevents crash if strings are null)
     const grouped = data.items.reduce((acc, item) => {
-      const key = `${item.desc.trim()}|${item.ata.trim()}|${item.auth.trim()}`;
+      const d = String(item.desc || "NO DESCRIPTION").trim();
+      const a = String(item.ata || "00-00-00").trim();
+      const au = String(item.auth || "N/A").trim();
+      
+      const key = `${d}|${a}|${au}`;
       if (!acc[key]) {
-        acc[key] = { ...item, pns: [item.pn] };
-      } else if (!acc[key].pns.includes(item.pn)) {
-        acc[key].pns.push(item.pn);
+        acc[key] = { desc: d, ata: a, auth: au, pns: [String(item.pn || "N/A")] };
+      } else if (!acc[key].pns.includes(String(item.pn))) {
+        acc[key].pns.push(String(item.pn));
       }
       return acc;
     }, {});
 
     const rows = Object.values(grouped);
     
-    // 2. Pagination Logic
-    // We calculate "Row Units". A normal row = 1 unit. A row with many PNs = more units.
+    // 3. Pagination Logic (Same as before)
     const MAX_UNITS_PER_PAGE = 22;
     const pages = [];
     let currentPageRows = [];
     let currentUnitCount = 0;
 
     rows.forEach((row) => {
-      // Calculate how many "units" this row takes based on PN count (2 columns)
       const pnRows = Math.ceil(row.pns.length / 2);
-      const rowUnits = Math.max(1, Math.ceil(pnRows / 1.5)); // estimate height
-
+      const rowUnits = Math.max(1, Math.ceil(pnRows / 1.5));
       if (currentUnitCount + rowUnits > MAX_UNITS_PER_PAGE) {
         pages.push(currentPageRows);
         currentPageRows = [];
@@ -167,20 +179,22 @@ window.openPALDocument = async function(empId, name, title) {
     });
     if (currentPageRows.length > 0) pages.push(currentPageRows);
 
-    // 3. Render Pages
+    // 4. Render Pages
     const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     const totalPages = pages.length;
+
+    if (totalPages === 0) {
+      container.innerHTML = `<div style="padding:50px; color:white; text-align:center;">No authorized items found for this personnel.</div>`;
+      return;
+    }
 
     pages.forEach((pageRows, index) => {
       const isLastPage = (index === totalPages - 1);
       const pageEl = document.createElement('div');
       pageEl.className = 'page';
 
-      // Construct Table Rows
       const tableRowsHtml = pageRows.map((row, i) => {
         const globalIdx = pages.slice(0, index).reduce((sum, p) => sum + p.length, 0) + i + 1;
-        
-        // Build PN Grid
         const mid = Math.ceil(row.pns.length / 2);
         const col1 = row.pns.slice(0, mid);
         const col2 = row.pns.slice(mid);
@@ -206,13 +220,11 @@ window.openPALDocument = async function(empId, name, title) {
           <img src="../pricing/assets/GMF_Logo.png">
           <div class="doc-title">PERSONAL ABILITY LIST</div>
         </div>
-
         <table class="info-block">
           <tr><td class="info-label">Name</td><td class="info-sep">:</td><td class="info-val">${name}</td></tr>
           <tr><td class="info-label">Personnel Number</td><td class="info-sep">:</td><td class="info-val">${empId}</td></tr>
           <tr><td class="info-label">Present Title</td><td class="info-sep">:</td><td class="info-val">${title || '-'}</td></tr>
         </table>
-
         <table class="pal-table">
           <thead>
             <tr>
@@ -225,7 +237,6 @@ window.openPALDocument = async function(empId, name, title) {
           </thead>
           <tbody>${tableRowsHtml}</tbody>
         </table>
-
         ${isLastPage ? `
           <div class="sig-container">
             <table class="sig-table">
@@ -240,7 +251,6 @@ window.openPALDocument = async function(empId, name, title) {
             </table>
           </div>
         ` : ''}
-
         <div class="doc-footer">
           <div>Form No: GMF/Q-364 R1</div>
           <div>Page ${index + 1} of ${totalPages}</div>
@@ -251,7 +261,7 @@ window.openPALDocument = async function(empId, name, title) {
 
   } catch (e) {
     console.error(e);
-    alert("Error loading PAL Document: " + e.message);
+    Swal.fire("Error", e.message, "error");
   } finally {
     if (typeof hideLoader === 'function') hideLoader();
   }
