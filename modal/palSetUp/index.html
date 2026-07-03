@@ -2,53 +2,69 @@
   /* --- PRINT SETUP A4 PORTRAIT --- */
   @page { 
     size: A4 portrait; 
-    margin: 15mm; 
+    margin: 15mm; /* Standard professional margin */
   }
 
   @media print {
-    /* Reset and Counter Setup */
-    body { counter-reset: page; }
-    body * { visibility: hidden !important; background: none !important; }
+    /* 1. Global Reset for Print */
+    html, body { 
+      height: auto !important; 
+      margin: 0 !important; 
+      padding: 0 !important; 
+      background: #fff !important;
+    }
+
+    body * { visibility: hidden !important; }
     
-    /* Ensure Modal and Table Structure are visible */
+    /* 2. Modal/Container Setup */
     #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
     #palDocumentModal { 
       position: absolute !important; 
       left: 0 !important; 
       top: 0 !important; 
-      width: 210mm !important; 
+      width: 100% !important; 
+      height: auto !important;
       background: white !important; 
       display: block !important; 
+      overflow: visible !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
 
     .no-print { display: none !important; }
     
+    /* 3. Document Body Fix - Remove min-height to stop blank pages */
     .pal-doc { 
       margin: 0 !important; 
+      padding: 0 !important; 
       box-shadow: none !important; 
       width: 100% !important; 
+      min-height: 0 !important; 
       display: block !important; 
     }
 
-    /* THE KEY: Table Group Printing */
-    .layout-table { width: 100%; border-collapse: collapse; }
+    /* 4. Table Logic for Repeating Headers/Footers */
+    .layout-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      table-layout: fixed;
+    }
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
 
-    /* Page Numbering */
+    /* 5. Page Numbering (Injected by browser during print) */
     .page-counter:after { 
       counter-increment: page;
       content: "Page " counter(page) " of " counter(pages); 
     }
-    
-    /* Fixed footer meta position */
-    .meta-footer-wrap {
-      padding-top: 5px;
-      border-top: 1px solid #eee;
-    }
   }
 
-  /* --- SCREEN VIEW STYLES --- */
+  /* --- SCREEN VIEW STYLES (Synchronized Preview) --- */
+  #palDocumentModal {
+    background: rgba(0,0,0,0.85);
+    transition: none;
+  }
+
   .pal-doc { 
     background: white; 
     width: 210mm; 
@@ -57,9 +73,7 @@
     margin: 20px auto; 
     color: #000; 
     font-family: Arial, sans-serif; 
-    display: flex; 
-    flex-direction: column;
-    box-shadow: 0 0 15px rgba(0,0,0,0.3); 
+    box-shadow: 0 0 15px rgba(0,0,0,0.5); 
     box-sizing: border-box; 
     position: relative;
   }
@@ -98,7 +112,7 @@
   .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   .pn-item { display: flex; gap: 5px; line-height: 1.2; }
 
-  /* --- FOOTER SIGNATURE TABLE --- */
+  /* --- FOOTER SIGNATURE TABLE (Preserving Visual Adjustments) --- */
   .footer-sig-table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -131,10 +145,14 @@
     justify-content: space-between; 
     margin-top: 5px; 
     font-size: 10px; 
+    border-top: 1px solid #000;
+    padding-top: 5px;
   }
+
+  .screen-page-info { font-size: 10px; color: #666; font-style: italic; }
 </style>
 
-<div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
+<div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500; overflow-y: auto;">
   
   <!-- Control Bar -->
   <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
@@ -142,12 +160,13 @@
        <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
        <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none; padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 4px;">+ Add Items</button>
      </div>
+     <div class="screen-page-info" style="color: #aaa;">Document Mode: A4 Portrait Table-Layout</div>
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
   <div id="palPrintArea" class="pal-doc">
     <table class="layout-table">
-      <!-- HEADER: Repeats on every page -->
+      <!-- HEADER: Repeats on every page in PDF -->
       <thead>
         <tr>
           <td>
@@ -163,7 +182,7 @@
         </tr>
       </thead>
 
-      <!-- BODY: The scrolling data -->
+      <!-- BODY: The content that flows between pages -->
       <tbody>
         <tr>
           <td>
@@ -177,15 +196,13 @@
                   <th width="90">RELATED AUTH</th>
                 </tr>
               </thead>
-              <tbody id="pal_items_body">
-                <!-- Data dynamically injected here -->
-              </tbody>
+              <tbody id="pal_items_body"></tbody>
             </table>
           </td>
         </tr>
       </tbody>
 
-      <!-- FOOTER: Repeats on every page -->
+      <!-- FOOTER: Repeats on every page in PDF -->
       <tfoot>
         <tr>
           <td>
@@ -200,7 +217,7 @@
                   <div class="sig-inner-flex">
                     <div>Approved by<br>SM Structure Workshop</div>
                     <div>
-                      ( ___________________________ )<br>
+                      ( _____________________ )<br>
                       <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
                     </div>
                   </div>
@@ -222,7 +239,7 @@
 <script>
 /**
  * Global Function for rendering the PAL Document
- * No changes to logic, only maintained IDs for structural integration
+ * IDs preserved exactly to match your existing logic.
  */
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
