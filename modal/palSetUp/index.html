@@ -6,36 +6,38 @@
   }
 
   @media print {
-
-      /* 2. Reset Body: Gunakan height auto agar tidak memicu blank page */
+      /* 1. KUNCI UTAMA: Hilangkan dashboard asli dari perhitungan tinggi, bukan cuma disembunyikan */
+      body > *:not(#palDocumentModal) {
+          display: none !important;
+      }
+  
       html, body { 
           background: #fff !important; 
           margin: 0 !important; 
           padding: 0 !important;
           height: auto !important; 
+          overflow: visible !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
       }
   
-
-      /* 4. Tampilkan Modal sebagai Wrapper Utama */
-      #palDocumentModal, #palDocumentModal * { 
-          visibility: visible !important; 
-      }
-  
-      /* 5. Logic Centering Flexbox */
+      /* 2. Ubah modal menjadi elemen statis agar mengikuti flow printer */
       #palDocumentModal {
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
-          width: 100% !important; 
-          display: flex !important;
-          justify-content: center !important; 
+          position: static !important; 
+          display: block !important; 
+          width: 210mm !important; 
           background: white !important;
-          overflow: visible !important;
+          margin: 0 auto !important;
+      }
+
+      /* Hilangkan overlay gelap saat print */
+      #palDocumentModal.modal-overlay {
+          background: none !important;
+          backdrop-filter: none !important;
       }
   
-      /* 6. Kontainer Kertas (The Paper) - MERGED & FIXED */
+      .no-print { display: none !important; }
+  
       .pal-doc {
           width: 210mm !important; 
           margin: 0 auto !important; 
@@ -43,41 +45,27 @@
           box-shadow: none !important;
           background: white !important;
           
-          /* Kill-switch untuk Blank Page */
+          /* Mencegah 1px sisa memicu halaman baru */
           height: auto !important;
           min-height: 0 !important;
           overflow: hidden !important; 
           display: block !important;
           box-sizing: border-box !important;
-          
-          page-break-after: avoid !important; 
-          page-break-before: avoid !important;
       }
   
-      /* 7. Logic Tabel - MERGED & FIXED */
       .layout-table { 
           width: 100% !important; 
           border-collapse: collapse !important; 
           table-layout: fixed !important;
           margin: 0 !important;
-          margin-bottom: 0 !important;
-          border-spacing: 0 !important;
-          page-break-inside: auto !important;
       }
       
-      /* Supaya logo & tanda tangan muncul di tiap halaman jika data panjang */
       thead { display: table-header-group !important; }
       tfoot { display: table-footer-group !important; }
   
-      /* Mencegah satu baris terpotong menjadi dua halaman */
       tr {
           page-break-inside: avoid !important;
-          page-break-after: auto !important;
       }
-  
-      .no-print { display: none !important; }
-      
-      .page-counter { font-weight: normal; }
   }
 
   /* --- 2. SCREEN VIEW STYLES (PREVIEW PDF MODE) --- */
