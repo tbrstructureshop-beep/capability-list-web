@@ -1,45 +1,38 @@
 <style>
-  /* --- 1. PRINT CONFIG (A4 ISOLATION) --- */
+  /* --- 1. PRINT CONFIG (A4 ISOLATION & PERFECT CENTERING) --- */
   @page { 
     size: A4 portrait; 
     margin: 0; 
   }
 
   @media print {
-      /* 
-         FIX UTAMA: 
-         Kenapa "Blank"? Karena #palDocumentModal dibungkus div lain. 
-         Jika div pembungkusnya kena "display: none", maka modal di dalamnya ikut hilang.
-      */
-      
-      /* Sembunyikan semua anak langsung body... */
-      body > * {
+      /* Hide everything except the modal and its parents */
+      body > *:not(#palDocumentModal):not(#palModalContainer):not(#modalUpdateSourceContainer) {
           display: none !important;
-      }
-  
-      /* ...KECUALI kontainer yang membungkus Modal PAL */
-      #palDocumentModal, 
-      #palModalContainer, 
-      #modalUpdateSourceContainer {
-          display: block !important;
-          visibility: visible !important;
-          position: static !important;
       }
 
       html, body { 
           background: #fff !important; 
           margin: 0 !important; 
           padding: 0 !important;
+          /* height: auto is key to prevent extra blank pages */
           height: auto !important; 
           overflow: visible !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
       }
   
+      /* The Modal becomes the Flex Parent to center the paper */
       #palDocumentModal {
-          width: 210mm !important; 
-          margin: 0 auto !important;
+          position: absolute !important; 
+          top: 0 !important; 
+          left: 0 !important;
+          width: 100% !important; 
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important; /* CENTER HORIZONTALLY */
           background: white !important;
+          visibility: visible !important;
       }
 
       #palDocumentModal.modal-overlay {
@@ -51,16 +44,18 @@
   
       .pal-doc {
           width: 210mm !important; 
-          margin: 0 auto !important; 
+          /* Use margin-top if you want a tiny gap at the very top, otherwise 0 */
+          margin: 0 !important; 
           padding: 15mm !important; 
           box-shadow: none !important;
           background: white !important;
           height: auto !important;
           min-height: 0 !important;
+          /* overflow: hidden prevents the 1px 'bleed' that creates blank pages */
           overflow: hidden !important; 
           display: block !important;
           box-sizing: border-box !important;
-          border: 0.1px solid transparent; /* Mencegah margin sisa */
+          position: relative !important;
       }
   
       .layout-table { 
@@ -99,6 +94,7 @@
     position: relative;
   }
 
+  /* --- 3. DOCUMENT CONTENT STYLES --- */
   .layout-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .logo-container { text-align: center; padding-bottom: 10px; }
   .logo-img { height: 48px; width: auto; display: block; margin: 0 auto; }
@@ -120,7 +116,7 @@
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500;">
   
-  <!-- Control Bar (No Print) -->
+  <!-- Control Bar (Visible on screen, Hidden on print) -->
   <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 10px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
      <div style="display:flex; gap: 12px;">
        <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 18px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px; display:flex; align-items:center; gap:8px;">
@@ -129,19 +125,17 @@
        </button>
        <button class="btn" onclick="openBulkAddModal()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 4px;">+ Add Items</button>
      </div>
-     <div class="screen-page-info">A4 Portrait Preview | Professional Mode</div>
+     <div class="screen-page-info">A4 Portrait Preview | High Fidelity Mode</div>
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
   <div id="palPrintArea" class="pal-doc">
     <table class="layout-table">
-      <!-- HEADER AUTOMATIC REPEAT -->
       <thead>
         <tr>
           <td>
             <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
             <div class="title-section">PERSONAL ABILITY LIST</div>
-
             <table class="info-table">
               <tr><td width="130">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
               <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
@@ -150,8 +144,6 @@
           </td>
         </tr>
       </thead>
-
-      <!-- BODY CONTENT -->
       <tbody>
         <tr>
           <td>
@@ -170,35 +162,24 @@
           </td>
         </tr>
       </tbody>
-
-      <!-- FOOTER AUTOMATIC REPEAT -->
       <tfoot>
         <tr>
           <td>
             <table class="footer-sig-table">
               <tr>
-                <td id="col_1">
-                  Date : <br><br>
-                  <span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span>
-                </td>
+                <td id="col_1">Date : <br><br><span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span></td>
                 <td id="col_2"></td>
                 <td id="col_3">
                   <div class="sig-inner-flex">
                     <div>Approved by<br>SM Structure Workshop</div>
-                    <div>
-                      ( _____________________ )<br>
-                      <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
-                    </div>
+                    <div>( _____________________ )<br><span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span></div>
                   </div>
                 </td>
               </tr>
             </table>
-
             <div class="meta-footer-wrap">
               <div>Form No.: GMF/Q-364 R1</div>
-              <div class="page-counter">
-                Page <span class="curr-p">1</span> of <span class="total-p">1</span>
-              </div>
+              <div class="page-counter">Page <span class="curr-p">1</span> of <span class="total-p">1</span></div>
             </div>
           </td>
         </tr>
