@@ -6,54 +6,41 @@
   }
 
   @media print {
-    /* 1. Reset Page and Initialize Counter */
-    @page { 
-      size: A4 portrait; 
-      margin: 10mm; 
-    }
-    body { 
-      counter-reset: page; 
-      background: white !important;
+    /* 1. Reset Global Styles */
+    html, body {
+      height: auto !important;
       margin: 0 !important;
       padding: 0 !important;
+      background: #fff !important;
     }
 
-    /* 2. Hard Exclusion: Physically remove everything except the target modal */
-    body > *:not(#palDocumentModal) { 
-      display: none !important; 
+    /* 2. Targeted Extraction: Hide the main UI but keep the container of the modal alive */
+    header, nav, .container, .no-print, .burger-btn, .sidebar-overlay, .swal2-container {
+      display: none !important;
     }
 
-    /* 3. Internal UI Cleanup: Hide buttons, close icons, and interactive elements */
-    .no-print, 
-    .close-x, 
-    button, 
-    [onclick],
-    .screen-page-info { 
-      display: none !important; 
-    }
-
-    /* 4. Reset Modal and Overlay for Print Stream */
-    #palDocumentModal { 
-      position: absolute !important; 
-      left: 0 !important; 
-      top: 0 !important; 
-      width: 100% !important; 
-      background: white !important; 
-      display: block !important; 
-      overflow: visible !important;
-      padding: 0 !important;
-      margin: 0 !important;
+    /* 3. Reset Modal for Print Engine */
+    #palDocumentModal {
+      display: block !important;
+      position: static !important; /* Changed from absolute to allow multi-page flow */
       visibility: visible !important;
+      width: 100% !important;
+      height: auto !important;
+      background: white !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: visible !important;
     }
 
+    /* Remove the dark overlay background in print */
     .modal-overlay {
       background: none !important;
       position: static !important;
-      overflow: visible !important;
       display: block !important;
+      overflow: visible !important;
     }
 
-    /* 5. Document Container Optimization */
+    /* 4. Document Body Optimization */
     .pal-doc { 
       margin: 0 !important; 
       padding: 0 !important;
@@ -64,32 +51,29 @@
       visibility: visible !important;
     }
 
-    /* 6. THE KEY: Table Group Printing (Repeat Header/Footer) */
+    /* 5. Repeating Header/Footer Logic */
     .layout-table { 
       width: 100%; 
       border-collapse: collapse; 
       table-layout: fixed;
-      visibility: visible !important;
     }
     thead { display: table-header-group !important; }
     tfoot { display: table-footer-group !important; }
     
-    /* Ensure rows don't break awkwardly */
     tr { break-inside: avoid; }
 
-    /* 7. Page Numbering Logic */
+    /* 6. Page Numbering (Counter setup in body) */
+    body { counter-reset: page; }
     .page-counter:after { 
       counter-increment: page;
       content: "Page " counter(page) " of " counter(pages); 
     }
     
-    /* 8. Metadata Footer Wrap Styling */
     .meta-footer-wrap {
       padding-top: 5px;
       border-top: 1px solid #000;
-      display: flex;
+      display: flex !important;
       justify-content: space-between;
-      visibility: visible !important;
     }
   }
   
