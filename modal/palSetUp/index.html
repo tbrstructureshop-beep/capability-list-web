@@ -1,238 +1,279 @@
 <style>
-    /* --- 1. PRINT PRECISION (TETAP SAMA) --- */
-    @page { size: A4 portrait; margin: 0; }
-    @media print {
-        html, body { height: 297mm; overflow: hidden !important; background: #fff !important; }
-        body * { visibility: hidden !important; }
-        #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
-        #palDocumentModal { position: absolute !important; left: 0 !important; top: 0 !important; width: 210mm !important; background: white !important; display: block !important; }
-        .no-print, .resizer { display: none !important; }
-        .pal-page { margin: 0 !important; padding: 5mm !important; width: 210mm !important; height: 297mm !important; box-shadow: none !important; page-break-after: always !important; border: none !important; box-sizing: border-box !important; position: relative !important; }
-        .pal-footer { position: absolute !important; bottom: 5mm !important; left: 5mm !important; right: 5mm !important; border-top: 1px solid #000; padding-top: 2px; }
-        [contenteditable]:focus { outline: none; }
+  /* --- PRINT ENGINE: A4 PORTRAIT --- */
+  @page { 
+    size: A4 portrait; 
+    margin: 10mm 15mm 15mm 15mm; 
+  }
+
+  @media print {
+    body * { visibility: hidden !important; }
+    #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
+    #palDocumentModal { 
+      position: absolute !important; 
+      left: 0 !important; top: 0 !important; 
+      width: 100% !important; 
+      background: white !important; 
     }
-
-    /* --- 2. SCREEN VIEW & EDITOR STYLES --- */
-    #palDocumentModal { background: #525659; }
-    .pal-page { 
-        background: white; width: 210mm; height: 297mm; padding: 15mm; margin: 20px auto; 
-        color: #000; font-family: Arial, sans-serif; display: flex; flex-direction: column;
-        box-shadow: 0 0 15px rgba(0,0,0,0.5); box-sizing: border-box; position: relative;
-    }
-
-    /* Indikator Area Bisa Diedit */
-    [contenteditable="true"]:hover { background: rgba(60, 146, 166, 0.05); outline: 1px dashed #3c92a6; }
-    [contenteditable="true"]:focus { outline: 2px solid #3c92a6; background: #fff; }
-
-    /* Table Styles */
-    .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; position: relative; }
-    .main-table th, .main-table td { border: 1px solid black; position: relative; }
-    .main-table th { padding: 8px 4px; background: #f2f2f2; font-size: 10px; font-weight: bold; }
-    .main-table td { padding: 4px 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; line-height: 1.1; }
-
-    /* Column Resizer Handle */
-    .resizer {
-        position: absolute; top: 0; right: 0; width: 5px; cursor: col-resize;
-        user-select: none; height: 100%; z-index: 10;
-    }
-    .resizer:hover, .resizing { border-right: 3px solid #3c92a6; }
-
-    .logo-container { text-align: center; margin-bottom: 10px; }
-    .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
-    .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
+    .no-print { display: none !important; }
     
-    .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
-    .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 15px; }
-    .footer-sig-table td { border: 1px solid black; height: 100px; vertical-align: top; padding: 10px; font-size: 11px; }
+    /* Ensure the white paper fills the page without cut-off */
+    .pal-doc { 
+      box-shadow: none !important; 
+      margin: 0 !important; 
+      padding: 0 !important;
+      width: 100% !important;
+    }
 
-    .pal-footer { display: flex; justify-content: space-between; font-size: 9px; margin-top: auto; padding-top: 5px; }
-    .dynamic-content { flex-grow: 1; }
-    #pal-ghost { position: absolute; visibility: hidden; top: -10000px; width: 200mm; }
+    /* Standard repeating header trick */
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    
+    tr { break-inside: avoid; } /* Don't split rows across pages */
+  }
+
+  /* --- SCREEN PREVIEW STYLES --- */
+  .pal-doc { 
+    background: white; 
+    width: 210mm; 
+    min-height: 297mm; 
+    padding: 15mm; 
+    margin: 30px auto; 
+    color: #000; 
+    font-family: "Segoe UI", Arial, sans-serif; 
+    display: block;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+    box-sizing: border-box; 
+    position: relative;
+  }
+
+  /* Table structure to handle dynamic content */
+  .layout-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .logo-container { text-align: center; padding-bottom: 10px; }
+  .logo-img { height: 45px; width: auto; }
+  
+  .title-section { 
+    text-align: center; 
+    font-weight: 900; 
+    font-size: 16px; 
+    text-decoration: underline; 
+    margin-bottom: 15px; 
+    text-transform: uppercase; 
+  }
+  
+  .info-table { width: 70%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; text-align: left; }
+  .info-table td { padding: 3px 0; vertical-align: top; }
+
+  /* Data Table */
+  .main-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    border: 1px solid black; 
+  }
+  .main-table th { 
+    border: 1px solid black; padding: 10px 5px; background: #f0f0f0; 
+    text-transform: uppercase; font-size: 10px; font-weight: bold; 
+  }
+  .main-table td { 
+    border: 1px solid black; padding: 8px 6px; font-size: 10px; 
+    vertical-align: top; word-wrap: break-word; 
+  }
+
+  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pn-item { display: flex; gap: 4px; line-height: 1.3; }
+
+  /* --- SIGNATURE (Last Page Only) --- */
+  .footer-sig-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    border: 1px solid black; 
+    margin-top: 15px; 
+    table-layout: fixed; 
+    page-break-inside: avoid;
+  }
+  .footer-sig-table td { 
+    border: 1px solid black; height: 100px; 
+    vertical-align: top; padding: 10px; font-size: 11px; 
+  }
+  #col_1 { width: 35.59%; }
+  #col_2 { width: 33.68%; }
+  #col_3 { width: 30.73%; }
+
+  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
+
+  /* Static footer at the bottom of every page */
+  .form-no-footer {
+    font-size: 10px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
 </style>
 
-<div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500; overflow-y: auto;">
-    <!-- TOOLBAR EDITOR -->
-    <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
-        <div style="display:flex; gap: 12px; align-items: center;">
-            <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; font-weight: bold; border-radius: 4px;">Print A4 (Focus Area)</button>
-            <button class="btn" onclick="toggleEditGuidelines()" style="background:#555; color:white; border:none; padding: 8px 16px; border-radius: 4px;">Toggle Resize Lines</button>
-            <span style="color: #ccc; font-size: 11px;">*Drag table headers to resize. Click text to edit.</span>
-        </div>
-        <button class="close-x" onclick="closePALModal()" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
-    </div>
+<div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.9); z-index: 15500; overflow-y: auto;">
+  
+  <!-- Control Bar -->
+  <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #1a1a1a; padding: 15px 30px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
+     <div style="display:flex; gap: 15px;">
+       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 10px 20px; color:white; font-weight: bold; border-radius: 6px; cursor:pointer;">Print to PDF</button>
+       <button class="btn" onclick="openBulkAddModal()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid #444; padding: 10px 20px; cursor:pointer; font-weight: bold; border-radius: 6px;">+ Add Item</button>
+     </div>
+     <div style="color: #888; font-size: 13px; font-weight: 500;">Previewing Document: A4 Portrait</div>
+     <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:32px; border:none; background:none; cursor:pointer;">&times;</button>
+  </div>
 
-    <div id="pal-report-wrapper"></div>
-    <div id="pal-ghost"></div>
+  <div id="palPrintArea" class="pal-doc">
+    <table class="layout-table">
+      <thead>
+        <tr>
+          <td>
+            <!-- REPEATING HEADER CONTENT -->
+            <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
+            <div class="title-section">PERSONAL ABILITY LIST</div>
+
+            <table class="info-table">
+              <tr><td width="130">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
+              <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
+              <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
+            </table>
+
+            <table class="main-table" style="border-bottom:none;">
+              <thead>
+                <tr>
+                  <th width="35">No.</th>
+                  <th width="180">DESCRIPTION</th>
+                  <th>PART NUMBER</th>
+                  <th width="80">ATA</th>
+                  <th width="80">AUTH</th>
+                </tr>
+              </thead>
+            </table>
+          </td>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td>
+            <table class="main-table">
+              <tbody id="pal_items_body">
+                <!-- Rows injected here -->
+              </tbody>
+            </table>
+
+            <!-- SIGNATURE SECTION (Attached to the end of the body) -->
+            <table class="footer-sig-table">
+              <tr>
+                <td id="col_1">
+                  Date : <br><br>
+                  <span id="pal_today_date" style="font-weight:bold; font-size: 13px;">-</span>
+                </td>
+                <td id="col_2"></td>
+                <td id="col_3">
+                  <div class="sig-inner-flex">
+                    <div>Approved by<br>SM Structure Workshop</div>
+                    <div>
+                      ( ___________________________ )<br>
+                      <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+
+      <tfoot>
+        <tr>
+          <td>
+            <div class="form-no-footer">
+              <span>Form No.: GMF/Q-364 R1</span>
+              <span class="no-print">Page 1 of 1</span>
+            </div>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
 </div>
 
 <script>
-const PALEngine = {
-    maxHeight: 830,
-    currentEmp: null,
+/**
+ * Global Variable to store current viewing EmpID for Bulk Add logic
+ */
+let currentPalEmpId = null;
 
-    async init(empId, name, title) {
-        this.currentEmp = { id: empId, name: name, title: title };
-        const wrapper = document.getElementById('pal-report-wrapper');
-        wrapper.innerHTML = `<div style="color:white; text-align:center; padding:50px;">Generating Editable Layout...</div>`;
-        
-        try {
-            const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
-            const data = await res.json();
-            
-            const aggregated = data.items.reduce((acc, item) => {
-                const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
-                if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
-                else if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
-                return acc;
-            }, {});
+window.openPALDocument = async function(empId, name, title) {
+  currentPalEmpId = empId;
+  const modal = document.getElementById('palDocumentModal');
+  if (!modal) return;
 
-            this.render(Object.values(aggregated));
-            this.makeResizable(); // Aktifkan fitur geser kolom
-        } catch(e) { console.error(e); }
-    },
+  // Set Meta Info
+  document.getElementById('pal_name').textContent = name;
+  document.getElementById('pal_id').textContent = empId;
+  document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
+  
+  const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+  document.getElementById('pal_today_date').textContent = today;
 
-    render(items) {
-        const wrapper = document.getElementById('pal-report-wrapper');
-        wrapper.innerHTML = '';
-        let currentPage = this.createNewPage();
-        let contentDiv = currentPage.querySelector('.dynamic-content');
-        let currentH = 0;
+  modal.style.display = 'block';
+  document.body.style.overflow = 'hidden'; 
 
-        // Header Tabel dengan Resizer Handle
-        let tableHtml = `
-            <table class="main-table">
-                <thead>
-                    <tr>
-                        <th style="width: 35px;">No.<div class="resizer"></div></th>
-                        <th style="width: 180px;">DESCRIPTION<div class="resizer"></div></th>
-                        <th>PART NUMBER<div class="resizer"></div></th>
-                        <th style="width: 80px;">ATA<div class="resizer"></div></th>
-                        <th style="width: 70px;">AUTH<div class="resizer"></div></th>
-                    </tr>
-                </thead>
-                <tbody contenteditable="true">`;
-        
-        contentDiv.insertAdjacentHTML('beforeend', tableHtml);
-        let tbody = contentDiv.querySelector('tbody');
-        currentH += 50;
+  if (typeof showLoader === 'function') showLoader();
+  
+  try {
+    const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
+    const data = await res.json();
+    if(!data.success) throw new Error(data.error);
 
-        items.forEach((group, idx) => {
-            const row = this.createRow(group, idx + 1);
-            const rowH = this.measureElement(row);
+    // Grouping items by Description + Authority + Reference to keep the list compact
+    const aggregated = data.items.reduce((acc, item) => {
+      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
+      if (!acc[key]) {
+        acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
+      } else {
+        if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
+      }
+      return acc;
+    }, {});
 
-            if (currentH + rowH > this.maxHeight) {
-                contentDiv.insertAdjacentHTML('beforeend', `</tbody></table>`);
-                currentPage = this.createNewPage();
-                contentDiv = currentPage.querySelector('.dynamic-content');
-                contentDiv.insertAdjacentHTML('beforeend', tableHtml.replace('DESCRIPTION', 'DESCRIPTION (CONT.)'));
-                tbody = contentDiv.querySelector('tbody');
-                currentH = 50;
-            }
-            tbody.appendChild(row);
-            currentH += rowH;
-        });
+    const body = document.getElementById('pal_items_body');
+    body.innerHTML = '';
+    
+    Object.values(aggregated).forEach((group, idx) => {
+      // Logic for split P/N display into 2 columns
+      const mid = Math.ceil(group.pns.length / 2);
+      const col1 = group.pns.slice(0, mid);
+      const col2 = group.pns.slice(mid);
 
-        contentDiv.insertAdjacentHTML('beforeend', `</tbody></table>`);
-        this.addSignature(contentDiv, currentH);
-    },
+      let pnHtml = `<div class="pn-grid"><div>`;
+      col1.forEach(p => pnHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
+      pnHtml += `</div><div>`;
+      col2.forEach(p => pnHtml += `<div class="pn-item"><span>-</span><span>${p}</span></div>`);
+      pnHtml += `</div></div>`;
 
-    createNewPage() {
-        const p = document.createElement('div');
-        p.className = 'pal-page';
-        p.innerHTML = `
-            <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
-            <div class="title-section" contenteditable="true">PERSONAL ABILITY LIST</div>
-            <table class="info-table">
-                <tr><td width="150">Name</td><td width="10">:</td><td><strong contenteditable="true">${this.currentEmp.name}</strong></td></tr>
-                <tr><td>Personnel Number</td><td>:</td><td><strong contenteditable="true">${this.currentEmp.id}</strong></td></tr>
-                <tr><td>Present Title</td><td>:</td><td><span contenteditable="true">${this.currentEmp.title}</span></td></tr>
-            </table>
-            <div class="dynamic-content"></div>
-            <div class="pal-footer">
-                <div contenteditable="true">Form No.: GMF/Q-364 R1</div>
-                <div class="page-num-label">Page 1 of 1</div>
-            </div>`;
-        document.getElementById('pal-report-wrapper').appendChild(p);
-        return p;
-    },
-
-    createRow(group, no) {
-        const tr = document.createElement('tr');
-        const mid = Math.ceil(group.pns.length / 2);
-        let pnHtml = `<div class="pn-grid"><div>` + 
-            group.pns.slice(0, mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
-            `</div><div>` + 
-            group.pns.slice(mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
-            `</div></div>`;
-
-        tr.innerHTML = `<td align="center">${no}</td><td><b>${group.desc.toUpperCase()}</b></td><td>${pnHtml}</td><td align="center"><b>${group.ata}</b></td><td align="center">${group.auth}</td>`;
-        return tr;
-    },
-
-    addSignature(container, h) {
-        const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
-        const sigHtml = `
-            <table class="footer-sig-table" contenteditable="true">
-                <tr>
-                    <td style="width:35%">Date : <br><br><strong>${today}</strong></td>
-                    <td style="width:35%"></td>
-                    <td style="width:30%">
-                        <div class="sig-inner-flex">
-                            <div>Approved by<br>SM Structure Workshop</div>
-                            <div>( ___________________________ )<br><span style="font-size:9px">Name & Signature</span></div>
-                        </div>
-                    </td>
-                </tr>
-            </table>`;
-        container.insertAdjacentHTML('beforeend', sigHtml);
-    },
-
-    // LOGIC GESER KOLOM (Resizer)
-    makeResizable() {
-        const resizers = document.querySelectorAll('.resizer');
-        resizers.forEach(resizer => {
-            let x = 0; let w = 0;
-            const mouseDownHandler = (e) => {
-                x = e.clientX;
-                const col = resizer.parentElement;
-                w = parseInt(window.getComputedStyle(col).width, 10);
-                resizer.classList.add('resizing');
-                document.addEventListener('mousemove', mouseMoveHandler);
-                document.addEventListener('mouseup', mouseUpHandler);
-            };
-            const mouseMoveHandler = (e) => {
-                const dx = e.clientX - x;
-                resizer.parentElement.style.width = `${w + dx}px`;
-            };
-            const mouseUpHandler = () => {
-                resizer.classList.remove('resizing');
-                document.removeEventListener('mousemove', mouseMoveHandler);
-                document.removeEventListener('mouseup', mouseUpHandler);
-            };
-            resizer.addEventListener('mousedown', mouseDownHandler);
-        });
-    },
-
-    measureElement(el) {
-        const g = document.getElementById('pal-ghost');
-        g.innerHTML = `<table class="main-table">${el.outerHTML}</table>`;
-        return g.offsetHeight;
-    }
-};
-
-function toggleEditGuidelines() {
-    const resizers = document.querySelectorAll('.resizer');
-    resizers.forEach(r => {
-        r.style.display = (r.style.display === 'none') ? 'block' : 'none';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td width="35" style="text-align:center;">${idx + 1}</td>
+        <td width="180" style="text-transform: uppercase; font-weight:bold;">${group.desc}</td>
+        <td>${pnHtml}</td>
+        <td width="80" style="text-align:center;"><strong>${group.ata}</strong></td>
+        <td width="80" style="text-align:center; font-size: 9px; font-weight: bold;">${group.auth}</td>
+      `;
+      body.appendChild(tr);
     });
+
+  } catch(e) { 
+    console.error("PAL Load Error:", e);
+    Swal.fire("Error", "Failed to fetch authorized items", "error");
+  } finally { 
+    if (typeof hideLoader === 'function') hideLoader(); 
+  }
 }
-
-window.openPALDocument = function(empId, name, title) {
-    document.getElementById('palDocumentModal').style.display = 'block';
-    PALEngine.init(empId, name, title);
-};
-
-window.closePALModal = function() {
-    document.getElementById('palDocumentModal').style.display = 'none';
-};
 </script>
