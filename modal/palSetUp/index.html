@@ -56,9 +56,8 @@
     tfoot { display: table-footer-group; }
 
     /* Page Counter */
-    .page-counter:after { 
-      counter-increment: page;
-      content: "Page " counter(page) " of " counter(pages); 
+    .page-counter {
+      font-weight: normal;
     }
   }
 
@@ -153,10 +152,10 @@
   .meta-footer-wrap { 
     display: flex; 
     justify-content: space-between; 
-    margin-top: 5px; 
+    margin-top: 2px; /* Perkecil jarak */
     font-size: 10px; 
-    border-top: 1px solid #000;
-    padding-top: 5px;
+    border-top: none; /* Hilangkan garis agar tidak double dengan border tabel */
+    padding-top: 2px;
   }
 
   .screen-page-info { font-size: 11px; color: #ccc; }
@@ -240,7 +239,9 @@
 
             <div class="meta-footer-wrap">
               <div>Form No.: GMF/Q-364 R1</div>
-              <div class="page-counter"></div>
+              <div class="page-counter">
+                Page <span class="curr-p">1</span> of <span class="total-p">1</span>
+              </div>
             </div>
           </td>
         </tr>
@@ -304,7 +305,23 @@ window.openPALDocument = async function(empId, name, title) {
       `;
       body.appendChild(tr);
     });
-  } catch(e) { console.error(e); }
-  finally { if (typeof hideLoader === 'function') hideLoader(); }
+
+    // --- MANUALLY CALCULATE PAGE TOTALS ---
+    setTimeout(() => {
+      const printArea = document.getElementById('palPrintArea');
+      if (printArea) {
+        // A4 Height at 96 DPI is ~1122px
+        const totalPages = Math.ceil(printArea.scrollHeight / 1120) || 1;
+        const totalElements = document.querySelectorAll('.total-p');
+        totalElements.forEach(el => el.textContent = totalPages);
+      }
+    }, 200);
+    // --- END CALCULATION ---
+
+  } catch(e) { 
+    console.error(e); 
+  } finally { 
+    if (typeof hideLoader === 'function') hideLoader(); 
+  }
 }
 </script>
