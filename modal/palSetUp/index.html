@@ -145,7 +145,7 @@
     width: 100%; 
     border-collapse: collapse; 
     border: 1px solid black; 
-    margin-top: 20px; 
+    margin-top: 10px; 
     table-layout: fixed; 
   }
   .footer-sig-table td { 
@@ -327,24 +327,28 @@ window.openPALDocument = async function(empId, name, title) {
 
     // --- MANUALLY CALCULATE PAGE TOTALS ---
     setTimeout(() => {
-        const printArea = document.getElementById('palPrintArea');
-        if (printArea) {
-            const h = printArea.scrollHeight;
-            const pageH = 1120; // Tinggi A4 dalam pixel
-            const buffer = 50;  // Toleransi 50px (jika cuma sisa segini, jangan anggap halaman baru)
-            
-            let totalPages;
-            if (h <= pageH + buffer) {
-                totalPages = 1;
-            } else {
-                totalPages = Math.ceil((h - buffer) / pageH);
-            }
-            
-            const totalElements = document.querySelectorAll('.total-p');
-            totalElements.forEach(el => el.textContent = totalPages);
-        }
-    }, 300);
-  
+          const printArea = document.getElementById('palPrintArea');
+          if (printArea) {
+              const h = printArea.scrollHeight;
+              const pageH = 1122; // Standar A4 96dpi
+              const buffer = 80;  // Naikkan buffer menjadi 80px agar lebih aman
+              
+              let totalPages;
+              // Logic: Jika tinggi konten masih di bawah (Halaman + Toleransi), anggap 1 halaman
+              if (h <= (pageH + buffer)) {
+                  totalPages = 1;
+              } else {
+                  // Jika lebih, hitung per halaman dengan tetap memberikan toleransi di akhir
+                  totalPages = Math.ceil((h - buffer) / pageH);
+              }
+              
+              const totalElements = document.querySelectorAll('.total-p');
+              totalElements.forEach(el => el.textContent = totalPages);
+              
+              // Debug untuk Anda lihat di console (F12)
+              console.log("Current Height:", h, "Calculated Pages:", totalPages);
+          }
+      }, 400); 
   } catch(e) { 
     console.error(e); 
   } finally { 
