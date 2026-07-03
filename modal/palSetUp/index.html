@@ -1,22 +1,21 @@
 <style>
-    /* --- PRINT SETUP A4 PORTRAIT --- */
+    /* --- 1 & 5. PRINT SETUP A4 PRECISION --- */
     @page { 
         size: A4 portrait; 
-        margin: 0; /* Margin nol karena kita kontrol via .pal-page padding */
+        margin: 0; /* Menghilangkan margin default browser */
     }
 
     @media print {
-        /* Hilangkan Scrollbars */
+        /* Hilangkan elemen pengganggu */
         html, body { 
+            height: 297mm; 
             overflow: hidden !important; 
-            height: 100% !important; 
-            margin: 0 !important; 
-            padding: 0 !important; 
-            background: white !important; 
+            background: #fff !important; 
         }
-
+        
         body * { visibility: hidden !important; }
         
+        /* 1 & 3. Matikan Scroll dan Background Grey */
         #palDocumentModal, #palDocumentModal * { 
             visibility: visible !important; 
         }
@@ -26,27 +25,39 @@
             left: 0 !important; 
             top: 0 !important; 
             width: 210mm !important; 
-            height: 100% !important;
+            height: 297mm !important;
             background: white !important; 
             display: block !important;
-            overflow: hidden !important; /* Pastikan tidak ada scrollbar di modal */
+            overflow: visible !important; /* Hilangkan scrollbar saat print */
         }
 
         .no-print { display: none !important; }
         
+        /* 2. Margin 5mm All Sides */
         .pal-page { 
             margin: 0 !important; 
+            padding: 5mm !important; /* Tepat 5mm margin konten dari tepi kertas */
+            width: 210mm !important; 
+            height: 297mm !important;
             box-shadow: none !important; 
             page-break-after: always !important;
             border: none !important;
-            background: white !important;
-            width: 210mm !important;
-            height: 297mm !important;
-            padding: 5mm !important; /* Margin 5mm All Sides */
+            box-sizing: border-box !important;
+            position: relative !important;
+        }
+
+        /* 4. Footer 5mm dari bawah kertas */
+        .pal-footer {
+            position: absolute !important; 
+            bottom: 5mm !important; 
+            left: 5mm !important; 
+            right: 5mm !important;
+            border-top: 1px solid #000;
+            padding-top: 2px;
         }
     }
 
-    /* --- SCREEN VIEW STYLES --- */
+    /* --- SCREEN VIEW STYLES (PREVIEW ONLY) --- */
     #palDocumentModal {
         background: #525659;
     }
@@ -55,7 +66,7 @@
         background: white; 
         width: 210mm; 
         height: 297mm; 
-        padding: 5mm; /* Margin 5mm All Sides sesuai request */
+        padding: 15mm; /* Preview di layar lebih lega */
         margin: 20px auto; 
         color: #000; 
         font-family: Arial, sans-serif; 
@@ -66,53 +77,44 @@
         position: relative;
     }
 
-    /* Local Loader Overlay */
+    /* Loader Overlay */
     .pal-loader-overlay {
         position: absolute; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(255,255,255,0.8); z-index: 100;
         display: none; flex-direction: column; justify-content: center; align-items: center;
     }
 
-    /* Standard Elements */
-    .logo-container { text-align: center; margin-bottom: 10px; }
-    .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
-    .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
+    /* UI Components */
+    .logo-container { text-align: center; margin-bottom: 8px; }
+    .logo-img { height: 40px; width: auto; display: block; margin: 0 auto; }
+    .title-section { text-align: center; font-weight: bold; font-size: 13px; text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; }
     
-    .info-table { width: 65%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; border: none !important;}
-    .info-table td { padding: 2px 0; border: none !important; text-transform: uppercase;}
+    .info-table { width: 65%; border-collapse: collapse; margin-bottom: 10px; font-size: 10px; border: none !important;}
+    .info-table td { padding: 1px 0; border: none !important; text-transform: uppercase;}
 
     .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
     .main-table th { border: 1px solid black; padding: 6px 4px; background: #f2f2f2; text-transform: uppercase; font-size: 9px; font-weight: bold; }
-    .main-table td { border: 1px solid black; padding: 5px; font-size: 9px; vertical-align: top; word-wrap: break-word; }
+    .main-table td { border: 1px solid black; padding: 4px 6px; font-size: 9px; vertical-align: top; word-wrap: break-word; line-height: 1.1; }
 
     .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-    .pn-item { display: flex; gap: 5px; line-height: 1.1; }
+    .pn-item { display: flex; gap: 5px; }
 
-    /* Signature Table */
     .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 10px; table-layout: fixed; }
-    .footer-sig-table td { border: 1px solid black; height: 100px; vertical-align: top; padding: 8px; font-size: 10px; }
+    .footer-sig-table td { border: 1px solid black; height: 90px; vertical-align: top; padding: 8px; font-size: 10px; }
+    
     #col_1 { width: 35.59%; } #col_2 { width: 33.68%; } #col_3 { width: 30.73%; }
     .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
 
-    /* Footer Pagination & Form No */
     .pal-footer {
-        position: absolute; 
-        bottom: 2.5mm; /* 2.5 mm dari tepi bawah kertas */
-        left: 5mm; 
-        right: 5mm;
-        display: flex; 
-        justify-content: space-between; 
-        font-size: 9px;
-        border-top: 0.5px solid #000; 
-        padding-top: 3px;
+        display: flex; justify-content: space-between; font-size: 9px;
+        margin-top: auto; padding-top: 5px;
     }
 
     .dynamic-content { flex-grow: 1; overflow: hidden; }
-    #pal-ghost { position: absolute; visibility: hidden; top: -10000px; width: 200mm; }
+    #pal-ghost { position: absolute; visibility: hidden; top: -10000px; width: 200mm; } /* Ghost width mengikuti margin 5mm */
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500; overflow-y: auto;">
-  
     <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
         <div style="display:flex; gap: 12px;">
             <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
@@ -127,7 +129,9 @@
 
 <script>
 const PALEngine = {
-    maxHeight: 1000, // Ditingkatkan karena margin (padding) sekarang lebih kecil (5mm)
+    // 3. Kalibrasi Tinggi Maksimal (mm ke px) untuk mencegah overflow ke Page 2 abu-abu
+    // A4 297mm - 10mm (margin v) - Header/Info (~70mm) - Footer (~15mm) = ~200mm usable
+    maxHeight: 820, 
     currentEmp: null,
 
     async init(empId, name, title) {
@@ -138,7 +142,7 @@ const PALEngine = {
         wrapper.innerHTML = `
             <div class="pal-loader-overlay" style="display:flex">
                 <div class="spinner"></div>
-                <div style="margin-top:15px; font-weight:bold; color:#3c92a6">Generating Document...</div>
+                <div style="margin-top:15px; font-weight:bold; color:#3c92a6">Formatting Documents...</div>
             </div>`;
         
         try {
@@ -155,7 +159,6 @@ const PALEngine = {
 
             this.render(Object.values(aggregated));
         } catch(e) {
-            console.error(e);
             wrapper.innerHTML = `<div style="color:white; text-align:center; padding:50px;">Error: ${e.message}</div>`;
         }
     },
@@ -168,7 +171,7 @@ const PALEngine = {
         let contentDiv = currentPage.querySelector('.dynamic-content');
         let currentH = 0;
 
-        let tableHtml = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">AUTH</th></tr></thead><tbody>`;
+        let tableHtml = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="80">ATA</th><th width="70">AUTH</th></tr></thead><tbody>`;
         contentDiv.insertAdjacentHTML('beforeend', tableHtml);
         let tbody = contentDiv.querySelector('tbody');
         currentH += 40;
@@ -182,7 +185,7 @@ const PALEngine = {
                 currentPage = this.createNewPage();
                 contentDiv = currentPage.querySelector('.dynamic-content');
                 
-                const contHeader = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION (CONT.)</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">AUTH</th></tr></thead><tbody>`;
+                const contHeader = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION (CONT.)</th><th>PART NUMBER</th><th width="80">ATA</th><th width="70">AUTH</th></tr></thead><tbody>`;
                 contentDiv.insertAdjacentHTML('beforeend', contHeader);
                 tbody = contentDiv.querySelector('tbody');
                 currentH = 45;
@@ -214,7 +217,7 @@ const PALEngine = {
             <div class="dynamic-content"></div>
             <div class="pal-footer">
                 <div>Form No.: GMF/Q-364 R1</div>
-                <div class="page-num-label">Page 1 of 1</div>
+                <div class="page-num-label"></div>
             </div>`;
         document.getElementById('pal-report-wrapper').appendChild(p);
         return p;
@@ -229,12 +232,7 @@ const PALEngine = {
             group.pns.slice(mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
             `</div></div>`;
 
-        tr.innerHTML = `
-            <td align="center">${no}</td>
-            <td style="text-transform:uppercase"><b>${group.desc}</b></td>
-            <td>${pnHtml}</td>
-            <td align="center"><b>${group.ata}</b></td>
-            <td align="center">${group.auth}</td>`;
+        tr.innerHTML = `<td align="center">${no}</td><td><b>${group.desc.toUpperCase()}</b></td><td>${pnHtml}</td><td align="center"><b>${group.ata}</b></td><td align="center">${group.auth}</td>`;
         return tr;
     },
 
