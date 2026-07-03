@@ -64,12 +64,12 @@
 </div>
 
 <script>
+  /**
+   * State Management menggunakan Composite Key (Otoritas + PN)
+   * Agar satu PN yang punya banyak otoritas bisa dipilih secara terpisah.
+   */
   let selectedItems = new Map(); 
 
-  /**
-   * TRIGGER FUNCTION
-   * Di-panggil oleh window.openBulkAddModal di index.html
-   */
   window.startBulkAddProcess = function() {
     const overlay = document.getElementById('bulkAddModalOverlay');
     if (overlay) {
@@ -91,7 +91,8 @@
     if(!query || query.length < 2) return;
 
     const q = query.toLowerCase();
-    // rawData berasal dari global scope index.html
+    
+    // Filter rawData (1:AUTH, 3:ATA, 5:PN, 6:NAME)
     const matches = rawData.filter(row => 
       String(row[5]).toLowerCase().includes(q) || 
       String(row[6]).toLowerCase().includes(q) || 
@@ -99,27 +100,40 @@
     ).slice(0, 25);
 
     container.innerHTML = matches.map(row => {
-      const isSelected = selectedItems.has(row[5]);
+      const auth = String(row[1]);
+      const pn = String(row[5]);
+      
+      // KUNCI UNIK: Gabungan Otoritas dan PN (Menghindari tabrakan pilihan)
+      const itemKey = `${auth}|${pn}`;
+      const isSelected = selectedItems.has(itemKey);
+      
+      // Escape petik satu pada deskripsi agar tidak merusak HTML
+      const safeDesc = row[6].replace(/'/g, "\\'");
+
       return `
-        <div class="bulk-item ${isSelected ? 'selected' : ''}" onclick="toggleBulkItem('${row[1]}', '${row[5]}', '${row[6].replace(/'/g, "\\'")}', '${row[3]}')">
-          <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleBulkItem('${row[1]}', '${row[5]}', '${row[6].replace(/'/g, "\\'")}', '${row[3]}')">
+        <div class="bulk-item ${isSelected ? 'selected' : ''}" 
+             onclick="toggleBulkItem('${auth}', '${pn}', '${safeDesc}', '${row[3]}')">
+          <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleBulkItem('${auth}', '${pn}', '${safeDesc}', '${row[3]}')">
           <div class="bulk-info">
-            <span class="bulk-pn">${row[5]}</span>
+            <span class="bulk-pn">${pn}</span>
             <span class="bulk-desc">${row[6]}</span>
-            <span class="bulk-meta">${row[1]} • ATA ${row[3]}</span>
+            <span class="bulk-meta">${auth} • ATA ${row[3]}</span>
           </div>
-          <div style="opacity:0.5;">${typeof formatLogoValue === 'function' ? formatLogoValue(row[1]) : row[1]}</div>
+          <div style="opacity:0.6;">${typeof formatLogoValue === 'function' ? formatLogoValue(auth) : auth}</div>
         </div>
       `;
     }).join('');
   }
 
   function toggleBulkItem(auth, pn, desc, ata) {
-    if(selectedItems.has(pn)) {
-      selectedItems.delete(pn);
+    const itemKey = `${auth}|${pn}`; // Gunakan composite key
+    
+    if(selectedItems.has(itemKey)) {
+      selectedItems.delete(itemKey);
     } else {
-      selectedItems.set(pn, { authority: auth, pn: pn, desc: desc, ata: ata });
+      selectedItems.set(itemKey, { authority: auth, pn: pn, desc: desc, ata: ata });
     }
+    
     updateBasketUI();
     updateBulkAdvice(document.getElementById('bulkSearchInput').value);
   }
@@ -139,15 +153,18 @@
     saveBtn.disabled = false;
     saveBtn.textContent = `Save Selection (${selectedItems.size})`;
     
-    basket.innerHTML = Array.from(selectedItems.values()).map(item => `
-      <div class="basket-tag">
-        ${item.pn} <span onclick="toggleBulkItem('','${item.pn}')">&times;</span>
-      </div>
-    `).join('');
+    basket.innerHTML = Array.from(selectedItems.values()).map(item => {
+      const itemKey = `${item.authority}|${item.pn}`;
+      return `
+        <div class="basket-tag">
+          <small style="font-size:8px; opacity:0.7; margin-right:4px;">${item.authority}</small> ${item.pn} 
+          <span onclick="toggleBulkItem('${item.authority}','${item.pn}')">&times;</span>
+        </div>
+      `;
+    }).join('');
   }
 
   async function saveBulkAuthorized() {
-    // Ambil Emp ID dari modal PAL yang sedang aktif
     const empId = document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
     
@@ -164,9 +181,8 @@
       });
       const result = await res.json();
       if(result.success) {
-        Swal.fire({ icon: 'success', title: 'Saved!', text: `${itemsArray.length} items added to PAL.`, timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Saved!', text: `${itemsArray.length} items added.`, timer: 1500, showConfirmButton: false });
         closeBulkAddModal();
-        // Auto-refresh tabel di modal PAL
         if (typeof openPALDocument === 'function') {
            openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent);
         }
