@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-  
 <head>
   <meta charset="UTF-8" />
   <title>Enterprise Capability Dashboard</title>
@@ -2254,8 +2253,7 @@
 
     // Bridge untuk muat Modal Bulk Add
     async function injectBulkAddModule() {
-      // If already injected, don't do it again
-      if (document.getElementById('bulkAddModalOverlay')) return true; 
+      if (document.getElementById('bulkAddModalOverlay')) return true; // Sudah ada
       
       const targetPath = "modal/palSetUp/addNewItem/index.html";
       try {
@@ -2267,7 +2265,7 @@
         container.innerHTML = html;
         document.body.appendChild(container);
     
-        // Execute scripts inside the module
+        // Jalankan scripts di dalamnya
         const scripts = container.querySelectorAll("script");
         scripts.forEach(s => {
           const newS = document.createElement("script");
@@ -2276,7 +2274,7 @@
         });
         return true;
       } catch (e) {
-        console.error("Failed to load Bulk Module:", e);
+        console.error("Gagal load Bulk Module:", e);
         return false;
       }
     }
@@ -2288,13 +2286,9 @@
       hideLoader();
       
       if (loaded) {
-        // The injected HTML should define a function named 'showBulkAddUI' 
-        // to avoid conflict with this bridge function name.
-        if (typeof showBulkAddUI === 'function') {
-           showBulkAddUI(); 
-        } else {
-           // Fallback if you used the same name in the module
-           console.log("Module loaded. Ensure it has a trigger function.");
+        // Panggil fungsi asli yang baru saja di-inject
+        if (typeof window.openBulkAddModal === 'function') {
+           window.openBulkAddModal(); 
         }
       }
     };
