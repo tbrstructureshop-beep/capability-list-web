@@ -6,48 +6,93 @@
   }
 
   @media print {
-    /* Reset and Counter Setup */
-    body { counter-reset: page; }
-    body * { visibility: hidden !important; background: none !important; }
-    
-    /* Ensure Modal and Table Structure are visible */
-    #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
+    /* 1. Reset Page and Initialize Counter */
+    @page { 
+      size: A4 portrait; 
+      margin: 10mm; 
+    }
+    body { 
+      counter-reset: page; 
+      background: white !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    /* 2. Hard Exclusion: Physically remove everything except the target modal */
+    body > *:not(#palDocumentModal) { 
+      display: none !important; 
+    }
+
+    /* 3. Internal UI Cleanup: Hide buttons, close icons, and interactive elements */
+    .no-print, 
+    .close-x, 
+    button, 
+    [onclick],
+    .screen-page-info { 
+      display: none !important; 
+    }
+
+    /* 4. Reset Modal and Overlay for Print Stream */
     #palDocumentModal { 
       position: absolute !important; 
       left: 0 !important; 
       top: 0 !important; 
-      width: 210mm !important; 
+      width: 100% !important; 
       background: white !important; 
       display: block !important; 
+      overflow: visible !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      visibility: visible !important;
     }
 
-    .no-print { display: none !important; }
-    
+    .modal-overlay {
+      background: none !important;
+      position: static !important;
+      overflow: visible !important;
+      display: block !important;
+    }
+
+    /* 5. Document Container Optimization */
     .pal-doc { 
       margin: 0 !important; 
+      padding: 0 !important;
       box-shadow: none !important; 
       width: 100% !important; 
+      min-height: 0 !important; 
       display: block !important; 
+      visibility: visible !important;
     }
 
-    /* THE KEY: Table Group Printing */
-    .layout-table { width: 100%; border-collapse: collapse; }
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
+    /* 6. THE KEY: Table Group Printing (Repeat Header/Footer) */
+    .layout-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      table-layout: fixed;
+      visibility: visible !important;
+    }
+    thead { display: table-header-group !important; }
+    tfoot { display: table-footer-group !important; }
+    
+    /* Ensure rows don't break awkwardly */
+    tr { break-inside: avoid; }
 
-    /* Page Numbering */
+    /* 7. Page Numbering Logic */
     .page-counter:after { 
       counter-increment: page;
       content: "Page " counter(page) " of " counter(pages); 
     }
     
-    /* Fixed footer meta position */
+    /* 8. Metadata Footer Wrap Styling */
     .meta-footer-wrap {
       padding-top: 5px;
-      border-top: 1px solid #eee;
+      border-top: 1px solid #000;
+      display: flex;
+      justify-content: space-between;
+      visibility: visible !important;
     }
   }
-
+  
   /* --- SCREEN VIEW STYLES --- */
   .pal-doc { 
     background: white; 
