@@ -37,12 +37,13 @@
     .no-print { display: none !important; }
     
     .pal-doc { 
-      margin: 0 auto !important; 
-      padding: 15mm !important; /* Margin dalam kertas A4 */
-      box-shadow: none !important; 
+      margin: 0 !important; 
+      padding: 15mm !important; 
       width: 210mm !important; 
       min-height: 0 !important; 
-      display: block !important; 
+      display: block !important;
+      border: none !important; /* Pastikan tidak ada border yang menambah tinggi */
+      overflow: hidden !important; /* Mencegah bleed 1px yang memicu halaman baru */
     }
 
     /* Table Logic for Repeating Headers/Footers */
@@ -50,8 +51,9 @@
       width: 100% !important; 
       border-collapse: collapse; 
       table-layout: fixed;
-      margin: 0 auto !important;
+      margin: 0 !important; /* Pastikan tabel tidak punya margin-top/bottom */
     }
+    
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
 
@@ -310,12 +312,23 @@ window.openPALDocument = async function(empId, name, title) {
     setTimeout(() => {
       const printArea = document.getElementById('palPrintArea');
       if (printArea) {
-        // A4 Height at 96 DPI is ~1122px
-        const totalPages = Math.ceil(printArea.scrollHeight / 1120) || 1;
+        /**
+         * Penjelasan Perbaikan:
+         * 1. Gunakan 1125 sebagai pembagi (sedikit lebih longgar untuk A4).
+         * 2. Kurangi scrollHeight dengan buffer (misal 10px) sebelum membagi.
+         *    Ini mencegah konten yang "nyaris" 1 halaman tidak dianggap 2 halaman.
+         */
+        const buffer = 15; // pixel toleransi
+        const a4Height = 1122; // Standar pixel A4 96 DPI
+        
+        const totalPages = Math.ceil((printArea.scrollHeight - buffer) / a4Height) || 1;
+        
         const totalElements = document.querySelectorAll('.total-p');
         totalElements.forEach(el => el.textContent = totalPages);
+        
+        // Debugging (opsional): console.log("Height:", printArea.scrollHeight, "Total Pages:", totalPages);
       }
-    }, 200);
+    }, 250);
     // --- END CALCULATION ---
 
   } catch(e) { 
