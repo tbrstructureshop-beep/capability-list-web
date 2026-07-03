@@ -30,7 +30,7 @@
           visibility: visible !important; 
       }
   
-      /* 5. Logic Centering: Menggunakan Flexbox agar pas di tengah preview */
+      /* 5. Logic Centering Flexbox */
       #palDocumentModal {
           position: absolute !important;
           left: 0 !important;
@@ -42,26 +42,33 @@
           overflow: visible !important;
       }
   
-      /* 6. Kontainer Kertas (The Paper) */
+      /* 6. Kontainer Kertas (The Paper) - MERGED & FIXED */
       .pal-doc {
           width: 210mm !important; 
           margin: 0 auto !important; 
-          padding: 15mm !important; /* Jarak aman konten dari tepi kertas */
+          padding: 15mm !important; 
           box-shadow: none !important;
           background: white !important;
-          min-height: 0 !important;
+          
+          /* Kill-switch untuk Blank Page */
           height: auto !important;
+          min-height: 0 !important;
+          overflow: hidden !important; 
+          display: block !important;
+          box-sizing: border-box !important;
+          
           page-break-after: avoid !important; 
           page-break-before: avoid !important;
-          box-sizing: border-box !important;
       }
   
-      /* 7. Logic Tabel: Menggabungkan Repeating Header + Row Integrity */
+      /* 7. Logic Tabel - MERGED & FIXED */
       .layout-table { 
           width: 100% !important; 
           border-collapse: collapse !important; 
           table-layout: fixed !important;
           margin: 0 !important;
+          margin-bottom: 0 !important;
+          border-spacing: 0 !important;
           page-break-inside: auto !important;
       }
       
