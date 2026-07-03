@@ -1,108 +1,84 @@
 <style>
-  /* --- PRINT SETUP A4 PORTRAIT --- */
-  @page { 
-    size: A4 portrait; 
-    margin: 10mm 0mm; /* Reduced vertical margin to prevent spillover */
-  }
+  /* --- PRINT SETUP --- */
+  @page { size: A4 portrait; margin: 15mm; }
 
   @media print {
-    /* Hide EVERYTHING else (Background, Header, Dashboard) */
-    body, html, header, .container, .no-print, .sidebar, .sidebar-overlay { 
+    /* Hide background and other UI */
+    body, html, header, .container, .no-print, .sidebar, .modal-overlay:not(#palDocumentModal) { 
       visibility: hidden !important; 
-      background: none !important; 
     }
-
-    /* Target the Modal Overlay to remove gray background */
+    
     #palDocumentModal { 
       visibility: visible !important; 
       position: absolute !important; 
-      left: 0 !important; 
-      top: 0 !important; 
-      width: 210mm !important; 
+      left: 0; top: 0; width: 100%; 
       background: white !important; 
-      display: block !important; 
-      overflow: visible !important;
     }
 
-    /* Print Area specific styles */
     .pal-doc { 
-      visibility: visible !important;
-      margin: 0 !important; 
-      padding: 15mm !important;
       box-shadow: none !important; 
-      width: 210mm !important; 
-      min-height: 297mm !important; 
-      display: flex !important; 
-      flex-direction: column !important; 
-      border: none !important;
+      margin: 0 !important; 
+      padding: 0 !important;
     }
 
-    /* Ensure all nested children are visible */
-    #palPrintArea, #palPrintArea * { visibility: visible !important; }
-
-    /* Footer Pagination on Paper */
-    .meta-footer-fixed { 
-      position: fixed; 
-      bottom: 10mm; 
-      left: 15mm; 
-      right: 15mm; 
-      display: flex !important; 
-      justify-content: space-between; 
-      font-size: 10px; 
-      border-top: 1px solid #000;
+    /* Fixed Footer for Print - repeats on every page */
+    .pal-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex !important;
+      justify-content: space-between;
+      font-size: 10px;
+      background: white;
       padding-top: 5px;
-      visibility: visible !important;
     }
     
-    /* Auto-increment Page Numbering for CSS Print */
-    .page-counter:after { content: "Page " counter(page); }
+    /* Auto-generate Page Number on Print */
+    .page-number::after {
+      content: "Page " counter(page);
+    }
   }
 
-  /* --- SCREEN VIEW STYLES (Preserved) --- */
+  /* --- SCREEN VIEW --- */
   .pal-doc { 
-    background: white; 
-    width: 210mm; 
-    min-height: 297mm; 
-    padding: 15mm; 
-    margin: 20px auto; 
-    color: #000; 
-    font-family: Arial, sans-serif; 
-    display: flex; 
-    flex-direction: column;
-    box-shadow: 0 0 15px rgba(0,0,0,0.3); 
-    box-sizing: border-box; 
-    position: relative;
+    background: white; width: 210mm; min-height: 297mm; 
+    padding: 15mm; margin: 20px auto; color: #000; 
+    font-family: Arial, sans-serif; display: flex; flex-direction: column;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3); position: relative;
+    box-sizing: border-box;
   }
 
-  /* --- ADDED: Local Loading Spinner for PAL --- */
+  /* Local Loader */
   .pal-loading-overlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.9);
-    display: none; 
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.9); display: none;
+    flex-direction: column; justify-content: center; align-items: center; z-index: 100;
   }
 
-  .logo-container { text-align: center; margin-bottom: 10px; }
-  .logo-img { height: 45px; width: auto; display: block; margin: 0 auto; }
-  .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
-  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
-  .info-table td { padding: 2px 0; }
-  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; flex-grow: 1; table-layout: fixed; }
-  .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2; text-transform: uppercase; font-size: 10px; font-weight: bold; }
-  .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; }
-  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-  .pn-item { display: flex; gap: 5px; line-height: 1.2; }
+  /* Footer styling for Screen */
+  .pal-footer {
+    margin-top: auto; /* Pushes footer to bottom of content */
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    padding-top: 15px;
+    color: #666;
+  }
 
-  .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 20px; table-layout: fixed; break-inside: avoid; }
+  /* ... (Existing Logo, Info Table, Main Table, PN Grid, Sig Table CSS remains the same) ... */
+  .logo-container { text-align: center; margin-bottom: 10px; }
+  .logo-img { height: 45px; }
+  .title-section { text-align: center; font-weight: bold; text-decoration: underline; text-transform: uppercase; margin-bottom: 20px; }
+  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
+  .main-table th, .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; }
+  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .pn-item { display: flex; gap: 5px; }
+  .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 20px; }
   .footer-sig-table td { border: 1px solid black; height: 110px; vertical-align: top; padding: 10px; font-size: 11px; }
   #col_1 { width: 35.59%; } #col_2 { width: 33.68%; } #col_3 { width: 30.73%; }
   .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
-  .meta-footer { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; }
-  .meta-footer-fixed { display: none; }
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; background: rgba(0,0,0,0.85); z-index: 15500; overflow-y: auto;">
@@ -112,14 +88,13 @@
        <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
        <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none; padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 4px;">+ Add Items</button>
      </div>
-     <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
+     <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';">&times;</button>
   </div>
 
   <div id="palPrintArea" class="pal-doc">
-    <!-- Local Loader Inside Document -->
     <div id="palLocalLoader" class="pal-loading-overlay">
       <div class="spinner"></div>
-      <p style="font-weight:700; margin-top:10px; color: var(--primary);">Retrieving Personnel Items...</p>
+      <p style="font-weight:700; margin-top:10px;">Fetching Authorized Items...</p>
     </div>
 
     <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
@@ -154,21 +129,19 @@
         <td id="col_3">
           <div class="sig-inner-flex">
             <div>Approved by<br>SM Structure Workshop</div>
-            <div>( ___________________________ )<br><span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span></div>
+            <div>
+              ( ___________________________ )<br>
+              <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
+            </div>
           </div>
         </td>
       </tr>
     </table>
 
-    <div class="meta-footer no-print">
+    <!-- ONE CONSOLIDATED FOOTER -->
+    <div class="pal-footer">
       <div>Form No.: GMF/Q-364 R1</div>
-      <div id="web_page_counter">Page 1 of 1</div>
-    </div>
-
-    <!-- This is what shows on the paper -->
-    <div class="meta-footer-fixed">
-      <div>Form No.: GMF/Q-364 R1</div>
-      <div class="page-counter"></div>
+      <div class="page-number"></div>
     </div>
   </div>
 </div>
