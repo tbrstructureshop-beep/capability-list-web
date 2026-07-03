@@ -1428,22 +1428,20 @@
     
         // 4. Optimasi Loop Detail (Hanya loop index yang dibutuhkan)
         let detailsHtml = "";
-        [2, 3, 4, 6, 7, 9, 11, 12].forEach(idx => {
+        [2, 3, 8, 4, 6, 7, 9, 11, 12].forEach(idx => {
             const cell = row[idx];
             let displayValue;
             let labelName = colNames[idx];
             let specialStyle = "";
             
             if (idx === 12) {
-              labelName = "STATUS"; // Override label
-              // Use original variables as formatStatus handles its own internal escaping
+              labelName = "STATUS"; 
               displayValue = formatStatus(cell, authName, pn);
-              // Style melebar untuk Status di bagian bawah
               specialStyle = 'style="grid-column: span 3; border-top: 1px solid var(--border); padding-top:12px; margin-top:4px;"';
             } else {
               displayValue = cell || '—';
             }
-    
+        
             detailsHtml += `
               <div class="detail-item" ${specialStyle}>
                 <span class="detail-label">${labelName}</span>
