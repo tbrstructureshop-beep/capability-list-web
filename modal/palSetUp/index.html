@@ -1,123 +1,125 @@
-<style>
-    /* --- 1 & 5. PRINT SETUP A4 PRECISION --- */
-    @page { 
-        size: A4 portrait; 
-        margin: 0; /* Menghilangkan margin default browser */
+<style id="pal-dynamic-style">
+    /* Variabel CSS yang bisa dikontrol via Editor */
+    :root {
+        --pal-margin: 5mm;
+        --pal-font-size: 9px;
+        --pal-title-size: 13px;
+        --pal-table-padding: 4px;
+        --pal-sig-height: 90px;
+        --pal-footer-bottom: 5mm;
+        --pal-row-gap: 1.1;
     }
+
+    @page { size: A4 portrait; margin: 0; }
 
     @media print {
-        /* Hilangkan elemen pengganggu */
-        html, body { 
-            height: 297mm; 
-            overflow: hidden !important; 
-            background: #fff !important; 
-        }
-        
+        html, body { height: 297mm; overflow: hidden !important; background: #fff !important; }
         body * { visibility: hidden !important; }
+        #palDocumentModal, #palDocumentModal * { visibility: visible !important; }
+        #palDocumentModal { position: absolute !important; left: 0 !important; top: 0 !important; width: 210mm !important; height: 297mm !important; background: white !important; display: block !important; overflow: visible !important; }
+        .no-print, .pal-editor-sidebar { display: none !important; }
         
-        /* 1 & 3. Matikan Scroll dan Background Grey */
-        #palDocumentModal, #palDocumentModal * { 
-            visibility: visible !important; 
-        }
-        
-        #palDocumentModal { 
-            position: absolute !important; 
-            left: 0 !important; 
-            top: 0 !important; 
-            width: 210mm !important; 
-            height: 297mm !important;
-            background: white !important; 
-            display: block !important;
-            overflow: visible !important; /* Hilangkan scrollbar saat print */
-        }
-
-        .no-print { display: none !important; }
-        
-        /* 2. Margin 5mm All Sides */
         .pal-page { 
             margin: 0 !important; 
-            padding: 5mm !important; /* Tepat 5mm margin konten dari tepi kertas */
-            width: 210mm !important; 
-            height: 297mm !important;
-            box-shadow: none !important; 
-            page-break-after: always !important;
-            border: none !important;
-            box-sizing: border-box !important;
+            padding: var(--pal-margin) !important; 
+            width: 210mm !important; height: 297mm !important;
+            box-shadow: none !important; page-break-after: always !important;
+            border: none !important; box-sizing: border-box !important;
             position: relative !important;
         }
-
-        /* 4. Footer 5mm dari bawah kertas */
-        .pal-footer {
-            position: absolute !important; 
-            bottom: 5mm !important; 
-            left: 5mm !important; 
-            right: 5mm !important;
-            border-top: 1px solid #000;
-            padding-top: 2px;
-        }
     }
 
-    /* --- SCREEN VIEW STYLES (PREVIEW ONLY) --- */
-    #palDocumentModal {
-        background: #525659;
+    /* --- EDITOR SIDEBAR STYLE --- */
+    .pal-editor-sidebar {
+        position: fixed; left: 0; top: 60px; width: 260px; height: calc(100% - 60px);
+        background: #2c3e50; color: white; padding: 20px; z-index: 17000;
+        font-family: sans-serif; overflow-y: auto; box-shadow: 2px 0 10px rgba(0,0,0,0.3);
     }
+    .pal-editor-sidebar h4 { margin-top: 0; color: #3498db; border-bottom: 1px solid #555; padding-bottom: 10px; }
+    .control-group { margin-bottom: 15px; }
+    .control-group label { display: block; font-size: 11px; margin-bottom: 5px; color: #bdc3c7; }
+    .control-group input { width: 100%; }
+    .btn-copy-css { background: #27ae60; color: white; border: none; padding: 10px; width: 100%; cursor: pointer; border-radius: 4px; font-weight: bold; margin-top: 10px; }
+
+    /* --- SCREEN VIEW STYLES --- */
+    #palDocumentModal { background: #525659; display: flex; }
+    #pal-report-wrapper { margin-left: 260px; flex-grow: 1; }
 
     .pal-page { 
-        background: white; 
-        width: 210mm; 
-        height: 297mm; 
-        padding: 15mm; /* Preview di layar lebih lega */
-        margin: 20px auto; 
-        color: #000; 
-        font-family: Arial, sans-serif; 
-        display: flex; 
-        flex-direction: column;
-        box-shadow: 0 0 15px rgba(0,0,0,0.5); 
-        box-sizing: border-box; 
-        position: relative;
+        background: white; width: 210mm; height: 297mm; 
+        padding: var(--pal-margin); margin: 20px auto; 
+        color: #000; font-family: Arial, sans-serif; 
+        display: flex; flex-direction: column;
+        box-shadow: 0 0 15px rgba(0,0,0,0.5); box-sizing: border-box; position: relative;
     }
 
-    /* Loader Overlay */
-    .pal-loader-overlay {
-        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(255,255,255,0.8); z-index: 100;
-        display: none; flex-direction: column; justify-content: center; align-items: center;
-    }
+    /* Editable highlight */
+    [contenteditable="true"]:hover { background: #fffdec; outline: 1px dashed #3498db; }
 
-    /* UI Components */
     .logo-container { text-align: center; margin-bottom: 8px; }
     .logo-img { height: 40px; width: auto; display: block; margin: 0 auto; }
-    .title-section { text-align: center; font-weight: bold; font-size: 13px; text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; }
+    .title-section { text-align: center; font-weight: bold; font-size: var(--pal-title-size); text-decoration: underline; margin-bottom: 15px; text-transform: uppercase; }
     
-    .info-table { width: 65%; border-collapse: collapse; margin-bottom: 10px; font-size: 10px; border: none !important;}
-    .info-table td { padding: 1px 0; border: none !important; text-transform: uppercase;}
-
+    .info-table { width: 65%; border-collapse: collapse; margin-bottom: 10px; font-size: calc(var(--pal-font-size) + 1px); }
     .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
-    .main-table th { border: 1px solid black; padding: 6px 4px; background: #f2f2f2; text-transform: uppercase; font-size: 9px; font-weight: bold; }
-    .main-table td { border: 1px solid black; padding: 4px 6px; font-size: 9px; vertical-align: top; word-wrap: break-word; line-height: 1.1; }
-
-    .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-    .pn-item { display: flex; gap: 5px; }
+    .main-table th { border: 1px solid black; padding: 6px 4px; background: #f2f2f2; font-size: calc(var(--pal-font-size) - 1px); }
+    .main-table td { border: 1px solid black; padding: var(--pal-table-padding); font-size: var(--pal-font-size); vertical-align: top; line-height: var(--pal-row-gap); }
 
     .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 10px; table-layout: fixed; }
-    .footer-sig-table td { border: 1px solid black; height: 90px; vertical-align: top; padding: 8px; font-size: 10px; }
+    .footer-sig-table td { border: 1px solid black; height: var(--pal-sig-height); vertical-align: top; padding: 8px; font-size: var(--pal-font-size); }
     
     #col_1 { width: 35.59%; } #col_2 { width: 33.68%; } #col_3 { width: 30.73%; }
     .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
 
     .pal-footer {
-        display: flex; justify-content: space-between; font-size: 9px;
-        margin-top: auto; padding-top: 5px;
+        position: absolute; bottom: var(--pal-footer-bottom); left: var(--pal-margin); right: var(--pal-margin);
+        display: flex; justify-content: space-between; font-size: calc(var(--pal-font-size) - 1px);
+        border-top: 1px solid #000; padding-top: 2px;
     }
 
     .dynamic-content { flex-grow: 1; overflow: hidden; }
-    #pal-ghost { position: absolute; visibility: hidden; top: -10000px; width: 200mm; } /* Ghost width mengikuti margin 5mm */
+    #pal-ghost { position: absolute; visibility: hidden; top: -10000px; width: 200mm; }
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500; overflow-y: auto;">
-    <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
-        <div style="display:flex; gap: 12px;">
-            <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print A4 (PDF)</button>
+    
+    <!-- Editor Sidebar -->
+    <div class="pal-editor-sidebar no-print">
+        <h4>Layout Editor</h4>
+        
+        <div class="control-group">
+            <label>Page Margin (mm): <span id="val-margin">5</span></label>
+            <input type="range" min="0" max="25" value="5" oninput="updateLayout('margin', this.value)">
+        </div>
+
+        <div class="control-group">
+            <label>Main Font Size (px): <span id="val-font">9</span></label>
+            <input type="range" min="6" max="14" value="9" oninput="updateLayout('font', this.value)">
+        </div>
+
+        <div class="control-group">
+            <label>Table Cell Padding (px): <span id="val-padding">4</span></label>
+            <input type="range" min="0" max="10" value="4" oninput="updateLayout('padding', this.value)">
+        </div>
+
+        <div class="control-group">
+            <label>Signature Height (px): <span id="val-sig">90</span></label>
+            <input type="range" min="50" max="150" value="90" oninput="updateLayout('sig', this.value)">
+        </div>
+
+        <div class="control-group">
+            <label>Footer Distance (mm): <span id="val-footer">5</span></label>
+            <input type="range" min="0" max="20" value="5" oninput="updateLayout('footer', this.value)">
+        </div>
+
+        <button class="btn-copy-css" onclick="copyFinalCSS()">Copy CSS for Production</button>
+        <p style="font-size: 10px; color: #95a5a6; margin-top: 20px;">*Teks Nama & Judul di kertas bisa diklik langsung untuk diedit.</p>
+    </div>
+
+    <!-- Toolbar Atas -->
+    <div class="no-print" style="position: fixed; top: 0; left: 0; width: 100%; background: #323639; padding: 12px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
+        <div style="display:flex; gap: 12px; margin-left: 260px;">
+            <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 16px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px;">Print PDF</button>
             <button class="btn" onclick="openBulkAddModal()" style="background:#fff; color:#333; border:none; padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 4px;">+ Add Items</button>
         </div>
         <button class="close-x" onclick="closePALModal()" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
@@ -128,45 +130,35 @@
 </div>
 
 <script>
+// Logic Management
 const PALEngine = {
-    // 3. Kalibrasi Tinggi Maksimal (mm ke px) untuk mencegah overflow ke Page 2 abu-abu
-    // A4 297mm - 10mm (margin v) - Header/Info (~70mm) - Footer (~15mm) = ~200mm usable
-    maxHeight: 820, 
-    currentEmp: null,
+    maxHeight: 820,
+    currentData: [],
 
     async init(empId, name, title) {
         this.currentEmp = { id: empId, name: name, title: title };
         window.currentPalEmpId = empId;
         
-        const wrapper = document.getElementById('pal-report-wrapper');
-        wrapper.innerHTML = `
-            <div class="pal-loader-overlay" style="display:flex">
-                <div class="spinner"></div>
-                <div style="margin-top:15px; font-weight:bold; color:#3c92a6">Formatting Documents...</div>
-            </div>`;
+        document.getElementById('pal-report-wrapper').innerHTML = `<div style="color:white; padding:100px; text-align:center;">Loading Data...</div>`;
         
         try {
             const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
             const data = await res.json();
-            if(!data.success) throw new Error(data.error);
-
-            const aggregated = data.items.reduce((acc, item) => {
+            
+            this.currentData = data.items.reduce((acc, item) => {
                 const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
                 if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
                 else if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
                 return acc;
             }, {});
 
-            this.render(Object.values(aggregated));
-        } catch(e) {
-            wrapper.innerHTML = `<div style="color:white; text-align:center; padding:50px;">Error: ${e.message}</div>`;
-        }
+            this.render(Object.values(this.currentData));
+        } catch(e) { console.error(e); }
     },
 
     render(items) {
         const wrapper = document.getElementById('pal-report-wrapper');
         wrapper.innerHTML = '';
-
         let currentPage = this.createNewPage();
         let contentDiv = currentPage.querySelector('.dynamic-content');
         let currentH = 0;
@@ -174,7 +166,7 @@ const PALEngine = {
         let tableHtml = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="80">ATA</th><th width="70">AUTH</th></tr></thead><tbody>`;
         contentDiv.insertAdjacentHTML('beforeend', tableHtml);
         let tbody = contentDiv.querySelector('tbody');
-        currentH += 40;
+        currentH += 45;
 
         items.forEach((group, idx) => {
             const row = this.createRow(group, idx + 1);
@@ -184,11 +176,9 @@ const PALEngine = {
                 contentDiv.insertAdjacentHTML('beforeend', `</tbody></table>`);
                 currentPage = this.createNewPage();
                 contentDiv = currentPage.querySelector('.dynamic-content');
-                
-                const contHeader = `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION (CONT.)</th><th>PART NUMBER</th><th width="80">ATA</th><th width="70">AUTH</th></tr></thead><tbody>`;
-                contentDiv.insertAdjacentHTML('beforeend', contHeader);
+                contentDiv.insertAdjacentHTML('beforeend', `<table class="main-table"><thead><tr><th width="35">No.</th><th width="180">DESCRIPTION (CONT.)</th><th>PART NUMBER</th><th width="80">ATA</th><th width="70">AUTH</th></tr></thead><tbody>`);
                 tbody = contentDiv.querySelector('tbody');
-                currentH = 45;
+                currentH = 50;
             }
             tbody.appendChild(row);
             currentH += rowH;
@@ -198,9 +188,7 @@ const PALEngine = {
         this.addSignature(contentDiv, currentH);
 
         const totalPages = wrapper.querySelectorAll('.pal-page').length;
-        wrapper.querySelectorAll('.page-num-label').forEach((el, i) => {
-            el.innerText = `Page ${i + 1} of ${totalPages}`;
-        });
+        wrapper.querySelectorAll('.page-num-label').forEach((el, i) => { el.innerText = `Page ${i + 1} of ${totalPages}`; });
     },
 
     createNewPage() {
@@ -208,15 +196,15 @@ const PALEngine = {
         p.className = 'pal-page';
         p.innerHTML = `
             <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
-            <div class="title-section">PERSONAL ABILITY LIST</div>
+            <div class="title-section" contenteditable="true">PERSONAL ABILITY LIST</div>
             <table class="info-table">
-                <tr><td width="150">Name</td><td width="10">:</td><td><strong>${this.currentEmp.name}</strong></td></tr>
-                <tr><td>Personnel Number</td><td>:</td><td><strong>${this.currentEmp.id}</strong></td></tr>
-                <tr><td>Present Title</td><td>:</td><td><span>${this.currentEmp.title}</span></td></tr>
+                <tr><td width="150">Name</td><td width="10">:</td><td contenteditable="true"><strong>${this.currentEmp.name}</strong></td></tr>
+                <tr><td>Personnel Number</td><td>:</td><td contenteditable="true"><strong>${this.currentEmp.id}</strong></td></tr>
+                <tr><td>Present Title</td><td>:</td><td contenteditable="true"><span>${this.currentEmp.title}</span></td></tr>
             </table>
             <div class="dynamic-content"></div>
             <div class="pal-footer">
-                <div>Form No.: GMF/Q-364 R1</div>
+                <div contenteditable="true">Form No.: GMF/Q-364 R1</div>
                 <div class="page-num-label"></div>
             </div>`;
         document.getElementById('pal-report-wrapper').appendChild(p);
@@ -226,62 +214,61 @@ const PALEngine = {
     createRow(group, no) {
         const tr = document.createElement('tr');
         const mid = Math.ceil(group.pns.length / 2);
-        let pnHtml = `<div class="pn-grid"><div>` + 
-            group.pns.slice(0, mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
-            `</div><div>` + 
-            group.pns.slice(mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + 
-            `</div></div>`;
-
-        tr.innerHTML = `<td align="center">${no}</td><td><b>${group.desc.toUpperCase()}</b></td><td>${pnHtml}</td><td align="center"><b>${group.ata}</b></td><td align="center">${group.auth}</td>`;
+        let pnHtml = `<div class="pn-grid"><div>` + group.pns.slice(0, mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + `</div><div>` + group.pns.slice(mid).map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('') + `</div></div>`;
+        tr.innerHTML = `<td align="center">${no}</td><td contenteditable="true"><b>${group.desc.toUpperCase()}</b></td><td contenteditable="true">${pnHtml}</td><td align="center" contenteditable="true"><b>${group.ata}</b></td><td align="center" contenteditable="true">${group.auth}</td>`;
         return tr;
     },
 
     addSignature(container, h) {
-        const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
-        const sigHtml = `
-            <table class="footer-sig-table">
-                <tr>
-                    <td id="col_1">Date : <br><br><strong>${today}</strong></td>
-                    <td id="col_2"></td>
-                    <td id="col_3">
-                        <div class="sig-inner-flex">
-                            <div>Approved by<br>SM Structure Workshop</div>
-                            <div>( ___________________________ )<br><span style="font-size:9px">Name & Signature</span></div>
-                        </div>
-                    </td>
-                </tr>
-            </table>`;
-        
-        const sigH = this.measureHtml(sigHtml);
-        if (h + sigH > this.maxHeight) {
-            const p = this.createNewPage();
-            p.querySelector('.dynamic-content').insertAdjacentHTML('beforeend', sigHtml);
+        const sigHtml = `<table class="footer-sig-table"><tr><td id="col_1">Date : <br><br><strong>${new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})}</strong></td><td id="col_2"></td><td id="col_3"><div class="sig-inner-flex"><div>Approved by<br>SM Structure Workshop</div><div>( ___________________________ )<br><span style="font-size:9px">Name & Signature</span></div></div></td></tr></table>`;
+        if (h + this.measureHtml(sigHtml) > this.maxHeight) {
+            this.createNewPage().querySelector('.dynamic-content').insertAdjacentHTML('beforeend', sigHtml);
         } else {
             container.insertAdjacentHTML('beforeend', sigHtml);
         }
     },
 
-    measureHtml(html) {
-        const g = document.getElementById('pal-ghost');
-        g.innerHTML = html;
-        return g.offsetHeight;
-    },
+    measureHtml(html) { const g = document.getElementById('pal-ghost'); g.innerHTML = html; return g.offsetHeight; },
+    measureElement(el) { const g = document.getElementById('pal-ghost'); g.innerHTML = `<table class="main-table">${el.outerHTML}</table>`; return g.offsetHeight; }
+};
 
-    measureElement(el) {
-        const g = document.getElementById('pal-ghost');
-        g.innerHTML = `<table class="main-table">${el.outerHTML}</table>`;
-        return g.offsetHeight;
+// Editor Logic
+function updateLayout(type, val) {
+    const root = document.documentElement;
+    document.getElementById(`val-${type}`).innerText = val;
+    
+    switch(type) {
+        case 'margin': root.style.setProperty('--pal-margin', val + 'mm'); break;
+        case 'font': root.style.setProperty('--pal-font-size', val + 'px'); break;
+        case 'padding': root.style.setProperty('--pal-table-padding', val + 'px'); break;
+        case 'sig': root.style.setProperty('--pal-sig-height', val + 'px'); break;
+        case 'footer': root.style.setProperty('--pal-footer-bottom', val + 'mm'); break;
     }
-};
 
-window.openPALDocument = function(empId, name, title) {
-    document.getElementById('palDocumentModal').style.display = 'block';
-    document.body.style.overflow = 'hidden';
-    PALEngine.init(empId, name, title);
-};
+    // Debounce re-rendering to prevent lag
+    clearTimeout(window.reRenderTimer);
+    window.reRenderTimer = setTimeout(() => {
+        // Adjust maxHeight based on new margin and font size
+        PALEngine.maxHeight = 850 - (val * 4); // Simple heuristics
+        PALEngine.render(Object.values(PALEngine.currentData));
+    }, 500);
+}
 
-window.closePALModal = function() {
-    document.getElementById('palDocumentModal').style.display = 'none';
-    document.body.style.overflow = 'auto';
-};
+function copyFinalCSS() {
+    const root = document.documentElement;
+    const css = `
+/* PRODUCTION CSS FOR PAL */
+:root {
+    --pal-margin: ${getComputedStyle(root).getPropertyValue('--pal-margin')};
+    --pal-font-size: ${getComputedStyle(root).getPropertyValue('--pal-font-size')};
+    --pal-table-padding: ${getComputedStyle(root).getPropertyValue('--pal-table-padding')};
+    --pal-sig-height: ${getComputedStyle(root).getPropertyValue('--pal-sig-height')};
+    --pal-footer-bottom: ${getComputedStyle(root).getPropertyValue('--pal-footer-bottom')};
+}`;
+    navigator.clipboard.writeText(css);
+    Swal.fire("Copied!", "Production CSS has been copied to clipboard.", "success");
+}
+
+window.openPALDocument = (id, n, t) => { document.getElementById('palDocumentModal').style.display = 'block'; PALEngine.init(id, n, t); };
+window.closePALModal = () => { document.getElementById('palDocumentModal').style.display = 'none'; };
 </script>
