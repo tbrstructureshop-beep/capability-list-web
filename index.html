@@ -936,6 +936,8 @@
     let activeFilters = {};    // <--- TAMBAHKAN INI (State untuk Multi-Select)
     let actionMode = false;
     let currentView = "database"; 
+    let currentPalEmpId = null; 
+    let palModuleLoaded = false; 
 
 
      async function getLocalCache() {
@@ -971,7 +973,6 @@
     async function switchView(view) {
       currentView = view;
       currentPage = 1; 
-      
       showLoader(); 
     
       const title = document.querySelector("h1");
@@ -979,11 +980,10 @@
       const subSidebar = document.getElementById("submissionSidebarActions");
       const filterRow = document.getElementById("filterRow");
       
-      // Guard: Safe selector untuk bulkSidebar
       const authTag = document.querySelector(".authority-tag");
       const bulkSidebar = authTag ? authTag.parentElement : null;
     
-      // --- LOGIC: Filter & Search Reset (No Ruin) ---
+      // --- LOGIC: Filter & Search Reset ---
       activeFilters = {}; 
       if (filterRow) {
         filterRow.innerHTML = ""; 
@@ -996,111 +996,99 @@
       if (view === "submissions") {
         if (title) title.textContent = "Submission Tracking";
         if (searchInput) searchInput.placeholder = "Search by Part Number, Name, or ID...";
-        
-        // Sidebar Guard Logic
         if (subSidebar) subSidebar.style.display = "block";
         if (bulkSidebar) bulkSidebar.style.display = "none";
-    
-        // --- LOGIC: Inject Submission Filter Headers ---
-        const subHeaders = ["ID", "Date", "User", "Unit", "Auth", "Category", "Rating", "P/N", "Name", "Mfr", "ATA", "Shop", "A/C", "Levels", "Files", "Status"];
-        if (typeof buildFilterInputs === "function") {
-          buildFilterInputs(subHeaders);
-        }
-    
-        if (typeof loadSubmissions !== "function") {
-          await injectSubmissionModule();
-        }
         
+        const subHeaders = ["ID", "Date", "User", "Unit", "Auth", "Category", "Rating", "P/N", "Name", "Mfr", "ATA", "Shop", "A/C", "Levels", "Files", "Status"];
+        buildFilterInputs(subHeaders);
+        
+        if (typeof loadSubmissions !== "function") await injectSubmissionModule();
         loadSubmissions(); 
         
       } else if (view === "personnel") {
         if (title) title.textContent = "Personnel Ability List Dashboard";
         if (searchInput) searchInput.placeholder = "Search by Employee Name, ID, or Unit...";
-        
-        // Sidebar Guard Logic
         if (subSidebar) subSidebar.style.display = "none";
         if (bulkSidebar) bulkSidebar.style.display = "none";
 
-        // --- NEW: Inject PAL Filter Headers ---
         const palHeaders = ["Employee ID", "Full Name", "Unit", "Job Title", "Stamp No"];
-        if (typeof buildFilterInputs === "function") {
-          buildFilterInputs(palHeaders);
-        }
+        buildFilterInputs(palHeaders);
     
-        // Inject Personnel logic if not exists
+        // 1. Inject Print Modal Structure (Table thead/tfoot)
+        if (!palModuleLoaded) {
+          await injectPALModule();
+        }
+        
+        // 2. Inject Dashboard Card logic
         if (typeof loadPersonnelDashboard !== "function") {
-          await injectPersonnelModule();
+          await injectPersonnelModule(); 
         }
         
         loadPersonnelDashboard();
     
       } else {
-        // DEFAULT: Main Database (database)
+        // DEFAULT: Main Database
         if (title) title.textContent = "Enterprise Capability Web";
         if (searchInput) searchInput.placeholder = "Search components, part numbers, or descriptions...";
-        
-        // Sidebar Guard Logic
         if (subSidebar) subSidebar.style.display = "none";
         if (bulkSidebar) bulkSidebar.style.display = "block";
         
-        // --- LOGIC: Re-build Main Database Filters ---
-        if (typeof colNames !== 'undefined' && colNames.length > 0 && typeof buildFilterInputs === "function") {
+        if (typeof colNames !== 'undefined' && colNames.length > 0) {
           buildFilterInputs(colNames);
         }
-        
         refreshData(true);
       }
     }
     
     async function injectSubmissionModule() {
-      // Gunakan relative path yang benar untuk Vercel
       const targetPath = "application/dashboard/index.html"; 
       try {
         const response = await fetch(targetPath);
-        if (!response.ok) throw new Error("Module Submission tidak ditemukan");
         const html = await response.text();
-        
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = html;
-        
         const scripts = tempDiv.querySelectorAll("script");
-        scripts.forEach(oldScript => {
-          const newScript = document.createElement("script");
-          newScript.text = oldScript.innerHTML;
-          document.body.appendChild(newScript);
+        scripts.forEach(s => {
+          const newS = document.createElement("script");
+          newS.text = s.innerHTML;
+          document.body.appendChild(newS);
         });
-        console.log("Submission Module Injected.");
-      } catch (err) {
-        console.error("Injection Error:", err);
-      }
+      } catch (err) { console.error("Submission Error:", err); }
     }
 
-    /**
-     * NEW: injectPersonnelModule
-     * Loads the logic for Personnel Ability List cards and modals.
-     */
+    async function injectPALModule() {
+      const targetPath = "modal/palSetUp/index.html"; 
+      try {
+        const response = await fetch(targetPath);
+        const html = await response.text();
+        const container = document.createElement("div");
+        container.id = "palModalContainer";
+        container.innerHTML = html;
+        document.body.appendChild(container);
+        const scripts = container.querySelectorAll("script");
+        scripts.forEach(s => {
+          const newS = document.createElement("script");
+          newS.text = s.innerHTML;
+          document.body.appendChild(newS);
+        });
+        palModuleLoaded = true;
+      } catch (err) { console.error("PAL Modal Error:", err); }
+    }
+
     async function injectPersonnelModule() {
       const targetPath = "application/PersonelAbilityList/index.html"; 
       try {
         const response = await fetch(targetPath);
-        if (!response.ok) throw new Error("Personnel Module not found");
         const html = await response.text();
-        
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = html;
-        
-        // Pastikan script di dalam module dieksekusi
         const scripts = tempDiv.querySelectorAll("script");
-        scripts.forEach(oldScript => {
-          const newScript = document.createElement("script");
-          newScript.text = oldScript.innerHTML;
-          document.body.appendChild(newScript);
+        scripts.forEach(s => {
+          const newS = document.createElement("script");
+          newS.text = s.innerHTML;
+          document.body.appendChild(newS);
         });
-        console.log("Personnel Module Injected.");
-      } catch (err) {
-        console.error("PAL Injection Error:", err);
-        Swal.fire("Error", "Gagal memuat modul Personnel.", "error");
-      }
+      } catch (err) { console.error("PAL Dashboard Error:", err); }
     }
 
     // 1. Tambahkan Bridge Function agar tombol Manage di kartu bisa memanggil modal
