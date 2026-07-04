@@ -26,7 +26,7 @@
 
   .bulk-advice-list { max-height: 400px; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
-  /* --- STYLE UNTUK ITEM YANG SUDAH DIMILIKI --- */
+  /* --- STYLE UNTUK ITEM YANG SUDAH DIMILIKI (DISABLED & GRAYSCALE) --- */
   .bulk-item {
     padding: 12px 16px; border-radius: 14px; cursor: pointer;
     display: grid; grid-template-columns: 35px 1fr auto; align-items: center;
@@ -35,13 +35,16 @@
   .bulk-item:hover:not(.already-owned) { background: var(--bg); }
   .bulk-item.selected { background: var(--primary-light); border-color: var(--primary); }
 
+  /* LOGIKA DISABLE & GRAYSCALE */
   .bulk-item.already-owned {
-    opacity: 0.6;
+    filter: grayscale(100%); /* Efek Abu-abu */
+    opacity: 0.5;
     background: #f1f5f9 !important;
     cursor: not-allowed !important;
-    pointer-events: none; /* MATIKAN INTERAKSI */
+    pointer-events: none; /* Klik mati */
     border-left: 4px solid #94a3b8;
   }
+  
   .bulk-item.already-owned .bulk-pn { color: #64748b; text-decoration: line-through; }
 
   .bulk-pn { font-weight: 800; color: var(--primary); font-size: 14px; }
@@ -49,7 +52,7 @@
   .bulk-meta { font-size: 10px; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
   
   .already-badge {
-    background: #94a3b8; color: white; padding: 2px 6px; border-radius: 4px;
+    background: #475569; color: white; padding: 2px 6px; border-radius: 4px;
     font-size: 9px; font-weight: 800; margin-left: 5px;
   }
 
@@ -63,7 +66,7 @@
          <label style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase;">Bulk Add Authorized Parts</label>
          <button onclick="closeBulkAddModal()" style="border:none; background:none; cursor:pointer; font-size:24px;">&times;</button>
       </div>
-      <input type="text" id="bulkSearchInput" placeholder="Search Part Number atau Description..." oninput="updateBulkAdvice(this.value)">
+      <input type="text" id="bulkSearchInput" placeholder="Masukkan P/N atau Nama Part..." oninput="updateBulkAdvice(this.value)">
     </div>
 
     <div id="selectionBasket" class="selection-basket" style="display:none;"></div>
@@ -79,16 +82,24 @@
 
 <script>
   let selectedItems = new Map(); 
-  let employeeOwnedSet = new Set(); // Key: "AUTHORITY|PNCLEAN"
+  let employeeOwnedSet = new Set(); 
 
   /**
-   * 1. SYNC DATA: Ambil apa yang sudah dimiliki employee
+   * Helper: Normalisasi String agar deteksi akurat
+   * Contoh: "642-3801-507" jadi "6423801507"
+   */
+  function normalize(str) {
+    return String(str || "").replace(/[^A-Z0-9]/gi, '').toUpperCase();
+  }
+
+  /**
+   * 1. SYNC: Ambil data milik Staff secara lokal
    */
   window.startBulkAddProcess = async function() {
     const overlay = document.getElementById('bulkAddModalOverlay');
     overlay.style.display = 'flex';
     document.getElementById('bulkSearchInput').value = '';
-    document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; padding:20px;">Checking current authorized list...</p>';
+    document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; padding:20px;">Checking authorization records...</p>';
     
     selectedItems.clear();
     employeeOwnedSet.clear();
@@ -97,45 +108,46 @@
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     
     try {
+      // Ambil list Item yang SUDAH dimiliki staff ini
       const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
       const result = await res.json();
       
       if(result.success) {
         result.items.forEach(item => {
           const auth = item.auth.toUpperCase().trim();
-          // Pecah P/N karena di sheet Authorized kolom Part Number isinya bisa rombongan (;)
-          const pns = String(item.pn).split(/[;,\n\r]+/);
+          // Pecah P/N jika kolom P/N berisi banyak part (pemisah ;, \n, dll)
+          const pns = String(item.pn).split(/[;,\n\r\t]+/);
           pns.forEach(p => {
-            const cleanP = p.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+            const cleanP = normalize(p);
             if(cleanP) employeeOwnedSet.add(`${auth}|${cleanP}`);
           });
         });
       }
-      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; color:var(--text-light); padding:20px;">Ready. Start searching...</p>';
+      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; color:var(--text-light); padding:20px;">Ready. Type to search...</p>';
     } catch(e) {
       console.error(e);
-      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="color:red; text-align:center;">Failed to sync data.</p>';
+      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="color:red; text-align:center;">Sync Error.</p>';
     }
   };
 
   /**
-   * 2. LOGIKA SEARCH & FILTER: Bandingkan Database vs OwnedSet
+   * 2. LOGIKA SEARCH & DISABLE: Bandingkan Keyword vs List Lokal
    */
   function updateBulkAdvice(query) {
     const container = document.getElementById('bulkAdviceContainer');
     if(!query || query.length < 2) { container.innerHTML = ''; return; }
 
-    const q = query.toLowerCase().replace(/[^a-z0-9]/g, ''); 
+    const q = normalize(query); 
     
-    // Filter dari Master Data 'rawData' (global variable di index.html utama)
+    // Filter dari Master Data Capability 'rawData'
     const matches = rawData.filter(row => {
-      const pnDB = String(row[5]).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const pnDB = normalize(row[5]);
       const nameDB = String(row[6]).toLowerCase();
-      return pnDB.includes(q) || nameDB.includes(q);
+      return pnDB.includes(q) || nameDB.includes(query.toLowerCase());
     }).slice(0, 30);
 
     if(matches.length === 0) {
-      container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-light);">No items found in database.</p>';
+      container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-light);">No data found.</p>';
       return;
     }
 
@@ -143,20 +155,21 @@
       const authDB = String(row[1]).trim().toUpperCase();
       const pnFullDB = String(row[5]);
       
-      // LOGIKA VALIDASI: Pecah P/N di Database baris ini (siapa tau dia juga rombongan)
-      const pnsInRow = pnFullDB.split(/[;,\n\r]+/);
+      // LOGIKA PENGECEKAN: Pecah P/N di Database baris ini
+      const pnsInRow = pnFullDB.split(/[;,\n\r\t]+/);
       let isOwned = false;
 
+      // Cek satu per satu apakah ada yang sudah masuk di Set kita
       for (let p of pnsInRow) {
-        const cleanP = p.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+        const cleanP = normalize(p);
         if (employeeOwnedSet.has(`${authDB}|${cleanP}`)) {
           isOwned = true;
-          break; // Jika salah satu saja P/N di baris ini sudah dimiliki, tandai baris ini Owned
+          break; 
         }
       }
 
-      // ID Unik untuk Basket (P/N pertama + Auth)
-      const firstPnClean = pnsInRow[0].replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      // ID Unik untuk penampungan (Key Seleksi)
+      const firstPnClean = normalize(pnsInRow[0]);
       const itemKey = `${authDB}|${firstPnClean}`;
       const isSelected = selectedItems.has(itemKey);
 
@@ -166,7 +179,7 @@
           
           <div style="display:flex; align-items:center; justify-content:center;">
              ${isOwned ? 
-               `<svg width="20" height="20" viewBox="0 0 24 24" fill="#94a3b8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : 
+               `<svg width="20" height="20" viewBox="0 0 24 24" fill="#64748b"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : 
                `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`
              }
           </div>
@@ -186,7 +199,7 @@
   }
 
   function toggleBulkItem(auth, pn, desc, ata) {
-    const firstPnClean = pn.split(/[;,\n\r]+/)[0].replace(/[^A-Z0-9]/gi, '').toUpperCase();
+    const firstPnClean = normalize(pn.split(/[;,\n\r\t]+/)[0]);
     const itemKey = `${auth.toUpperCase()}|${firstPnClean}`; 
     
     if(selectedItems.has(itemKey)) { 
@@ -201,12 +214,19 @@
   function updateBasketUI() {
     const basket = document.getElementById('selectionBasket');
     const saveBtn = document.getElementById('btnSaveBulk');
-    if(selectedItems.size === 0) { basket.style.display = 'none'; saveBtn.disabled = true; saveBtn.textContent = "Save Selection (0)"; return; }
+    if(selectedItems.size === 0) { 
+      basket.style.display = 'none'; 
+      saveBtn.disabled = true; 
+      saveBtn.textContent = "Save Selection (0)"; 
+      return; 
+    }
 
-    basket.style.display = 'flex'; saveBtn.disabled = false; saveBtn.textContent = `Save Selection (${selectedItems.size})`;
+    basket.style.display = 'flex'; 
+    saveBtn.disabled = false; 
+    saveBtn.textContent = `Save Selection (${selectedItems.size})`;
     basket.innerHTML = Array.from(selectedItems.values()).map(item => `
       <div class="basket-tag">
-        <small>${item.authority}</small> ${item.pn.substring(0,10)}... 
+        <small>${item.authority}</small> ${item.pn.substring(0,12)}.. 
         <span style="cursor:pointer; color:#ef4444; font-weight:bold;" onclick="toggleBulkItem('${item.authority}','${item.pn.replace(/'/g, "\\'")}','','')">&times;</span>
       </div>`).join('');
   }
@@ -215,18 +235,24 @@
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
     
-    Swal.fire({ title: 'Saving...', text: `Adding ${itemsArray.length} items to Staff ID ${empId}`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: 'Saving...', text: `Adding ${itemsArray.length} items`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
-      const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) });
+      const res = await fetch(GAS_API_URL, { 
+        method: "POST", 
+        body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) 
+      });
       const result = await res.json();
       if(result.success) {
-        Swal.fire({ icon: 'success', title: 'Success', timer: 1500, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Data Saved', timer: 1500, showConfirmButton: false });
         closeBulkAddModal();
+        // Refresh PAL
         if (typeof openPALDocument === 'function') openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent);
       } else { throw new Error(result.error); }
     } catch(e) { Swal.fire('Error', e.message, 'error'); }
   }
 
-  function closeBulkAddModal() { document.getElementById('bulkAddModalOverlay').style.display = 'none'; }
+  function closeBulkAddModal() { 
+    document.getElementById('bulkAddModalOverlay').style.display = 'none'; 
+  }
 </script>
