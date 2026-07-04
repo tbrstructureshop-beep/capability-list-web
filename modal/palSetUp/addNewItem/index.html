@@ -1,106 +1,74 @@
-<!-- 
-  MODAL: Bulk Add Authorized Parts
-  Path: modal/palSetUp/addNewItem/index.html
--->
-
 <style>
-  /* --- STYLING MODAL BULK ADD (ROOT COMPATIBLE) --- */
+  /* --- STYLING MODAL BULK ADD --- */
   .bulk-add-card {
     background: var(--card-bg);
     width: 95%; max-width: 550px; border-radius: 20px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
     display: flex; flex-direction: column; overflow: hidden;
-    animation: bulkSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes bulkSlideIn { 
-    from { opacity: 0; transform: translateY(20px) scale(0.98); } 
-    to { opacity: 1; transform: translateY(0) scale(1); } 
   }
 
   .bulk-search-box { padding: 24px; border-bottom: 1px solid var(--border); background: #f9fafb; }
   .bulk-search-box input {
     width: 100%; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border);
-    outline: none; font-size: 14px; transition: all 0.2s; background: var(--card-bg); color: var(--text-main);
+    outline: none; font-size: 14px; background: var(--card-bg); color: var(--text-main);
   }
-  .bulk-search-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1); }
 
   .selection-basket {
     padding: 12px 20px; background: var(--primary-light); border-bottom: 1px solid var(--border);
-    display: flex; flex-wrap: wrap; gap: 8px; max-height: 120px; overflow-y: auto;
+    display: flex; flex-wrap: wrap; gap: 8px; max-height: 100px; overflow-y: auto;
   }
 
   .basket-tag {
     background: var(--card-bg); border: 1px solid var(--primary); color: var(--primary);
-    padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
-    display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm);
+    padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
   }
-  .basket-tag span { cursor: pointer; color: #ef4444; font-size: 16px; font-weight: bold; line-height: 1; }
 
-  .bulk-advice-list { max-height: 400px; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 6px; background: var(--card-bg); }
+  .bulk-advice-list { max-height: 400px; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
+  /* --- STYLE UNTUK ITEM YANG SUDAH DIMILIKI --- */
   .bulk-item {
     padding: 12px 16px; border-radius: 14px; cursor: pointer;
     display: grid; grid-template-columns: 35px 1fr auto; align-items: center;
     border: 1px solid transparent; transition: 0.2s;
   }
-  .bulk-item:hover:not(.already-owned) { background: var(--bg); transform: translateX(4px); }
+  .bulk-item:hover:not(.already-owned) { background: var(--bg); }
   .bulk-item.selected { background: var(--primary-light); border-color: var(--primary); }
 
-  /* --- LOGIKA FREEZE / ALREADY OWNED (GRAYSCALE) --- */
   .bulk-item.already-owned {
-    opacity: 0.6 !important;
-    background: #f8fafc !important; /* Biru abu-abu sangat muda */
+    opacity: 0.6;
+    background: #f1f5f9 !important;
     cursor: not-allowed !important;
-    border-left: 4px solid #94a3b8 !important;
-    pointer-events: none; /* Mematikan semua interaksi klik */
+    pointer-events: none; /* MATIKAN INTERAKSI */
+    border-left: 4px solid #94a3b8;
   }
+  .bulk-item.already-owned .bulk-pn { color: #64748b; text-decoration: line-through; }
 
-  .bulk-item.already-owned .bulk-pn {
-    color: #64748b !important;
-    text-decoration: line-through;
-  }
+  .bulk-pn { font-weight: 800; color: var(--primary); font-size: 14px; }
+  .bulk-desc { font-size: 12px; color: var(--text-main); font-weight: 600; }
+  .bulk-meta { font-size: 10px; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
   
   .already-badge {
-    background: #94a3b8 !important;
-    color: white !important;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 9px;
-    margin-left: 5px;
-    font-weight: 800;
+    background: #94a3b8; color: white; padding: 2px 6px; border-radius: 4px;
+    font-size: 9px; font-weight: 800; margin-left: 5px;
   }
 
-  .bulk-info { display: flex; flex-direction: column; padding-left: 12px; overflow: hidden; }
-  .bulk-pn { font-weight: 800; color: var(--primary); font-size: 14px; }
-  .bulk-desc { font-size: 12px; color: var(--text-main); font-weight: 600; line-height: 1.3; margin: 2px 0; }
-  .bulk-meta { font-size: 10px; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
-
-  .bulk-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg); }
-  .bulk-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); }
-  .bulk-loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; gap: 15px; color: var(--text-light); }
+  .bulk-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
 </style>
 
 <div id="bulkAddModalOverlay" class="modal-overlay" style="display:none; z-index: 17000; justify-content: center; align-items: center;">
   <div class="bulk-add-card">
     <div class="bulk-search-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-         <label style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing: 0.05em;">Bulk Add Authorized Parts</label>
-         <button onclick="closeBulkAddModal()" style="border:none; background:none; cursor:pointer; font-size:24px; color:var(--text-light);">&times;</button>
+         <label style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase;">Bulk Add Authorized Parts</label>
+         <button onclick="closeBulkAddModal()" style="border:none; background:none; cursor:pointer; font-size:24px;">&times;</button>
       </div>
-      <input type="text" id="bulkSearchInput" placeholder="Search by P/N, Name, or ATA..." oninput="updateBulkAdvice(this.value)">
+      <input type="text" id="bulkSearchInput" placeholder="Search Part Number atau Description..." oninput="updateBulkAdvice(this.value)">
     </div>
 
-    <!-- Area Basket: Menampung yang akan ditambahkan -->
     <div id="selectionBasket" class="selection-basket" style="display:none;"></div>
     
-    <!-- Area List: Menampilkan hasil pencarian dari Database -->
-    <div id="bulkAdviceContainer" class="bulk-advice-list">
-       <div class="bulk-loading-state">
-         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-         <p>Type at least 2 characters to search...</p>
-       </div>
-    </div>
+    <div id="bulkAdviceContainer" class="bulk-advice-list"></div>
 
     <div class="bulk-footer">
       <button class="btn" onclick="closeBulkAddModal()">Cancel</button>
@@ -111,23 +79,19 @@
 
 <script>
   let selectedItems = new Map(); 
-  let employeeOwnedSet = new Set(); // Key format: "AUTH|PNCLEAN"
+  let employeeOwnedSet = new Set(); // Key: "AUTHORITY|PNCLEAN"
 
   /**
-   * 1. START PROCESS & SYNC
-   * Mengambil data yang sudah dimiliki staff dan menyimpannya ke dalam Set.
+   * 1. SYNC DATA: Ambil apa yang sudah dimiliki employee
    */
   window.startBulkAddProcess = async function() {
     const overlay = document.getElementById('bulkAddModalOverlay');
-    if (!overlay) return;
-
     overlay.style.display = 'flex';
     document.getElementById('bulkSearchInput').value = '';
-    document.getElementById('bulkSearchInput').focus();
-    document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Syncing staff authorized records...</p></div>';
+    document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; padding:20px;">Checking current authorized list...</p>';
     
     selectedItems.clear();
-    employeeOwnedSet.clear(); 
+    employeeOwnedSet.clear();
     updateBasketUI();
 
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
@@ -139,102 +103,88 @@
       if(result.success) {
         result.items.forEach(item => {
           const auth = item.auth.toUpperCase().trim();
-          // Normalisasi pemecahan P/N (bisa semicolon, koma, atau enter)
+          // Pecah P/N karena di sheet Authorized kolom Part Number isinya bisa rombongan (;)
           const pns = String(item.pn).split(/[;,\n\r]+/);
           pns.forEach(p => {
-            // Hanya ambil Alfanumerik (Normalisasi Total)
-            const cleanP = p.replace(/[^A-Z0-9]/gi, '').toUpperCase(); 
+            const cleanP = p.replace(/[^A-Z0-9]/gi, '').toUpperCase();
             if(cleanP) employeeOwnedSet.add(`${auth}|${cleanP}`);
           });
         });
       }
-      document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Ready! Search items to add.</p></div>';
-    } catch(e) { 
+      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; color:var(--text-light); padding:20px;">Ready. Start searching...</p>';
+    } catch(e) {
       console.error(e);
-      document.getElementById('bulkAdviceContainer').innerHTML = '<div style="color:red; text-align:center;">Failed to sync personnel data.</div>';
+      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="color:red; text-align:center;">Failed to sync data.</p>';
     }
   };
 
-  function closeBulkAddModal() { 
-    document.getElementById('bulkAddModalOverlay').style.display = 'none'; 
-  }
-
   /**
-   * 2. MATCHING & RENDER ADVICE
-   * Membandingkan hasil pencarian database (rawData) dengan staffOwnedSet.
+   * 2. LOGIKA SEARCH & FILTER: Bandingkan Database vs OwnedSet
    */
   function updateBulkAdvice(query) {
     const container = document.getElementById('bulkAdviceContainer');
-    if(!query || query.length < 2) return;
+    if(!query || query.length < 2) { container.innerHTML = ''; return; }
 
-    // Normalisasi Query input
     const q = query.toLowerCase().replace(/[^a-z0-9]/g, ''); 
     
-    // Filter dari Master Data (Global Variable rawData)
+    // Filter dari Master Data 'rawData' (global variable di index.html utama)
     const matches = rawData.filter(row => {
-      const pnSearch = String(row[5]).toLowerCase().replace(/[^a-z0-9]/g, '');
-      const nameSearch = String(row[6]).toLowerCase();
-      const ataSearch = String(row[3]).toLowerCase();
-      return pnSearch.includes(q) || nameSearch.includes(q) || ataSearch.includes(q);
-    }).slice(0, 40);
+      const pnDB = String(row[5]).toLowerCase().replace(/[^a-z0-9]/g, '');
+      const nameDB = String(row[6]).toLowerCase();
+      return pnDB.includes(q) || nameDB.includes(q);
+    }).slice(0, 30);
 
     if(matches.length === 0) {
-      container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">No matching database items.</div>';
+      container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-light);">No items found in database.</p>';
       return;
     }
 
     container.innerHTML = matches.map(row => {
-      const rowAuth = String(row[1]).trim().toUpperCase();
-      const rowPnFull = String(row[5]);
+      const authDB = String(row[1]).trim().toUpperCase();
+      const pnFullDB = String(row[5]);
       
-      // LOGIKA PENGECEKAN: Apakah salah satu P/N di baris ini sudah dimiliki staff?
-      const rowPns = rowPnFull.split(/[;,\n\r]+/);
+      // LOGIKA VALIDASI: Pecah P/N di Database baris ini (siapa tau dia juga rombongan)
+      const pnsInRow = pnFullDB.split(/[;,\n\r]+/);
       let isOwned = false;
 
-      for (let p of rowPns) {
+      for (let p of pnsInRow) {
         const cleanP = p.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-        if (employeeOwnedSet.has(`${rowAuth}|${cleanP}`)) {
+        if (employeeOwnedSet.has(`${authDB}|${cleanP}`)) {
           isOwned = true;
-          break; 
+          break; // Jika salah satu saja P/N di baris ini sudah dimiliki, tandai baris ini Owned
         }
       }
 
-      // ID Unik untuk penampampungan (Basket)
-      const firstPnClean = rowPns[0].replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      const itemKey = `${rowAuth}|${firstPnClean}`;
+      // ID Unik untuk Basket (P/N pertama + Auth)
+      const firstPnClean = pnsInRow[0].replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      const itemKey = `${authDB}|${firstPnClean}`;
       const isSelected = selectedItems.has(itemKey);
-      
-      const safeDesc = String(row[6]).replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
-      const safePnForClick = rowPnFull.replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
 
       return `
         <div class="bulk-item ${isOwned ? 'already-owned' : (isSelected ? 'selected' : '')}" 
-             ${isOwned ? '' : `onclick="toggleBulkItem('${rowAuth}', '${safePnForClick}', '${safeDesc}', '${row[3]}')"`}>
+             ${isOwned ? '' : `onclick="toggleBulkItem('${authDB}', '${pnFullDB.replace(/'/g, "\\'")}', '${String(row[6]).replace(/'/g, "\\'")}', '${row[3]}')"`}>
           
           <div style="display:flex; align-items:center; justify-content:center;">
              ${isOwned ? 
-               `<svg width="18" height="18" viewBox="0 0 24 24" fill="#94a3b8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : 
+               `<svg width="20" height="20" viewBox="0 0 24 24" fill="#94a3b8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : 
                `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`
              }
           </div>
 
           <div class="bulk-info">
-            <span class="bulk-pn">${rowPnFull}</span>
+            <span class="bulk-pn">${pnFullDB}</span>
             <span class="bulk-desc">${row[6]}</span>
-            <span class="bulk-meta">${rowAuth} • ATA ${row[3]} ${isOwned ? '<span class="already-badge">ALREADY AUTHORIZED</span>' : ''}</span>
+            <span class="bulk-meta">${authDB} • ATA ${row[3]} ${isOwned ? '<span class="already-badge">AUTHORIZED</span>' : ''}</span>
           </div>
 
           <div style="text-align:right;">
-             ${typeof formatLogoValue === 'function' ? formatLogoValue(rowAuth) : rowAuth}
+             ${typeof formatLogoValue === 'function' ? formatLogoValue(authDB) : authDB}
           </div>
         </div>
       `;
     }).join('');
   }
 
-  /**
-   * 3. TOGGLE ITEM (BASKET)
-   */
   function toggleBulkItem(auth, pn, desc, ata) {
     const firstPnClean = pn.split(/[;,\n\r]+/)[0].replace(/[^A-Z0-9]/gi, '').toUpperCase();
     const itemKey = `${auth.toUpperCase()}|${firstPnClean}`; 
@@ -244,102 +194,39 @@
     } else { 
       selectedItems.set(itemKey, { authority: auth, pn: pn, desc: desc, ata: ata }); 
     }
-    
     updateBasketUI();
-    // Re-render list untuk memperbarui status checkbox/highlight
     updateBulkAdvice(document.getElementById('bulkSearchInput').value);
   }
 
-  /**
-   * 4. UPDATE BASKET UI
-   */
   function updateBasketUI() {
     const basket = document.getElementById('selectionBasket');
     const saveBtn = document.getElementById('btnSaveBulk');
-    
-    if(selectedItems.size === 0) { 
-      basket.style.display = 'none'; 
-      saveBtn.disabled = true; 
-      saveBtn.textContent = "Save Selection (0)"; 
-      return; 
-    }
+    if(selectedItems.size === 0) { basket.style.display = 'none'; saveBtn.disabled = true; saveBtn.textContent = "Save Selection (0)"; return; }
 
-    basket.style.display = 'flex'; 
-    saveBtn.disabled = false; 
-    saveBtn.textContent = `Save Selection (${selectedItems.size})`;
-    
-    basket.innerHTML = Array.from(selectedItems.values()).map(item => {
-      const displayPn = item.pn.length > 15 ? item.pn.substring(0,12) + '...' : item.pn;
-      const safePnForRemove = item.pn.replace(/'/g, "\\'");
-      return `
-        <div class="basket-tag">
-          <small style="font-size:8px; opacity:0.7;">${item.authority}</small> 
-          ${displayPn} 
-          <span onclick="toggleBulkItem('${item.authority}','${safePnForRemove}','','')">&times;</span>
-        </div>`;
-    }).join('');
+    basket.style.display = 'flex'; saveBtn.disabled = false; saveBtn.textContent = `Save Selection (${selectedItems.size})`;
+    basket.innerHTML = Array.from(selectedItems.values()).map(item => `
+      <div class="basket-tag">
+        <small>${item.authority}</small> ${item.pn.substring(0,10)}... 
+        <span style="cursor:pointer; color:#ef4444; font-weight:bold;" onclick="toggleBulkItem('${item.authority}','${item.pn.replace(/'/g, "\\'")}','','')">&times;</span>
+      </div>`).join('');
   }
 
-  /**
-   * 5. SAVE DATA TO SERVER
-   */
   async function saveBulkAuthorized() {
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
     
-    const swalConfig = { 
-      target: document.getElementById('bulkAddModalOverlay'), 
-      allowOutsideClick: false, 
-      didOpen: () => { Swal.showLoading(); } 
-    };
-
-    Swal.fire({ 
-      ...swalConfig, 
-      title: 'Recording Data...', 
-      html: `Adding <b>${itemsArray.length}</b> new items to Employee ID <b>${empId}</b>` 
-    });
+    Swal.fire({ title: 'Saving...', text: `Adding ${itemsArray.length} items to Staff ID ${empId}`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
-      const res = await fetch(GAS_API_URL, { 
-        method: "POST", 
-        body: JSON.stringify({ 
-          action: "bulkAddAuthorized", 
-          empId: empId, 
-          items: itemsArray 
-        }) 
-      });
-      
+      const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) });
       const result = await res.json();
-      
       if(result.success) {
-        await Swal.fire({ 
-          ...swalConfig, 
-          icon: 'success', 
-          title: 'Items Saved!', 
-          timer: 1500, 
-          showConfirmButton: false 
-        });
-        
+        Swal.fire({ icon: 'success', title: 'Success', timer: 1500, showConfirmButton: false });
         closeBulkAddModal();
-        
-        // Refresh dokumen PAL (Trigger fungsi dari modul PAL)
-        if (typeof openPALDocument === 'function') { 
-          openPALDocument(
-            empId, 
-            document.getElementById('pal_name').textContent, 
-            document.getElementById('pal_title').textContent
-          ); 
-        }
-      } else { 
-        throw new Error(result.error || "Unknown server error"); 
-      }
-    } catch(e) { 
-      Swal.fire({ 
-        ...swalConfig, 
-        icon: 'error', 
-        title: 'Save Failed', 
-        text: e.message 
-      }); 
-    }
+        if (typeof openPALDocument === 'function') openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent);
+      } else { throw new Error(result.error); }
+    } catch(e) { Swal.fire('Error', e.message, 'error'); }
   }
+
+  function closeBulkAddModal() { document.getElementById('bulkAddModalOverlay').style.display = 'none'; }
 </script>
