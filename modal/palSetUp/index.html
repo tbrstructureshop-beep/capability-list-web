@@ -186,25 +186,19 @@
 
 </div>
 <script>
-/**
- * Global Function for rendering the PAL Document with Multi-Page Mimic
- * Optimized for FAA PNs and High-Accuracy String preservation.
- */
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
   const wrapper = document.getElementById('palPagesWrapper');
   if (!modal || !wrapper) return;
 
-  // Simpan ID untuk keperluan Bulk Add
   window.currentPalEmpId = empId;
-
-  // 1. Tampilkan modal & Reset Tampilan Awal
   modal.style.display = 'block';
   document.body.style.overflow = 'hidden'; 
+  
   wrapper.innerHTML = `
     <div class="pal-internal-loader no-print" style="margin-top: 100px;">
       <div class="pal-spinner-ring"></div>
-      <div style="font-weight: 600; color: #fff; font-size: 14px;">Loading Your Ability Items...</div>
+      <div style="font-weight: 600; color: #fff; font-size: 14px;">Loading Ability Items...</div>
     </div>
   `;
 
@@ -214,23 +208,30 @@ window.openPALDocument = async function(empId, name, title) {
     if(!data.success) throw new Error(data.error);
 
     /**
-     * 2. AGGREGATION LOGIC (AKURASI TINGGI)
-     * Memecah Part Number sambil menjaga integritas spasi (penting untuk FAA/Airbus)
+     * LOGIKA AGGREGATION (KUNCI AKURASI)
+     * Mengelompokkan berdasarkan Nama, Otoritas, dan ATA
      */
     const aggregated = data.items.reduce((acc, item) => {
-      const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
+      // Dapatkan data dari sheet ALL (dikirim oleh backend)
+      const description = item.desc || "Unknown Item";
+      const authority = item.auth || "Unknown";
+      const ata = item.ata || "N/A";
       
-      // Split hanya berdasarkan delimiter, jangan hapus spasi di dalam string (misal: S 5411 tetap S 5411)
+      const key = `${description.trim()}|${authority.trim()}|${ata.trim()}`;
+      
+      // Proses Pemecahan Part Number (Handle FAA semicolon)
       const rawPnString = String(item.pn || "");
+      // Regex ini memecah berdasarkan ; atau , atau Enter, tapi tetap menjaga spasi internal
       const parts = rawPnString.split(/[;,\n\t]+/);
 
       const cleanedPns = parts
-        .map(p => p.trim()) 
-        .filter(p => p.length > 0);
+        .map(p => p.trim()) // Bersihkan spasi luar saja
+        .filter(p => p.length > 0); // Buang string kosong
 
       if (!acc[key]) {
-        acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: cleanedPns };
+        acc[key] = { desc: description, auth: authority, ata: ata, pns: cleanedPns };
       } else {
+        // Gabungkan jika ada P/N baru di baris lain dengan key yang sama
         cleanedPns.forEach(p => {
           if (!acc[key].pns.includes(p)) acc[key].pns.push(p);
         });
@@ -239,22 +240,17 @@ window.openPALDocument = async function(empId, name, title) {
     }, {});
 
     const groups = Object.values(aggregated);
-    const rowsPerPage = 12; // Menjaga posisi konten tetap di dalam margin A4
+    const rowsPerPage = 12; // Membatasi baris agar fit A4
     const totalPages = Math.ceil(groups.length / rowsPerPage) || 1;
     const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 
-    wrapper.innerHTML = ''; // Hapus loader
+    wrapper.innerHTML = ''; 
 
-    /**
-     * 3. MANUAL PAGE GENERATION (Advanced Slicing)
-     * Membuat lembaran-lembaran kertas A4 secara dinamis
-     */
     for (let p = 0; p < totalPages; p++) {
       const pageData = groups.slice(p * rowsPerPage, (p + 1) * rowsPerPage);
       const pageDiv = document.createElement('div');
       pageDiv.className = 'pal-doc';
 
-      // --- TEMPLATE 1: HEADER (Muncul di setiap halaman) ---
       const headerHtml = `
         <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
         <div class="title-section">PERSONAL ABILITY LIST</div>
@@ -265,15 +261,14 @@ window.openPALDocument = async function(empId, name, title) {
         </table>
       `;
 
-      // --- TEMPLATE 2: TABLE ROWS ---
       let rowsHtml = '';
       pageData.forEach((group, idx) => {
-        group.pns.sort();
+        group.pns.sort(); // Urutkan P/N agar profesional
         const mid = Math.ceil(group.pns.length / 2);
         const col1 = group.pns.slice(0, mid);
         const col2 = group.pns.slice(mid);
 
-        // MENGGUNAKAN BULLET (•) UNTUK PENULISAN PART NUMBER
+        // MENGGUNAKAN SIMBOL BULLET (•) DAN MENJAGA SPASI (Akurat sesuai request)
         const pnHtml = `
           <div class="pn-grid">
             <div>${col1.map(p => `<div class="pn-item"><span>•</span><span>${p}</span></div>`).join('')}</div>
@@ -292,7 +287,6 @@ window.openPALDocument = async function(empId, name, title) {
         `;
       });
 
-      // --- TEMPLATE 3: SIGNATURE (Hanya muncul di halaman terakhir) ---
       let signatureHtml = '';
       if (p === totalPages - 1) {
         signatureHtml = `
@@ -314,7 +308,6 @@ window.openPALDocument = async function(empId, name, title) {
         `;
       }
 
-      // --- TEMPLATE 4: FOOTER (Muncul di setiap halaman) ---
       const footerHtml = `
         <div class="doc-footer-container">
           ${signatureHtml}
@@ -325,32 +318,21 @@ window.openPALDocument = async function(empId, name, title) {
         </div>
       `;
 
-      // Gabungkan semua komponen ke dalam lembaran kertas (A4)
       pageDiv.innerHTML = `
         ${headerHtml}
         <table class="main-table">
           <thead>
-            <tr>
-              <th width="35">No.</th>
-              <th width="180">DESCRIPTION</th>
-              <th>PART NUMBER</th>
-              <th width="80">ATA</th>
-              <th width="80">RELATED AUTH</th>
-            </tr>
+            <tr><th width="35">No.</th><th width="180">DESCRIPTION</th><th>PART NUMBER</th><th width="80">ATA</th><th width="80">RELATED AUTH</th></tr>
           </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
+          <tbody>${rowsHtml}</tbody>
         </table>
         ${footerHtml}
       `;
-
       wrapper.appendChild(pageDiv);
     }
-
   } catch(e) { 
     console.error(e);
-    wrapper.innerHTML = `<div style="text-align:center; color:white; padding:50px;">Error loading items: ${e.message}</div>`;
+    wrapper.innerHTML = `<div style="text-align:center; color:white; padding:50px;">Error: ${e.message}</div>`;
   }
 }
 </script>
