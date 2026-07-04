@@ -14,34 +14,31 @@
         border: none !important;
         outline: none !important;
       }
-      /* 1. Paksa Root agar tidak punya scrollbar sama sekali */
+
       html, body { 
           background: #fff !important; 
           margin: 0 !important; 
           padding: 0 !important;
-          width: 210mm !important; /* Kunci: Lebar harus fix A4 */
+          width: 210mm !important; 
           height: auto !important; 
-          overflow: hidden !important; /* Hapus scrollbar horizontal & vertikal */
+          overflow: visible !important; /* Biarkan mengalir ke halaman berikutnya */
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
       }
   
-      /* 2. Sembunyikan semua elemen kecuali modal dan pembungkusnya */
       body > *:not(#palDocumentModal):not(#palModalContainer):not(#modalUpdateSourceContainer) {
           display: none !important;
       }
   
-      /* 3. Atur Modal agar Center secara Horizontal */
       #palDocumentModal {
           position: static !important; 
-          display: flex !important; /* Gunakan Flexbox untuk centering */
+          display: flex !important;
           flex-direction: column !important;
-          align-items: center !important; /* Ini yang bikin CENTER */
+          align-items: center !important;
           width: 210mm !important; 
           background: white !important;
           margin: 0 !important;
           padding: 0 !important;
-          overflow: hidden !important;
       }
 
       #palDocumentModal.modal-overlay {
@@ -49,29 +46,22 @@
           backdrop-filter: none !important;
       }
   
-      /* 4. HAPUS TOTAL CONTROL BAR */
-      .no-print { 
-          display: none !important; 
-          height: 0 !important;
-          width: 0 !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          overflow: hidden !important;
-      }
-  
-      /* 5. Kontainer Kertas (A4 Portrait) */
       .pal-doc {
           width: 210mm !important; 
           margin: 0 !important; 
           padding: 15mm !important; 
           box-shadow: none !important;
           background: white !important;
-          height: auto !important;
-          min-height: 296mm !important; /* Memastikan satu halaman penuh */
+          height: 297mm !important; /* Paksa tinggi tiap lembar pas A4 */
           overflow: hidden !important; 
-          display: block !important;
+          display: flex !important;
+          flex-direction: column !important;
+          page-break-after: always !important; /* Kunci pemisah halaman di PDF */
           box-sizing: border-box !important;
-          border: none !important;
+      }
+      
+      .pal-doc:last-child {
+          page-break-after: auto !important;
       }
   
       .layout-table { 
@@ -79,199 +69,125 @@
           border-collapse: collapse !important; 
           table-layout: fixed !important;
           margin: 0 !important;
+          flex-grow: 1; /* Biarkan tabel mengambil ruang yang tersedia */
       }
-      
-      thead { display: table-header-group !important; }
-      tfoot { display: table-footer-group !important; }
-      tr { page-break-inside: avoid !important; }
   }
 
+  /* --- 2. SCREEN VIEW STYLES (PDF VIEWER MIMIC MODE) --- */
+  #palDocumentModal {
+    background: #525659; /* Abu-abu gelap ala PDF viewer */
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 15500;
+    overflow-y: auto;
+    padding: 40px 0; /* Memberikan ruang di atas dan bawah kertas */
+    transition: none;
+  }
+
+  /* Lembaran Kertas di Layar */
+  .pal-doc { 
+    background: white; 
+    width: 210mm; 
+    height: 297mm; /* Tinggi FIX A4 */
+    padding: 15mm; 
+    margin: 0 auto 30px auto; /* Centering horizontal & Jeda antar kertas */
+    color: #000; 
+    font-family: Arial, sans-serif; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+    box-sizing: border-box; 
+    display: flex;
+    flex-direction: column; /* Memungkinkan footer didorong ke bawah */
+    position: relative;
+  }
+
+  /* --- 3. DOCUMENT CONTENT STYLES --- */
+  .layout-table { width: 100%; border-collapse: collapse; table-layout: fixed; flex-grow: 1; }
+  .logo-container { text-align: center; padding-bottom: 10px; }
+  .logo-img { height: 48px; width: auto; display: block; margin: 0 auto; }
+  .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
+  
+  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
+  .info-table td { padding: 2px 0; }
+
+  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
+  .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2 !important; text-transform: uppercase; font-size: 10px; font-weight: bold; -webkit-print-color-adjust: exact; }
+  .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; }
+
+  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .pn-item { display: flex; gap: 5px; line-height: 1.2; }
+
+  /* Footer & Signature Position */
+  .doc-footer-container {
+    margin-top: auto; /* Mendorong footer ke paling bawah kertas */
+    width: 100%;
+  }
+
+  .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 10px; table-layout: fixed; }
+  .footer-sig-table td { border: 1px solid black; height: 165px; vertical-align: top; padding: 10px; font-size: 11px; }
+  
+  #col_1 { width: 35%; } #col_2 { width: 34%; } #col_3 { width: 31%; }
+  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
+
+  .meta-footer-wrap { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10px; border-top: none; padding-top: 2px; }
+  
   [contenteditable="true"]:hover {
     background: rgba(60, 146, 166, 0.05);
     cursor: edit;
     outline: 1px dashed #3c92a6;
   }
-  
-  /* --- 2. SCREEN VIEW STYLES (PREVIEW PDF MODE) --- */
-  #palDocumentModal {
-    background: rgba(82, 86, 89, 1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    transition: none;
-    overflow-y: auto;
-  }
 
-  .pal-doc { 
-    background: white; 
-    width: 210mm; 
-    min-height: 297mm; 
-    padding: 15mm; 
-    margin: 30px auto; 
-    color: #000; 
-    font-family: Arial, sans-serif; 
-    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
-    box-sizing: border-box; 
-    position: relative;
-  }
-
-  /* Spinner Animation */
-  .pal-internal-loader {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 50px;
-    gap: 15px;
-  }
+  /* Spinner */
+  .pal-internal-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px; gap: 15px; }
+  .pal-spinner-ring { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3c92a6; border-radius: 50%; animation: pal-spin 1s linear infinite; }
+  @keyframes pal-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   
-  .pal-spinner-ring {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3c92a6;
-    border-radius: 50%;
-    animation: pal-spin 1s linear infinite;
-  }
-  
-  @keyframes pal-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  /* --- 3. DOCUMENT CONTENT STYLES --- */
-  .layout-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .logo-container { text-align: center; padding-bottom: 10px; }
-  .logo-img { height: 48px; width: auto; display: block; margin: 0 auto; }
-  .title-section { text-align: center; font-weight: bold; font-size: 14px; text-decoration: underline; margin-bottom: 20px; text-transform: uppercase; }
-  .info-table { width: 65%; border-collapse: collapse; margin-bottom: 15px; font-size: 11px; }
-  .info-table td { padding: 2px 0; }
-  .main-table { width: 100%; border-collapse: collapse; border: 1px solid black; table-layout: fixed; }
-  .main-table th { border: 1px solid black; padding: 8px 4px; background: #f2f2f2 !important; text-transform: uppercase; font-size: 10px; font-weight: bold; -webkit-print-color-adjust: exact; }
-  .main-table td { border: 1px solid black; padding: 6px; font-size: 10px; vertical-align: top; word-wrap: break-word; }
-  .pn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-  .pn-item { display: flex; gap: 5px; line-height: 1.2; }
-  .footer-sig-table { width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 10px; table-layout: fixed; }
-  .footer-sig-table td { border: 1px solid black; height: 135px; vertical-align: top; padding: 10px; font-size: 11px; }
-  #col_1 { width: 35%; } #col_2 { width: 34%; } #col_3 { width: 31%; }
-  .sig-inner-flex { display: flex; flex-direction: column; justify-content: space-between; height: 100%; text-align: center; }
-  .meta-footer-wrap { display: flex; justify-content: space-between; margin-top: 2px; font-size: 10px; border-top: none; padding-top: 2px; }
   .screen-page-info { font-size: 11px; color: #ccc; }
 </style>
 
 <div id="palDocumentModal" class="modal-overlay" style="display:none; z-index: 15500;">
   
-  <!-- Control Bar (Visible on screen, Hidden on print) -->
-  <div class="no-print" style="position: sticky; top: 0; width: 100%; background: #323639; padding: 10px 25px; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; z-index: 16000;">
+  <!-- Control Bar Tetap di Atas (Fixed) -->
+  <div class="no-print" style="position: fixed; top: 0; left: 0; width: 100%; background: #323639; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; z-index: 16000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
      <div style="display:flex; gap: 12px;">
-       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 18px; color:white; cursor:pointer; font-weight: bold; border-radius: 4px; display:flex; align-items:center; gap:8px;">
+       <button class="btn btn-primary" onclick="window.print()" style="background:#3c92a6; border:none; padding: 8px 18px; color:white; cursor:pointer; font-weight: bold; border-radius: 6px; display:flex; align-items:center; gap:8px;">
          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
          Print to PDF
        </button>
-       <button class="btn" onclick="openBulkAddModal()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 4px;">+ Add Items</button>
+       <button class="btn" onclick="openBulkAddModal()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 6px;">+ Add Items</button>
      </div>
-     <div class="screen-page-info">A4 Portrait Preview | High Fidelity Mode</div>
+     
+     <div style="color: #ccc; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;">PERSONAL ABILITY LIST PREVIEW | MULTI-PAGE MODE</div>
+     
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
-  <div id="palPrintArea" class="pal-doc">
-    <table class="layout-table">
-      <thead>
-        <tr>
-          <td>
-            <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
-            <div class="title-section">PERSONAL ABILITY LIST</div>
-            <table class="info-table">
-              <tr><td width="130">Name</td><td width="10">:</td><td><strong id="pal_name" style="text-transform: uppercase;">-</strong></td></tr>
-              <tr><td>Personnel Number</td><td>:</td><td><strong id="pal_id">-</strong></td></tr>
-              <tr><td>Present Title</td><td>:</td><td><span id="pal_title">-</span></td></tr>
-            </table>
-          </td>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <table class="main-table">
-              <thead>
-                <tr>
-                  <th width="35">No.</th>
-                  <th width="180">DESCRIPTION</th>
-                  <th>PART NUMBER</th>
-                  <th width="80">ATA</th>
-                  <th width="80">RELATED AUTH</th>
-                </tr>
-              </thead>
-              <tbody id="pal_items_body"></tbody>
-            </table>
-          </td>
-        </tr>
-      </tbody>
-      <tfoot>
-        <tr>
-          <td>
-            <table class="footer-sig-table">
-              <tr>
-                <td id="col_1">Date : <br><br><span id="pal_today_date" style="font-weight:bold; font-size: 12px;">-</span></td>
-                <td id="col_2"></td>
-                <td id="col_3">
-                  <div class="sig-inner-flex">
-                    <div>
-                      Approved by<br>
-                      <span contenteditable="true" style="font-weight: bold;">SM Structure Workshop</span>
-                    </div>
-                    <div style="margin-top: auto;">
-                      ( <span contenteditable="true" style="display:inline-block; min-width: 150px; text-align: center;">_____________________</span> )<br>
-                      <span contenteditable="true" style="font-size: 10px; margin-top: 5px; display: block;">
-                        Name & Signature
-                      </span>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </table>
-            <div class="meta-footer-wrap">
-              <div>Form No.: GMF/Q-364 R1</div>
-              <div class="page-counter">Page <span class="curr-p">1</span> of <span class="total-p">1</span></div>
-            </div>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
+  <!-- Area tempat lembaran A4 akan di-render secara dinamis oleh JS -->
+  <div id="palPagesWrapper" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+      <!-- JavaScript akan menyuntikkan <div class="pal-doc"> di sini -->
   </div>
-</div>
 
+</div>
 <script>
 /**
- * Global Function for rendering the PAL Document
- * IDs preserved exactly to match your existing logic.
+ * Global Function for rendering the PAL Document with Multi-Page Mimic
  */
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
-  const body = document.getElementById('pal_items_body');
-  if (!modal || !body) return;
+  const wrapper = document.getElementById('palPagesWrapper');
+  if (!modal || !wrapper) return;
 
-  // 1. Tampilkan modal & Reset Teks Dasar
-  document.getElementById('pal_name').textContent = name;
-  document.getElementById('pal_id').textContent = empId;
-  document.getElementById('pal_title').textContent = title || "Aircraft Structure Engineer";
-  
-  const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
-  document.getElementById('pal_today_date').textContent = today;
+  // Simpan ID untuk keperluan Bulk Add nanti
+  window.currentPalEmpId = empId;
 
+  // 1. Tampilkan modal & Loading State
   modal.style.display = 'block';
   document.body.style.overflow = 'hidden'; 
-
-  // 2. Tampilkan Internal Loader di dalam tabel
-  body.innerHTML = `
-    <tr>
-      <td colspan="5">
-        <div class="pal-internal-loader no-print">
-          <div class="pal-spinner-ring"></div>
-          <div style="font-weight: 600; color: #3c92a6; font-size: 13px;">Loading Your Ability Items...</div>
-        </div>
-      </td>
-    </tr>
+  wrapper.innerHTML = `
+    <div class="pal-internal-loader no-print" style="margin-top: 100px;">
+      <div class="pal-spinner-ring"></div>
+      <div style="font-weight: 600; color: #fff; font-size: 14px;">Loading Your Ability Items...</div>
+    </div>
   `;
 
   try {
@@ -280,19 +196,15 @@ window.openPALDocument = async function(empId, name, title) {
     if(!data.success) throw new Error(data.error);
 
     /**
-     * 3. AGGREGATION LOGIC (FAA & MULTI-PN COMPATIBLE)
-     * Handles single cells containing multiple PNs separated by semicolons/newlines.
+     * 2. AGGREGATION LOGIC (FAA & MULTI-PN COMPATIBLE)
      */
     const aggregated = data.items.reduce((acc, item) => {
       const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
       
-      // 1. UNIFY: Convert newlines/tabs to semicolons
-      // 2. SPLIT: Break by semicolon or comma
       const rawPnString = String(item.pn || "");
       const unified = rawPnString.replace(/[\r\n\t]+/g, ';');
       const parts = unified.split(/[;,]+/);
 
-      // 3. CLEAN: Remove internal spaces but preserve "S " prefix for Airbus
       const cleanedPns = parts.map(p => {
         let pClean = p.trim();
         if (pClean.startsWith('S ')) {
@@ -304,7 +216,6 @@ window.openPALDocument = async function(empId, name, title) {
       if (!acc[key]) {
         acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: cleanedPns };
       } else {
-        // Merge unique PNs if they don't already exist in the list for this group
         cleanedPns.forEach(p => {
           if (!acc[key].pns.includes(p)) acc[key].pns.push(p);
         });
@@ -312,47 +223,117 @@ window.openPALDocument = async function(empId, name, title) {
       return acc;
     }, {});
 
-    // 4. Render Data (Otomatis menghapus loader)
-    body.innerHTML = ''; 
-    Object.values(aggregated).forEach((group, idx) => {
-      // Sort PNs within the group for professional alignment
-      group.pns.sort();
+    const groups = Object.values(aggregated);
+    const rowsPerPage = 12; // Anda bisa sesuaikan angka ini (10-14 biasanya pas untuk A4)
+    const totalPages = Math.ceil(groups.length / rowsPerPage) || 1;
+    const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 
-      const mid = Math.ceil(group.pns.length / 2);
-      const col1 = group.pns.slice(0, mid);
-      const col2 = group.pns.slice(mid);
+    wrapper.innerHTML = ''; // Bersihkan loader
 
-      // Generate the two-column grid for Part Numbers
-      let pnHtml = `
-        <div class="pn-grid">
-          <div>${col1.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
-          <div>${col2.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
+    /**
+     * 3. MANUAL PAGE GENERATION
+     */
+    for (let p = 0; p < totalPages; p++) {
+      const pageData = groups.slice(p * rowsPerPage, (p + 1) * rowsPerPage);
+      const pageDiv = document.createElement('div');
+      pageDiv.className = 'pal-doc';
+
+      // --- TEMPLATE 1: HEADER (Repeated on every page) ---
+      const headerHtml = `
+        <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
+        <div class="title-section">PERSONAL ABILITY LIST</div>
+        <table class="info-table">
+          <tr><td width="130">Name</td><td>: <strong style="text-transform:uppercase;">${name}</strong></td></tr>
+          <tr><td>Personnel Number</td><td>: <strong>${empId}</strong></td></tr>
+          <tr><td>Present Title</td><td>: <span>${title || "Aircraft Structure Engineer"}</span></td></tr>
+        </table>
+      `;
+
+      // --- TEMPLATE 2: TABLE ROWS ---
+      let rowsHtml = '';
+      pageData.forEach((group, idx) => {
+        group.pns.sort();
+        const mid = Math.ceil(group.pns.length / 2);
+        const col1 = group.pns.slice(0, mid);
+        const col2 = group.pns.slice(mid);
+
+        const pnHtml = `
+          <div class="pn-grid">
+            <div>${col1.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
+            <div>${col2.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
+          </div>
+        `;
+
+        rowsHtml += `
+          <tr>
+            <td style="text-align:center;">${(p * rowsPerPage) + idx + 1}</td>
+            <td style="text-transform: uppercase; font-weight:bold; font-size: 9.5px;">${group.desc}</td>
+            <td>${pnHtml}</td>
+            <td style="text-align:center;"><strong>${group.ata}</strong></td>
+            <td style="text-align:center; font-size: 9px; font-weight: bold;">${group.auth}</td>
+          </tr>
+        `;
+      });
+
+      // --- TEMPLATE 3: SIGNATURE (Only on the LAST page) ---
+      let signatureHtml = '';
+      if (p === totalPages - 1) {
+        signatureHtml = `
+          <table class="footer-sig-table">
+            <tr>
+              <td id="col_1">Date : <br><br><strong>${today}</strong></td>
+              <td id="col_2"></td>
+              <td id="col_3">
+                <div class="sig-inner-flex">
+                  <div>Approved by<br><span contenteditable="true" style="font-weight: bold;">SM Structure Workshop</span></div>
+                  <div style="margin-top: auto;">
+                    ( <span contenteditable="true" style="display:inline-block; min-width: 150px;">_____________________</span> )<br>
+                    <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        `;
+      }
+
+      // --- TEMPLATE 4: FOOTER (Repeated on every page) ---
+      const footerHtml = `
+        <div class="doc-footer-container">
+          ${signatureHtml}
+          <div class="meta-footer-wrap">
+            <div>Form No.: GMF/Q-364 R1</div>
+            <div>Page ${p + 1} of ${totalPages}</div>
+          </div>
         </div>
       `;
 
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="text-align:center;">${idx + 1}</td>
-        <td style="text-transform: uppercase; font-weight:bold;">${group.desc}</td>
-        <td>${pnHtml}</td>
-        <td style="text-align:center;"><strong>${group.ata}</strong></td>
-        <td style="text-align:center; font-size: 9px; font-weight: bold;">${group.auth}</td>
+      // Rakit Semua ke dalam PageDiv
+      pageDiv.innerHTML = `
+        ${headerHtml}
+        <table class="main-table">
+          <thead>
+            <tr>
+              <th width="35">No.</th>
+              <th width="180">DESCRIPTION</th>
+              <th>PART NUMBER</th>
+              <th width="80">ATA</th>
+              <th width="80">RELATED AUTH</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+        ${footerHtml}
       `;
-      body.appendChild(tr);
-    });
 
-    // 5. Update Page Totals with calculation buffer
-    setTimeout(() => {
-      const printArea = document.getElementById('palPrintArea');
-      if (printArea) {
-        const totalPages = Math.ceil((printArea.scrollHeight - 20) / 1122) || 1;
-        document.querySelectorAll('.total-p').forEach(el => el.textContent = totalPages);
-      }
-    }, 400);
+      wrapper.appendChild(pageDiv);
+    }
 
   } catch(e) { 
     console.error(e);
-    body.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red; padding:20px;">Error loading items: ${e.message}</td></tr>`;
+    wrapper.innerHTML = `<div style="text-align:center; color:white; padding:50px;">Error loading items: ${e.message}</div>`;
   }
 }
 </script>
