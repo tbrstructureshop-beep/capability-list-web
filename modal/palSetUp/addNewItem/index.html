@@ -111,6 +111,25 @@
     gap: 15px;
     color: var(--text-light);
   }
+  .bulk-item.already-owned {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f1f5f9;
+    border-left: 4px solid var(--text-light);
+  }
+
+  .bulk-item.already-owned:hover {
+    transform: none;
+  }
+
+  .already-badge {
+    font-size: 9px;
+    background: var(--text-light);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
 </style>
 
 <div id="bulkAddModalOverlay" class="modal-overlay" style="display:none; z-index: 17000; justify-content: center; align-items: center;">
@@ -143,15 +162,56 @@
 
 <script>
   let selectedItems = new Map(); 
+  let alreadyOwnedItems = new Set(); // Menyimpan kunci "auth|pn" yang sudah ada di database
 
-  window.startBulkAddProcess = function() {
+  /**
+   * Global Entry Point
+   * Dipanggil saat tombol "+ Add Items" diklik.
+   * Sekarang bersifat async untuk menarik data existing terlebih dahulu.
+   */
+  window.startBulkAddProcess = async function() {
     const overlay = document.getElementById('bulkAddModalOverlay');
-    if (overlay) {
-      overlay.style.display = 'flex';
-      document.getElementById('bulkSearchInput').value = '';
-      document.getElementById('bulkSearchInput').focus();
-      selectedItems.clear();
-      updateBasketUI();
+    if (!overlay) return;
+
+    overlay.style.display = 'flex';
+    document.getElementById('bulkSearchInput').value = '';
+    document.getElementById('bulkSearchInput').focus();
+    
+    // Tampilkan pesan loading awal di dalam list
+    document.getElementById('bulkAdviceContainer').innerHTML = `
+      <div class="bulk-loading-state">
+        <div class="pal-spinner-ring"></div>
+        <p>Syncing current records...</p>
+      </div>`;
+    
+    selectedItems.clear();
+    alreadyOwnedItems.clear();
+    updateBasketUI();
+
+    // 1. IDENTIFIKASI EMPLOYEE
+    const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
+    
+    // 2. AMBIL DATA EXISTING UNTUK "FREEZE" (Mencegah Double Input)
+    try {
+      const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
+      const result = await res.json();
+      if(result.success) {
+        result.items.forEach(item => {
+          // Buat kunci unik (auth|pn) dengan normalisasi spasi/enter
+          const cleanPn = String(item.pn).replace(/\s+/g, '').toUpperCase();
+          const cleanAuth = String(item.auth).trim().toUpperCase();
+          alreadyOwnedItems.add(`${cleanAuth}|${cleanPn}`);
+        });
+      }
+      // Reset list ke state siap cari
+      document.getElementById('bulkAdviceContainer').innerHTML = `
+        <div class="bulk-loading-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <p>Ready! Search components to add...</p>
+        </div>`;
+    } catch(e) {
+      console.error("Gagal sinkronisasi data existing:", e);
+      document.getElementById('bulkAdviceContainer').innerHTML = '<div style="padding:20px; color:red; text-align:center;">Sync error. Please try again.</div>';
     }
   };
 
@@ -159,11 +219,16 @@
     document.getElementById('bulkAddModalOverlay').style.display = 'none';
   }
 
+  /**
+   * Search & Advice Logic
+   */
   function updateBulkAdvice(query) {
     const container = document.getElementById('bulkAdviceContainer');
     if(!query || query.length < 2) return;
 
     const q = query.toLowerCase().replace(/\s+/g, ''); 
+
+    // Filter rawData (Global dari index.html)
     const matches = rawData.filter(row => 
       String(row[5]).toLowerCase().replace(/\s+/g, '').includes(q) || 
       String(row[6]).toLowerCase().includes(q) || 
@@ -176,23 +241,38 @@
     }
 
     container.innerHTML = matches.map(row => {
-      const auth = String(row[1]);
+      const auth = String(row[1]).trim();
       const pnRaw = String(row[5]);
-      const cleanPn = pnRaw.replace(/\s+/g, ''); 
-      const itemKey = `${auth}|${cleanPn}`;
-      const isSelected = selectedItems.has(itemKey);
+      const cleanPn = pnRaw.replace(/\s+/g, '').toUpperCase(); 
+      const itemKey = `${auth.toUpperCase()}|${cleanPn}`;
+      
+      // LOGIKA CEK STATUS
+      const isOwned = alreadyOwnedItems.has(itemKey); // Apakah sudah ada di DB?
+      const isSelected = selectedItems.has(itemKey);  // Apakah sedang dipilih di modal?
       
       const safeDesc = row[6].replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
       const safePn = pnRaw.replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
 
+      // CSS classes & Click handler
+      let itemClass = "bulk-item";
+      let clickAction = `onclick="toggleBulkItem('${auth}', '${safePn}', '${safeDesc}', '${row[3]}')"`;
+      let badgeHtml = "";
+
+      if (isOwned) {
+        itemClass += " already-owned"; // Tambahkan class untuk style freeze (abu-abu/opacity)
+        clickAction = ""; // Disable klik
+        badgeHtml = `<span class="already-badge" style="margin-left:8px; font-size:9px; background:#e5e7eb; color:#6b7280; padding:2px 6px; border-radius:4px; font-weight:700;">OWNED</span>`;
+      } else if (isSelected) {
+        itemClass += " selected";
+      }
+
       return `
-        <div class="bulk-item ${isSelected ? 'selected' : ''}" 
-             onclick="toggleBulkItem('${auth}', '${safePn}', '${safeDesc}', '${row[3]}')">
-          <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">
+        <div class="${itemClass}" style="${isOwned ? 'opacity:0.5; cursor:not-allowed;' : ''}" ${clickAction}>
+          <input type="checkbox" ${isOwned || isSelected ? 'checked' : ''} ${isOwned ? 'disabled' : ''} onclick="event.stopPropagation()">
           <div class="bulk-info">
             <span class="bulk-pn">${pnRaw}</span>
             <span class="bulk-desc">${row[6]}</span>
-            <span class="bulk-meta">${auth} • ATA ${row[3]}</span>
+            <span class="bulk-meta">${auth} • ATA ${row[3]} ${badgeHtml}</span>
           </div>
           <div style="opacity:0.8;">${typeof formatLogoValue === 'function' ? formatLogoValue(auth) : auth}</div>
         </div>
@@ -201,13 +281,18 @@
   }
 
   function toggleBulkItem(auth, pn, desc, ata) {
-    const cleanPn = pn.replace(/\s+/g, '');
-    const itemKey = `${auth}|${cleanPn}`; 
+    const cleanPn = pn.replace(/\s+/g, '').toUpperCase();
+    const itemKey = `${auth.toUpperCase()}|${cleanPn}`; 
+    
+    // Proteksi: Jangan proses jika item sudah dimiliki
+    if (alreadyOwnedItems.has(itemKey)) return;
+
     if(selectedItems.has(itemKey)) {
       selectedItems.delete(itemKey);
     } else {
       selectedItems.set(itemKey, { authority: auth, pn: pn, desc: desc, ata: ata });
     }
+    
     updateBasketUI();
     updateBulkAdvice(document.getElementById('bulkSearchInput').value);
   }
@@ -224,6 +309,7 @@
     basket.style.display = 'flex';
     saveBtn.disabled = false;
     saveBtn.textContent = `Save Selection (${selectedItems.size})`;
+    
     basket.innerHTML = Array.from(selectedItems.values()).map(item => `
       <div class="basket-tag">
         <small style="font-size:8px; opacity:0.7;">${item.authority}</small> 
@@ -237,9 +323,8 @@
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
     
-    // FIX: Paksa SweetAlert Muncul Paling Depan
     const swalConfig = {
-      target: document.getElementById('bulkAddModalOverlay'), // Muncul di dalam modal agar z-index ikut modal
+      target: document.getElementById('bulkAddModalOverlay'),
       allowOutsideClick: false,
       didOpen: () => { Swal.showLoading(); }
     };
@@ -247,7 +332,7 @@
     Swal.fire({
       ...swalConfig,
       title: 'Updating Ability List',
-      html: `Recording <b>${itemsArray.length}</b> items to Employee <b>${empId}</b>...`
+      html: `Recording <b>${itemsArray.length}</b> new items to Employee <b>${empId}</b>...`
     });
     
     try {
@@ -262,7 +347,6 @@
       const result = await res.json();
       
       if(result.success) {
-        // SUCCESS NOTIF
         await Swal.fire({
           ...swalConfig,
           icon: 'success',
@@ -273,6 +357,7 @@
         });
 
         closeBulkAddModal();
+        // Trigger refresh tabel dokumen di bawahnya
         if (typeof openPALDocument === 'function') {
            openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent);
         }
