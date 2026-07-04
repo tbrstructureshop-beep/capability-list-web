@@ -1,77 +1,155 @@
 <style>
-  /* --- STYLING MODAL BULK ADD --- */
+  /* --- STYLING MODAL BULK ADD (ALIGNED WITH ROOT) --- */
   .bulk-add-card {
     background: var(--card-bg);
-    width: 95%; max-width: 550px; border-radius: 20px;
+    width: 95%;
+    max-width: 550px;
+    border-radius: 20px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-    display: flex; flex-direction: column; overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: bulkSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .bulk-search-box { padding: 24px; border-bottom: 1px solid var(--border); background: #f9fafb; }
+  @keyframes bulkSlideIn { 
+    from { opacity: 0; transform: translateY(20px) scale(0.98); } 
+    to { opacity: 1; transform: translateY(0) scale(1); } 
+  }
+
+  .bulk-search-box {
+    padding: 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
   .bulk-search-box input {
-    width: 100%; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border);
-    outline: none; font-size: 14px; background: var(--card-bg); color: var(--text-main);
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    outline: none;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: var(--card-bg);
+    color: var(--text-main);
+  }
+
+  .bulk-search-box input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1);
   }
 
   .selection-basket {
-    padding: 12px 20px; background: var(--primary-light); border-bottom: 1px solid var(--border);
-    display: flex; flex-wrap: wrap; gap: 8px; max-height: 100px; overflow-y: auto;
+    padding: 12px 20px;
+    background: var(--primary-light);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap; gap: 8px;
+    max-height: 120px; overflow-y: auto;
   }
 
   .basket-tag {
-    background: var(--card-bg); border: 1px solid var(--primary); color: var(--primary);
-    padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: 700;
-    display: flex; align-items: center; gap: 6px;
+    background: var(--card-bg);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: var(--shadow-sm);
   }
 
-  .bulk-advice-list { max-height: 400px; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .basket-tag span { cursor: pointer; color: #ef4444; font-size: 16px; font-weight: bold; line-height: 1; }
 
-  /* --- STYLE UNTUK ITEM YANG SUDAH DIMILIKI (DISABLED & GRAYSCALE) --- */
+  .bulk-advice-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex; flex-direction: column; gap: 6px;
+    background: var(--card-bg);
+  }
+
   .bulk-item {
-    padding: 12px 16px; border-radius: 14px; cursor: pointer;
-    display: grid; grid-template-columns: 35px 1fr auto; align-items: center;
-    border: 1px solid transparent; transition: 0.2s;
+    padding: 12px 16px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    align-items: center;
+    border: 1px solid transparent;
+    transition: 0.2s;
   }
-  .bulk-item:hover:not(.already-owned) { background: var(--bg); }
+
+  .bulk-item:hover:not(.already-owned) { background: var(--bg); transform: translateX(4px); }
   .bulk-item.selected { background: var(--primary-light); border-color: var(--primary); }
 
-  /* LOGIKA DISABLE & GRAYSCALE */
+  /* --- LOGIKA FREEZE / ALREADY OWNED (GRAYSCALE) --- */
   .bulk-item.already-owned {
-    filter: grayscale(100%); /* Efek Abu-abu */
-    opacity: 0.5;
-    background: #f1f5f9 !important;
+    opacity: 0.5 !important;
     cursor: not-allowed !important;
-    pointer-events: none; /* Klik mati */
-    border-left: 4px solid #94a3b8;
+    background: #f1f5f9 !important;
+    filter: grayscale(100%) brightness(0.9) !important; 
+    border-left: 4px solid var(--text-light) !important;
+    pointer-events: none; /* MEMATIKAN SEMUA KLIK */
   }
-  
-  .bulk-item.already-owned .bulk-pn { color: #64748b; text-decoration: line-through; }
 
+  .bulk-item.already-owned .bulk-pn { color: var(--text-muted) !important; }
+
+  .bulk-info { display: flex; flex-direction: column; padding-left: 12px; overflow: hidden; }
   .bulk-pn { font-weight: 800; color: var(--primary); font-size: 14px; }
-  .bulk-desc { font-size: 12px; color: var(--text-main); font-weight: 600; }
+  .bulk-desc { font-size: 12px; color: var(--text-main); font-weight: 600; line-height: 1.3; margin: 2px 0; }
   .bulk-meta { font-size: 10px; color: var(--text-light); text-transform: uppercase; font-weight: 700; }
-  
-  .already-badge {
-    background: #475569; color: white; padding: 2px 6px; border-radius: 4px;
-    font-size: 9px; font-weight: 800; margin-left: 5px;
+
+  .bulk-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 12px;
+    background: var(--bg);
   }
 
-  .bulk-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+  .already-badge {
+    font-size: 8px;
+    background: #64748b;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+    font-weight: 800;
+  }
+
+  .bulk-item input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: var(--primary);
+  }
+
+  .bulk-loading-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 20px; gap: 15px; color: var(--text-light);
+  }
 </style>
 
+<!-- KONTENER UTAMA -->
 <div id="bulkAddModalOverlay" class="modal-overlay" style="display:none; z-index: 17000; justify-content: center; align-items: center;">
   <div class="bulk-add-card">
     <div class="bulk-search-box">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-         <label style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase;">Bulk Add Authorized Parts</label>
-         <button onclick="closeBulkAddModal()" style="border:none; background:none; cursor:pointer; font-size:24px;">&times;</button>
+         <label style="font-size:12px; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing: 0.05em;">Bulk Add Authorized Parts</label>
+         <button onclick="closeBulkAddModal()" style="border:none; background:none; cursor:pointer; font-size:24px; color:var(--text-light);">&times;</button>
       </div>
-      <input type="text" id="bulkSearchInput" placeholder="Masukkan P/N atau Nama Part..." oninput="updateBulkAdvice(this.value)">
+      <input type="text" id="bulkSearchInput" placeholder="Search by P/N, Name, or ATA..." oninput="updateBulkAdvice(this.value)">
     </div>
 
     <div id="selectionBasket" class="selection-basket" style="display:none;"></div>
     
-    <div id="bulkAdviceContainer" class="bulk-advice-list"></div>
+    <div id="bulkAdviceContainer" class="bulk-advice-list">
+       <div class="bulk-loading-state">
+         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+         </svg>
+         <p>Type at least 2 characters to search...</p>
+       </div>
+    </div>
 
     <div class="bulk-footer">
       <button class="btn" onclick="closeBulkAddModal()">Cancel</button>
@@ -82,116 +160,110 @@
 
 <script>
   let selectedItems = new Map(); 
-  let employeeOwnedSet = new Set(); 
+  let alreadyOwnedItems = new Set(); // Kamus data owned "AUTH|PN"
 
   /**
-   * Helper: Normalisasi String agar deteksi akurat
-   * Contoh: "642-3801-507" jadi "6423801507"
-   */
-  function normalize(str) {
-    return String(str || "").replace(/[^A-Z0-9]/gi, '').toUpperCase();
-  }
-
-  /**
-   * 1. SYNC: Ambil data milik Staff secara lokal
+   * 1. START: Ambil data owned dari server (Sync)
    */
   window.startBulkAddProcess = async function() {
     const overlay = document.getElementById('bulkAddModalOverlay');
+    if (!overlay) return;
+
     overlay.style.display = 'flex';
     document.getElementById('bulkSearchInput').value = '';
-    document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; padding:20px;">Checking authorization records...</p>';
+    document.getElementById('bulkSearchInput').focus();
+    document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Syncing user records...</p></div>';
     
     selectedItems.clear();
-    employeeOwnedSet.clear();
+    alreadyOwnedItems.clear();
     updateBasketUI();
 
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     
     try {
-      // Ambil list Item yang SUDAH dimiliki staff ini
       const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
       const result = await res.json();
-      
       if(result.success) {
         result.items.forEach(item => {
-          const auth = item.auth.toUpperCase().trim();
-          // Pecah P/N jika kolom P/N berisi banyak part (pemisah ;, \n, dll)
-          const pns = String(item.pn).split(/[;,\n\r\t]+/);
+          const auth = String(item.auth).trim().toUpperCase();
+          // PECAH PN FAA YANG PAKAI SEMICOLON
+          const pns = String(item.pn).split(/[;,\n\t]+/);
           pns.forEach(p => {
-            const cleanP = normalize(p);
-            if(cleanP) employeeOwnedSet.add(`${auth}|${cleanP}`);
+            const cleanP = p.trim().replace(/\s+/g, '').toUpperCase();
+            if(cleanP) alreadyOwnedItems.add(`${auth}|${cleanP}`);
           });
         });
       }
-      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="text-align:center; color:var(--text-light); padding:20px;">Ready. Type to search...</p>';
-    } catch(e) {
-      console.error(e);
-      document.getElementById('bulkAdviceContainer').innerHTML = '<p style="color:red; text-align:center;">Sync Error.</p>';
-    }
+      document.getElementById('bulkAdviceContainer').innerHTML = `
+        <div class="bulk-loading-state">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.5;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <p>Search components to add...</p>
+        </div>`;
+    } catch(e) { console.error("Sync Error", e); }
   };
 
+  function closeBulkAddModal() {
+    document.getElementById('bulkAddModalOverlay').style.display = 'none';
+  }
+
   /**
-   * 2. LOGIKA SEARCH & DISABLE: Bandingkan Keyword vs List Lokal
+   * 2. SEARCH & RENDER
    */
   function updateBulkAdvice(query) {
     const container = document.getElementById('bulkAdviceContainer');
-    if(!query || query.length < 2) { container.innerHTML = ''; return; }
+    if(!query || query.length < 2) return;
 
-    const q = normalize(query); 
-    
-    // Filter dari Master Data Capability 'rawData'
-    const matches = rawData.filter(row => {
-      const pnDB = normalize(row[5]);
-      const nameDB = String(row[6]).toLowerCase();
-      return pnDB.includes(q) || nameDB.includes(query.toLowerCase());
-    }).slice(0, 30);
+    const q = query.toLowerCase().replace(/\s+/g, ''); 
+
+    // rawData mapping: 1:Auth, 3:ATA, 5:PN, 6:Name
+    const matches = rawData.filter(row => 
+      String(row[5]).toLowerCase().replace(/\s+/g, '').includes(q) || 
+      String(row[6]).toLowerCase().includes(q) || 
+      String(row[3]).toLowerCase().includes(q)
+    ).slice(0, 30);
 
     if(matches.length === 0) {
-      container.innerHTML = '<p style="text-align:center; padding:20px; color:var(--text-light);">No data found.</p>';
+      container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-muted);">No items found.</div>';
       return;
     }
 
     container.innerHTML = matches.map(row => {
-      const authDB = String(row[1]).trim().toUpperCase();
-      const pnFullDB = String(row[5]);
+      const auth = String(row[1]).trim().toUpperCase();
+      const pnRaw = String(row[5]);
       
-      // LOGIKA PENGECEKAN: Pecah P/N di Database baris ini
-      const pnsInRow = pnFullDB.split(/[;,\n\r\t]+/);
+      // LOGIKA OWNED: Pecah PN di baris hasil cari, cek satu-satu ke kamus data owned
+      const pnsInRow = pnRaw.split(/[;,\n\t]+/);
       let isOwned = false;
-
-      // Cek satu per satu apakah ada yang sudah masuk di Set kita
-      for (let p of pnsInRow) {
-        const cleanP = normalize(p);
-        if (employeeOwnedSet.has(`${authDB}|${cleanP}`)) {
+      for(let p of pnsInRow) {
+        const cleanP = p.trim().replace(/\s+/g, '').toUpperCase();
+        if(cleanP && alreadyOwnedItems.has(`${auth}|${cleanP}`)) {
           isOwned = true;
-          break; 
+          break;
         }
       }
 
-      // ID Unik untuk penampungan (Key Seleksi)
-      const firstPnClean = normalize(pnsInRow[0]);
-      const itemKey = `${authDB}|${firstPnClean}`;
+      const itemKey = `${auth}|${pnRaw.replace(/\s+/g, '').toUpperCase()}`;
       const isSelected = selectedItems.has(itemKey);
+      
+      const safeDesc = row[6].replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
+      const safePnForClick = pnRaw.replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
+
+      // HILANGKAN CHECKBOX JIKA OWNED
+      const sideActionHtml = isOwned ? '<div></div>' : `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`;
+      
+      // KLIK HANYA UNTUK YANG BELUM PUNYA
+      const clickAction = isOwned ? "" : `onclick="toggleBulkItem('${auth}', '${safePnForClick}', '${safeDesc}', '${row[3]}')"`;
 
       return `
-        <div class="bulk-item ${isOwned ? 'already-owned' : (isSelected ? 'selected' : '')}" 
-             ${isOwned ? '' : `onclick="toggleBulkItem('${authDB}', '${pnFullDB.replace(/'/g, "\\'")}', '${String(row[6]).replace(/'/g, "\\'")}', '${row[3]}')"`}>
-          
-          <div style="display:flex; align-items:center; justify-content:center;">
-             ${isOwned ? 
-               `<svg width="20" height="20" viewBox="0 0 24 24" fill="#64748b"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>` : 
-               `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`
-             }
-          </div>
-
+        <div class="bulk-item ${isOwned ? 'already-owned' : (isSelected ? 'selected' : '')}" ${clickAction}>
+          ${sideActionHtml}
           <div class="bulk-info">
-            <span class="bulk-pn">${pnFullDB}</span>
+            <span class="bulk-pn">${pnRaw}</span>
             <span class="bulk-desc">${row[6]}</span>
-            <span class="bulk-meta">${authDB} • ATA ${row[3]} ${isOwned ? '<span class="already-badge">AUTHORIZED</span>' : ''}</span>
+            <span class="bulk-meta">${auth} • ATA ${row[3]} ${isOwned ? '<span class="already-badge">ALREADY OWNED</span>' : ''}</span>
           </div>
-
           <div style="text-align:right;">
-             ${typeof formatLogoValue === 'function' ? formatLogoValue(authDB) : authDB}
+             ${typeof formatLogoValue === 'function' ? formatLogoValue(auth) : auth}
           </div>
         </div>
       `;
@@ -199,13 +271,14 @@
   }
 
   function toggleBulkItem(auth, pn, desc, ata) {
-    const firstPnClean = normalize(pn.split(/[;,\n\r\t]+/)[0]);
-    const itemKey = `${auth.toUpperCase()}|${firstPnClean}`; 
-    
-    if(selectedItems.has(itemKey)) { 
-      selectedItems.delete(itemKey); 
-    } else { 
-      selectedItems.set(itemKey, { authority: auth, pn: pn, desc: desc, ata: ata }); 
+    const cleanPn = pn.replace(/\s+/g, '').toUpperCase();
+    const itemKey = `${auth.toUpperCase()}|${cleanPn}`; 
+    if (alreadyOwnedItems.has(itemKey)) return;
+
+    if(selectedItems.has(itemKey)) {
+      selectedItems.delete(itemKey);
+    } else {
+      selectedItems.set(itemKey, { authority: auth, pn: pn, desc: desc, ata: ata });
     }
     updateBasketUI();
     updateBulkAdvice(document.getElementById('bulkSearchInput').value);
@@ -214,45 +287,37 @@
   function updateBasketUI() {
     const basket = document.getElementById('selectionBasket');
     const saveBtn = document.getElementById('btnSaveBulk');
-    if(selectedItems.size === 0) { 
-      basket.style.display = 'none'; 
-      saveBtn.disabled = true; 
-      saveBtn.textContent = "Save Selection (0)"; 
-      return; 
+    if(selectedItems.size === 0) {
+      basket.style.display = 'none';
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Save Selection (0)";
+      return;
     }
-
-    basket.style.display = 'flex'; 
-    saveBtn.disabled = false; 
+    basket.style.display = 'flex';
+    saveBtn.disabled = false;
     saveBtn.textContent = `Save Selection (${selectedItems.size})`;
     basket.innerHTML = Array.from(selectedItems.values()).map(item => `
       <div class="basket-tag">
-        <small>${item.authority}</small> ${item.pn.substring(0,12)}.. 
-        <span style="cursor:pointer; color:#ef4444; font-weight:bold;" onclick="toggleBulkItem('${item.authority}','${item.pn.replace(/'/g, "\\'")}','','')">&times;</span>
-      </div>`).join('');
+        <small style="font-size:8px; opacity:0.7;">${item.authority}</small> 
+        ${item.pn.substring(0,10)}... 
+        <span onclick="toggleBulkItem('${item.authority}','${item.pn.replace(/'/g, "\\'")}','','')">&times;</span>
+      </div>
+    `).join('');
   }
 
   async function saveBulkAuthorized() {
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
-    
-    Swal.fire({ title: 'Saving...', text: `Adding ${itemsArray.length} items`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
+    const swalConfig = { target: document.getElementById('bulkAddModalOverlay'), allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } };
+    Swal.fire({ ...swalConfig, title: 'Updating Ability List', html: `Recording records to ${empId}...` });
     try {
-      const res = await fetch(GAS_API_URL, { 
-        method: "POST", 
-        body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) 
-      });
+      const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) });
       const result = await res.json();
       if(result.success) {
-        Swal.fire({ icon: 'success', title: 'Data Saved', timer: 1500, showConfirmButton: false });
+        await Swal.fire({ ...swalConfig, icon: 'success', title: 'Items Saved!', timer: 2000, showConfirmButton: false });
         closeBulkAddModal();
-        // Refresh PAL
-        if (typeof openPALDocument === 'function') openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent);
+        if (typeof openPALDocument === 'function') { openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent); }
       } else { throw new Error(result.error); }
-    } catch(e) { Swal.fire('Error', e.message, 'error'); }
-  }
-
-  function closeBulkAddModal() { 
-    document.getElementById('bulkAddModalOverlay').style.display = 'none'; 
+    } catch(e) { Swal.fire({ ...swalConfig, icon: 'error', title: 'Save Failed', text: e.message }); }
   }
 </script>
