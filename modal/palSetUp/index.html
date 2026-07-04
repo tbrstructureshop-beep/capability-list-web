@@ -279,22 +279,56 @@ window.openPALDocument = async function(empId, name, title) {
     const data = await res.json();
     if(!data.success) throw new Error(data.error);
 
-    // ... (Logika Aggregated Data tetap sama seperti sebelumnya) ...
+    /**
+     * 3. AGGREGATION LOGIC (FAA & MULTI-PN COMPATIBLE)
+     * Handles single cells containing multiple PNs separated by semicolons/newlines.
+     */
     const aggregated = data.items.reduce((acc, item) => {
       const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
-      if (!acc[key]) acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: [item.pn] };
-      else if (!acc[key].pns.includes(item.pn)) acc[key].pns.push(item.pn);
+      
+      // 1. UNIFY: Convert newlines/tabs to semicolons
+      // 2. SPLIT: Break by semicolon or comma
+      const rawPnString = String(item.pn || "");
+      const unified = rawPnString.replace(/[\r\n\t]+/g, ';');
+      const parts = unified.split(/[;,]+/);
+
+      // 3. CLEAN: Remove internal spaces but preserve "S " prefix for Airbus
+      const cleanedPns = parts.map(p => {
+        let pClean = p.trim();
+        if (pClean.startsWith('S ')) {
+          return 'S ' + pClean.substring(2).replace(/\s+/g, '');
+        }
+        return pClean.replace(/\s+/g, '');
+      }).filter(p => p.length > 0);
+
+      if (!acc[key]) {
+        acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: cleanedPns };
+      } else {
+        // Merge unique PNs if they don't already exist in the list for this group
+        cleanedPns.forEach(p => {
+          if (!acc[key].pns.includes(p)) acc[key].pns.push(p);
+        });
+      }
       return acc;
     }, {});
 
-    // 3. Render Data (Otomatis menghapus loader)
+    // 4. Render Data (Otomatis menghapus loader)
     body.innerHTML = ''; 
     Object.values(aggregated).forEach((group, idx) => {
-      // ... (Logika render baris tr tetap sama) ...
+      // Sort PNs within the group for professional alignment
+      group.pns.sort();
+
       const mid = Math.ceil(group.pns.length / 2);
       const col1 = group.pns.slice(0, mid);
       const col2 = group.pns.slice(mid);
-      let pnHtml = `<div class="pn-grid"><div>${col1.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div><div>${col2.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div></div>`;
+
+      // Generate the two-column grid for Part Numbers
+      let pnHtml = `
+        <div class="pn-grid">
+          <div>${col1.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
+          <div>${col2.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
+        </div>
+      `;
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -307,11 +341,13 @@ window.openPALDocument = async function(empId, name, title) {
       body.appendChild(tr);
     });
 
-    // 4. Update Page Totals
+    // 5. Update Page Totals with calculation buffer
     setTimeout(() => {
       const printArea = document.getElementById('palPrintArea');
-      const totalPages = Math.ceil((printArea.scrollHeight - 20) / 1122) || 1;
-      document.querySelectorAll('.total-p').forEach(el => el.textContent = totalPages);
+      if (printArea) {
+        const totalPages = Math.ceil((printArea.scrollHeight - 20) / 1122) || 1;
+        document.querySelectorAll('.total-p').forEach(el => el.textContent = totalPages);
+      }
     }, 400);
 
   } catch(e) { 
