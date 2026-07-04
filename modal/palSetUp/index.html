@@ -188,17 +188,17 @@
 <script>
 /**
  * Global Function for rendering the PAL Document with Multi-Page Mimic
- * Perfectly aligned with CSS Step 1 & 2.
+ * Optimized for FAA PNs and High-Accuracy String preservation.
  */
 window.openPALDocument = async function(empId, name, title) {
   const modal = document.getElementById('palDocumentModal');
   const wrapper = document.getElementById('palPagesWrapper');
   if (!modal || !wrapper) return;
 
-  // Simpan ID untuk keperluan Bulk Add nanti
+  // Simpan ID untuk keperluan Bulk Add
   window.currentPalEmpId = empId;
 
-  // 1. Tampilkan modal & Loading State
+  // 1. Tampilkan modal & Reset Tampilan Awal
   modal.style.display = 'block';
   document.body.style.overflow = 'hidden'; 
   wrapper.innerHTML = `
@@ -214,23 +214,19 @@ window.openPALDocument = async function(empId, name, title) {
     if(!data.success) throw new Error(data.error);
 
     /**
-     * 2. AGGREGATION LOGIC (FAA & MULTI-PN COMPATIBLE)
-     * Memecah Part Number yang digabung dalam satu cell (FAA style)
+     * 2. AGGREGATION LOGIC (AKURASI TINGGI)
+     * Memecah Part Number sambil menjaga integritas spasi (penting untuk FAA/Airbus)
      */
     const aggregated = data.items.reduce((acc, item) => {
       const key = `${item.desc.trim()}|${item.auth.trim()}|${item.ref.trim()}`;
       
+      // Split hanya berdasarkan delimiter, jangan hapus spasi di dalam string (misal: S 5411 tetap S 5411)
       const rawPnString = String(item.pn || "");
-      const unified = rawPnString.replace(/[\r\n\t]+/g, ';');
-      const parts = unified.split(/[;,]+/);
+      const parts = rawPnString.split(/[;,\n\t]+/);
 
-      const cleanedPns = parts.map(p => {
-        let pClean = p.trim();
-        if (pClean.toUpperCase().startsWith('S ')) {
-          return 'S ' + pClean.substring(2).replace(/\s+/g, '');
-        }
-        return pClean.replace(/\s+/g, '');
-      }).filter(p => p.length > 0);
+      const cleanedPns = parts
+        .map(p => p.trim()) 
+        .filter(p => p.length > 0);
 
       if (!acc[key]) {
         acc[key] = { desc: item.desc, auth: item.auth, ata: item.ref, pns: cleanedPns };
@@ -243,21 +239,22 @@ window.openPALDocument = async function(empId, name, title) {
     }, {});
 
     const groups = Object.values(aggregated);
-    const rowsPerPage = 12; // Konsisten dengan ruang A4
+    const rowsPerPage = 12; // Menjaga posisi konten tetap di dalam margin A4
     const totalPages = Math.ceil(groups.length / rowsPerPage) || 1;
     const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 
-    wrapper.innerHTML = ''; // Bersihkan loader
+    wrapper.innerHTML = ''; // Hapus loader
 
     /**
-     * 3. MANUAL PAGE GENERATION (Step 2 - Advanced Slicing)
+     * 3. MANUAL PAGE GENERATION (Advanced Slicing)
+     * Membuat lembaran-lembaran kertas A4 secara dinamis
      */
     for (let p = 0; p < totalPages; p++) {
       const pageData = groups.slice(p * rowsPerPage, (p + 1) * rowsPerPage);
       const pageDiv = document.createElement('div');
       pageDiv.className = 'pal-doc';
 
-      // --- TEMPLATE 1: HEADER (Repeated on every page) ---
+      // --- TEMPLATE 1: HEADER (Muncul di setiap halaman) ---
       const headerHtml = `
         <div class="logo-container"><img src="pricing/assets/GMF_Logo.png" class="logo-img"></div>
         <div class="title-section">PERSONAL ABILITY LIST</div>
@@ -276,18 +273,18 @@ window.openPALDocument = async function(empId, name, title) {
         const col1 = group.pns.slice(0, mid);
         const col2 = group.pns.slice(mid);
 
-        // Render PN dalam format grid 2-kolom ( Step 1 CSS Compatible )
+        // MENGGUNAKAN BULLET (•) UNTUK PENULISAN PART NUMBER
         const pnHtml = `
           <div class="pn-grid">
-            <div>${col1.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
-            <div>${col2.map(p => `<div class="pn-item"><span>-</span><span>${p}</span></div>`).join('')}</div>
+            <div>${col1.map(p => `<div class="pn-item"><span>•</span><span>${p}</span></div>`).join('')}</div>
+            <div>${col2.map(p => `<div class="pn-item"><span>•</span><span>${p}</span></div>`).join('')}</div>
           </div>
         `;
 
         rowsHtml += `
           <tr>
             <td style="text-align:center; width:35px;">${(p * rowsPerPage) + idx + 1}</td>
-            <td style="text-transform: uppercase; font-weight:bold; font-size: 9.5px; width:180px;">${group.desc}</td>
+            <td style="text-transform: uppercase; font-weight:bold; font-size: 9px; width:180px;">${group.desc}</td>
             <td>${pnHtml}</td>
             <td style="text-align:center; width:80px;"><strong>${group.ata}</strong></td>
             <td style="text-align:center; font-size: 9px; font-weight: bold; width:80px;">${group.auth}</td>
@@ -295,7 +292,7 @@ window.openPALDocument = async function(empId, name, title) {
         `;
       });
 
-      // --- TEMPLATE 3: SIGNATURE (Only on the LAST page) ---
+      // --- TEMPLATE 3: SIGNATURE (Hanya muncul di halaman terakhir) ---
       let signatureHtml = '';
       if (p === totalPages - 1) {
         signatureHtml = `
@@ -307,7 +304,7 @@ window.openPALDocument = async function(empId, name, title) {
                 <div class="sig-inner-flex">
                   <div>Approved by<br><span contenteditable="true" style="font-weight: bold;">SM Structure Workshop</span></div>
                   <div style="margin-top: auto;">
-                    ( <span contenteditable="true" style="display:inline-block; min-width: 150px; text-align: center;">_____________________</span> )<br>
+                    ( <span contenteditable="true" style="display:inline-block; min-width: 150px;">_____________________</span> )<br>
                     <span style="font-size: 10px; margin-top: 5px; display: block;">Name & Signature</span>
                   </div>
                 </div>
@@ -317,7 +314,7 @@ window.openPALDocument = async function(empId, name, title) {
         `;
       }
 
-      // --- TEMPLATE 4: FOOTER (Repeated on every page) ---
+      // --- TEMPLATE 4: FOOTER (Muncul di setiap halaman) ---
       const footerHtml = `
         <div class="doc-footer-container">
           ${signatureHtml}
@@ -328,7 +325,7 @@ window.openPALDocument = async function(empId, name, title) {
         </div>
       `;
 
-      // Rakit lembaran kertas
+      // Gabungkan semua komponen ke dalam lembaran kertas (A4)
       pageDiv.innerHTML = `
         ${headerHtml}
         <table class="main-table">
