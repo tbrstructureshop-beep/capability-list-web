@@ -71,6 +71,12 @@
     align-items: center;
     gap: 8px;
     box-shadow: var(--shadow-sm);
+    transition: 0.2s;
+  }
+
+  .basket-tag:hover {
+    background: #fff5f5;
+    border-color: #ef4444;
   }
 
   .basket-tag span {
@@ -214,7 +220,7 @@
 
     const q = query.toLowerCase().replace(/\s+/g, ''); 
 
-    // rawData berasal dari global scope index.html
+    // rawData mapping: 1:Auth, 3:ATA, 5:PN, 6:Name
     const matches = rawData.filter(row => 
       String(row[5]).toLowerCase().replace(/\s+/g, '').includes(q) || 
       String(row[6]).toLowerCase().includes(q) || 
@@ -296,14 +302,18 @@
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
     
+    // 1. OPEN LOADING SPINNER (SweetAlert2)
     Swal.fire({ 
       title: 'Updating Ability List', 
-      html: 'Please wait while we record the data...',
+      html: `Recording <b>${itemsArray.length}</b> items to Employee <b>${empId}</b>...`,
       allowOutsideClick: false,
-      didOpen: () => { Swal.showLoading(); }
+      didOpen: () => { 
+        Swal.showLoading(); 
+      }
     });
     
     try {
+      // 2. FETCH TO SERVER
       const res = await fetch(GAS_API_URL, {
         method: "POST",
         body: JSON.stringify({
@@ -315,7 +325,16 @@
       const result = await res.json();
       
       if(result.success) {
-        Swal.fire({ icon: 'success', title: 'Items Saved!', text: `${itemsArray.length} items successfully added.`, timer: 2000, showConfirmButton: false });
+        // 3. SUCCESS NOTIFICATION
+        await Swal.fire({ 
+          icon: 'success', 
+          title: 'Items Saved!', 
+          text: `Successfully added ${itemsArray.length} parts to ${empId}'s ability list.`, 
+          timer: 2000, 
+          showConfirmButton: false 
+        });
+
+        // 4. CLOSE MODAL AND REFRESH DOCUMENT
         closeBulkAddModal();
         if (typeof openPALDocument === 'function') {
            const name = document.getElementById('pal_name').textContent;
@@ -323,10 +342,16 @@
            openPALDocument(empId, name, title);
         }
       } else {
-        throw new Error(result.error);
+        throw new Error(result.error || "Unknown server error");
       }
     } catch(e) {
-      Swal.fire("Error", "Failed to save: " + e.message, "error");
+      // 5. ERROR NOTIFICATION
+      console.error("Save Bulk Error:", e);
+      Swal.fire({
+        icon: 'error',
+        title: 'Saving Failed',
+        text: e.message || "Could not connect to the server."
+      });
     }
   }
 </script>
