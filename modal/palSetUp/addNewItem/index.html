@@ -1,5 +1,5 @@
 <style>
-  /* --- STYLING MODAL BULK ADD (ALIGNED WITH ROOT) --- */
+  /* --- STYLING MODAL BULK ADD (ROOT COMPATIBLE) --- */
   .bulk-add-card {
     background: var(--card-bg);
     width: 95%;
@@ -85,13 +85,14 @@
   .bulk-item:hover:not(.already-owned) { background: var(--bg); transform: translateX(4px); }
   .bulk-item.selected { background: var(--primary-light); border-color: var(--primary); }
 
-  /* LOGIKA FREEZE / ALREADY OWNED */
+  /* --- LOGIKA FREEZE / ALREADY OWNED --- */
   .bulk-item.already-owned {
-    opacity: 0.4 !important;
+    opacity: 0.5 !important;
     cursor: not-allowed !important;
     background: #f1f5f9 !important;
-    filter: grayscale(100%) !important; 
+    filter: grayscale(100%) !important; /* MEMBUAT LOGO & TEKS JADI ABU-ABU */
     border-left: 4px solid var(--text-light) !important;
+    pointer-events: none; /* Matikan semua interaksi klik */
   }
 
   .bulk-item.already-owned .bulk-pn { color: var(--text-muted) !important; }
@@ -159,7 +160,7 @@
 
 <script>
   let selectedItems = new Map(); 
-  let alreadyOwnedItems = new Set(); // Akan menyimpan list pecah-pecah PN per Otoritas
+  let alreadyOwnedItems = new Set(); 
 
   window.startBulkAddProcess = async function() {
     const overlay = document.getElementById('bulkAddModalOverlay');
@@ -168,7 +169,7 @@
     overlay.style.display = 'flex';
     document.getElementById('bulkSearchInput').value = '';
     document.getElementById('bulkSearchInput').focus();
-    document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Syncing records...</p></div>';
+    document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Syncing user records...</p></div>';
     
     selectedItems.clear();
     alreadyOwnedItems.clear();
@@ -181,7 +182,6 @@
       if(result.success) {
         result.items.forEach(item => {
           const auth = String(item.auth).trim().toUpperCase();
-          // PECAH PN DARI DATABASE (FAA case: "PN1; PN2")
           const pnsInCell = String(item.pn).split(/[;,\n\t]+/);
           pnsInCell.forEach(p => {
             const cleanP = p.trim().replace(/\s+/g, '').toUpperCase();
@@ -217,7 +217,7 @@
       const auth = String(row[1]).trim().toUpperCase();
       const pnRaw = String(row[5]);
       
-      // CEK APAKAH BARIS INI (SECARA KESELURUHAN ATAU POTONGANNYA) SUDAH DIMILIKI?
+      // LOGIKA FAA SPLIT CHECKING
       const pnsInThisRow = pnRaw.split(/[;,\n\t]+/);
       let isOwned = false;
       for(let p of pnsInThisRow) {
@@ -235,8 +235,11 @@
       const safeDesc = row[6].replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
       const safePnForClick = pnRaw.replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
 
-      // Hilangkan checkbox jika sudah dimiliki
-      const sideActionHtml = isOwned ? '<div></div>' : `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`;
+      // HILANGKAN CHECKBOX JIKA OWNED
+      const sideActionHtml = isOwned ? 
+        '<div></div>' : 
+        `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`;
+
       const clickAction = isOwned ? "" : `onclick="toggleBulkItem('${auth}', '${safePnForClick}', '${safeDesc}', '${row[3]}')"`;
 
       return `
@@ -247,7 +250,7 @@
             <span class="bulk-desc">${row[6]}</span>
             <span class="bulk-meta">${auth} • ATA ${row[3]} ${isOwned ? '<span class="already-badge">OWNED</span>' : ''}</span>
           </div>
-          <div class="agency-logo-container" style="text-align:right;">
+          <div style="text-align:right;">
              ${typeof formatLogoValue === 'function' ? formatLogoValue(auth) : auth}
           </div>
         </div>
@@ -257,10 +260,7 @@
 
   function toggleBulkItem(auth, pn, desc, ata) {
     const cleanPn = pn.replace(/\s+/g, '').toUpperCase();
-    const authUpper = auth.toUpperCase();
-    const itemKey = `${authUpper}|${cleanPn}`; 
-    
-    // Safety check again
+    const itemKey = `${auth.toUpperCase()}|${cleanPn}`; 
     if (alreadyOwnedItems.has(itemKey)) return;
 
     if(selectedItems.has(itemKey)) {
@@ -296,15 +296,38 @@
   async function saveBulkAuthorized() {
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
-    const swalConfig = { target: document.getElementById('bulkAddModalOverlay'), allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } };
-    Swal.fire({ ...swalConfig, title: 'Updating...', html: `Saving <b>${itemsArray.length}</b> records to ${empId}` });
+    const swalConfig = {
+      target: document.getElementById('bulkAddModalOverlay'),
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    };
+
+    Swal.fire({
+      ...swalConfig,
+      title: 'Updating Ability List',
+      html: `Recording <b>${itemsArray.length}</b> new items to Employee <b>${empId}</b>...`
+    });
+    
     try {
-      const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) });
+      const res = await fetch(GAS_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray })
+      });
       const result = await res.json();
+      
       if(result.success) {
-        await Swal.fire({ ...swalConfig, icon: 'success', title: 'Items Saved!', timer: 2000, showConfirmButton: false });
+        await Swal.fire({
+          ...swalConfig,
+          icon: 'success',
+          title: 'Items Saved!',
+          text: `Capability list updated for ${empId}`,
+          timer: 2000,
+          showConfirmButton: false
+        });
         closeBulkAddModal();
-        if (typeof openPALDocument === 'function') { openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent); }
+        if (typeof openPALDocument === 'function') {
+           openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent);
+        }
       } else { throw new Error(result.error); }
     } catch(e) { Swal.fire({ ...swalConfig, icon: 'error', title: 'Save Failed', text: e.message }); }
   }
