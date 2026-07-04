@@ -86,56 +86,90 @@
     document.getElementById('bulkAddModalOverlay').style.display = 'none';
   }
 
+  /**
+   * REPAIRED: updateBulkAdvice & toggleBulkItem (Step 2 - Frontend Logic)
+   * 
+   * Perbaikan fokus pada:
+   * 1. Normalisasi Part Number (menghapus spasi/newline) untuk Key pencocokan.
+   * 2. Highlighting: Memastikan class 'selected' muncul saat item diklik.
+   * 3. FAA Multi-PN: Menangani string PN yang mengandung karakter pindah baris agar tidak merusak JavaScript.
+   */
+  
   function updateBulkAdvice(query) {
-    const container = document.getElementById('bulkAdviceContainer');
-    if(!query || query.length < 2) return;
-
-    const q = query.toLowerCase();
-    
-    // Filter rawData (1:AUTH, 3:ATA, 5:PN, 6:NAME)
-    const matches = rawData.filter(row => 
-      String(row[5]).toLowerCase().includes(q) || 
-      String(row[6]).toLowerCase().includes(q) || 
-      String(row[3]).toLowerCase().includes(q)
-    ).slice(0, 25);
-
-    container.innerHTML = matches.map(row => {
-      const auth = String(row[1]);
-      const pn = String(row[5]);
-      
-      // KUNCI UNIK: Gabungan Otoritas dan PN (Menghindari tabrakan pilihan)
-      const itemKey = `${auth}|${pn}`;
-      const isSelected = selectedItems.has(itemKey);
-      
-      // Escape petik satu pada deskripsi agar tidak merusak HTML
-      const safeDesc = row[6].replace(/'/g, "\\'");
-
-      return `
-        <div class="bulk-item ${isSelected ? 'selected' : ''}" 
-             onclick="toggleBulkItem('${auth}', '${pn}', '${safeDesc}', '${row[3]}')">
-          <input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleBulkItem('${auth}', '${pn}', '${safeDesc}', '${row[3]}')">
-          <div class="bulk-info">
-            <span class="bulk-pn">${pn}</span>
-            <span class="bulk-desc">${row[6]}</span>
-            <span class="bulk-meta">${auth} • ATA ${row[3]}</span>
+      const container = document.getElementById('bulkAdviceContainer');
+      if(!query || query.length < 2) {
+        container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-light); font-size: 13px;">Type at least 2 characters to search in Capability List...</div>';
+        return;
+      }
+  
+      // Normalisasi query: hapus spasi agar pencarian PN lebih fleksibel
+      const q = query.toLowerCase().replace(/\s+/g, ''); 
+  
+      const matches = rawData.filter(row => 
+        // Cek kolom PN (index 5) dengan normalisasi spasi
+        String(row[5]).toLowerCase().replace(/\s+/g, '').includes(q) || 
+        String(row[6]).toLowerCase().includes(q) || 
+        String(row[3]).toLowerCase().includes(q)
+      ).slice(0, 25);
+  
+      if(matches.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">No matching items found.</div>';
+        return;
+      }
+  
+      container.innerHTML = matches.map(row => {
+        const auth = String(row[1]);
+        const pnRaw = String(row[5]);
+        
+        // NORMALISASI KEY: Kunci unik menggunakan Gabungan Otoritas + PN tanpa spasi
+        const cleanPn = pnRaw.replace(/\s+/g, ''); 
+        const itemKey = `${auth}|${cleanPn}`;
+        
+        const isSelected = selectedItems.has(itemKey);
+        
+        // Sanitasi Deskripsi & PN untuk ditaruh di dalam attribute onclick HTML
+        const safeDesc = row[6].replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
+        const safePnForClick = pnRaw.replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
+  
+        return `
+          <div class="bulk-item ${isSelected ? 'selected' : ''}" 
+               onclick="toggleBulkItem('${auth}', '${safePnForClick}', '${safeDesc}', '${row[3]}')">
+            <input type="checkbox" ${isSelected ? 'checked' : ''} 
+                   onclick="event.stopPropagation(); toggleBulkItem('${auth}', '${safePnForClick}', '${safeDesc}', '${row[3]}')">
+            <div class="bulk-info">
+              <span class="bulk-pn">${pnRaw}</span>
+              <span class="bulk-desc">${row[6]}</span>
+              <span class="bulk-meta">${auth} • ATA ${row[3]}</span>
+            </div>
+            <div style="opacity:0.6;">${typeof formatLogoValue === 'function' ? formatLogoValue(auth) : auth}</div>
           </div>
-          <div style="opacity:0.6;">${typeof formatLogoValue === 'function' ? formatLogoValue(auth) : auth}</div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
   }
-
+  
   function toggleBulkItem(auth, pn, desc, ata) {
-    const itemKey = `${auth}|${pn}`; // Gunakan composite key
-    
-    if(selectedItems.has(itemKey)) {
-      selectedItems.delete(itemKey);
-    } else {
-      selectedItems.set(itemKey, { authority: auth, pn: pn, desc: desc, ata: ata });
-    }
-    
-    updateBasketUI();
-    updateBulkAdvice(document.getElementById('bulkSearchInput').value);
+      // Normalisasi PN (hapus spasi/newline) saat membuat Key untuk disimpan di Map
+      const cleanPn = pn.replace(/\s+/g, '');
+      const itemKey = `${auth}|${cleanPn}`; 
+      
+      if(selectedItems.has(itemKey)) {
+        selectedItems.delete(itemKey);
+      } else {
+        // Simpan PN asli untuk dikirim ke sheet, tapi gunakan cleanPn sebagai Key di Map
+        selectedItems.set(itemKey, { 
+          authority: auth, 
+          pn: pn, 
+          desc: desc, 
+          ata: ata 
+        });
+      }
+      
+      // Update Keranjang (basket) UI
+      updateBasketUI();
+      
+      // RE-RENDER LIST: Agar highlight biru (class .selected) langsung muncul/hilang seketika
+      const currentQuery = document.getElementById('bulkSearchInput').value;
+      updateBulkAdvice(currentQuery);
   }
 
   function updateBasketUI() {
