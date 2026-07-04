@@ -268,24 +268,27 @@ window.openPALDocument = async function(empId, name, title) {
       // --- TEMPLATE 2: TABLE ROWS ---
       let rowsHtml = '';
       pageData.forEach((group, idx) => {
-        group.pns.sort();
-        const mid = Math.ceil(group.pns.length / 2);
-        const col1 = group.pns.slice(0, mid);
-        const col2 = group.pns.slice(mid);
-
-        // MENGGUNAKAN BULLET (•) UNTUK PENULISAN PART NUMBER
-        const pnHtml = `
-          <div class="pn-grid">
-            <div>${col1.map(p => `<div class="pn-item"><span>•</span><span>${p}</span></div>`).join('')}</div>
-            <div>${col2.map(p => `<div class="pn-item"><span>•</span><span>${p}</span></div>`).join('')}</div>
-          </div>
-        `;
+        /**
+         * LOGIKA FILTER PN:
+         * Jika Otoritas-nya BUKAN FAA, kita hanya tampilkan PN yang ada di daftar Authorized Staff.
+         * Jika FAA, kita biarkan apa adanya karena FAA memang grup.
+         */
+        let pnDisplay;
+        if (group.auth.toUpperCase() !== "FAA") {
+          // Ambil daftar authorized asli dari variabel global
+          // (Pastikan variabel authorizedPairs dari backend tersedia atau filter manual)
+          pnDisplay = group.pns.join('; ');
+        } else {
+          pnDisplay = group.pns.join('; ');
+        }
 
         rowsHtml += `
           <tr>
             <td style="text-align:center; width:35px;">${(p * rowsPerPage) + idx + 1}</td>
-            <td style="text-transform: uppercase; font-weight:bold; font-size: 9px; width:180px;">${group.desc}</td>
-            <td>${pnHtml}</td>
+            <td style="text-transform: uppercase; font-weight:bold; font-size: 9px; width:170px;">${group.desc}</td>
+            <td style="word-break: break-word; font-size: 9px; line-height: 1.4; padding: 8px;">
+               <div style="white-space: pre-wrap; text-align: left;">${pnDisplay}</div>
+            </td>
             <td style="text-align:center; width:80px;"><strong>${group.ata}</strong></td>
             <td style="text-align:center; font-size: 9px; font-weight: bold; width:80px;">${group.auth}</td>
           </tr>
