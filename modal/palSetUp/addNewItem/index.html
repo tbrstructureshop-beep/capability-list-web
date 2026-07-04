@@ -85,12 +85,12 @@
   .bulk-item:hover:not(.already-owned) { background: var(--bg); transform: translateX(4px); }
   .bulk-item.selected { background: var(--primary-light); border-color: var(--primary); }
 
-  /* --- LOGIKA FREEZE / ALREADY OWNED (STYLING MATI) --- */
+  /* LOGIKA FREEZE / ALREADY OWNED */
   .bulk-item.already-owned {
-    opacity: 0.5 !important;
+    opacity: 0.4 !important;
     cursor: not-allowed !important;
-    background: #f8fafc !important;
-    filter: grayscale(100%) !important; /* Logo, Teks, Semua jadi abu-abu */
+    background: #f1f5f9 !important;
+    filter: grayscale(100%) !important; 
     border-left: 4px solid var(--text-light) !important;
   }
 
@@ -110,7 +110,7 @@
 
   .already-badge {
     font-size: 8px;
-    background: var(--text-light);
+    background: #64748b;
     color: white;
     padding: 2px 6px;
     border-radius: 4px;
@@ -159,11 +159,8 @@
 
 <script>
   let selectedItems = new Map(); 
-  let alreadyOwnedItems = new Set(); 
+  let alreadyOwnedItems = new Set(); // Akan menyimpan list pecah-pecah PN per Otoritas
 
-  /**
-   * Global Entry Point
-   */
   window.startBulkAddProcess = async function() {
     const overlay = document.getElementById('bulkAddModalOverlay');
     if (!overlay) return;
@@ -171,31 +168,29 @@
     overlay.style.display = 'flex';
     document.getElementById('bulkSearchInput').value = '';
     document.getElementById('bulkSearchInput').focus();
-    document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Checking user records...</p></div>';
+    document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Syncing records...</p></div>';
     
     selectedItems.clear();
     alreadyOwnedItems.clear();
     updateBasketUI();
 
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
-    
-    // AMBIL DATA EXISTING UNTUK FREEZE
     try {
       const res = await fetch(`${GAS_API_URL}?action=getStaffAuthorizedItems&empId=${empId}`);
       const result = await res.json();
       if(result.success) {
         result.items.forEach(item => {
-          // NORMALISASI: Hapus spasi dan enter agar matching kunci akurat
-          const cleanPn = String(item.pn).replace(/\s+/g, '').toUpperCase();
-          const cleanAuth = String(item.auth).trim().toUpperCase();
-          alreadyOwnedItems.add(`${cleanAuth}|${cleanPn}`);
+          const auth = String(item.auth).trim().toUpperCase();
+          // PECAH PN DARI DATABASE (FAA case: "PN1; PN2")
+          const pnsInCell = String(item.pn).split(/[;,\n\t]+/);
+          pnsInCell.forEach(p => {
+            const cleanP = p.trim().replace(/\s+/g, '').toUpperCase();
+            if(cleanP) alreadyOwnedItems.add(`${auth}|${cleanP}`);
+          });
         });
       }
-      document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Ready! Search items to add.</p></div>';
-    } catch(e) { 
-      console.error(e); 
-      document.getElementById('bulkAdviceContainer').innerHTML = '<div style="color:red; text-align:center; padding:20px;">Failed to sync records.</div>';
-    }
+      document.getElementById('bulkAdviceContainer').innerHTML = '<div class="bulk-loading-state"><p>Search components to add...</p></div>';
+    } catch(e) { console.error("Sync Error:", e); }
   };
 
   function closeBulkAddModal() {
@@ -207,8 +202,6 @@
     if(!query || query.length < 2) return;
 
     const q = query.toLowerCase().replace(/\s+/g, ''); 
-
-    // rawData berasal dari global index.html
     const matches = rawData.filter(row => 
       String(row[5]).toLowerCase().replace(/\s+/g, '').includes(q) || 
       String(row[6]).toLowerCase().includes(q) || 
@@ -221,28 +214,34 @@
     }
 
     container.innerHTML = matches.map(row => {
-      const auth = String(row[1]).trim();
+      const auth = String(row[1]).trim().toUpperCase();
       const pnRaw = String(row[5]);
-      const cleanPn = pnRaw.replace(/\s+/g, '').toUpperCase(); 
-      const itemKey = `${auth.toUpperCase()}|${cleanPn}`;
       
-      const isOwned = alreadyOwnedItems.has(itemKey); 
+      // CEK APAKAH BARIS INI (SECARA KESELURUHAN ATAU POTONGANNYA) SUDAH DIMILIKI?
+      const pnsInThisRow = pnRaw.split(/[;,\n\t]+/);
+      let isOwned = false;
+      for(let p of pnsInThisRow) {
+        const cleanP = p.trim().replace(/\s+/g, '').toUpperCase();
+        if(cleanP && alreadyOwnedItems.has(`${auth}|${cleanP}`)) {
+          isOwned = true;
+          break;
+        }
+      }
+
+      const cleanPnCell = pnRaw.replace(/\s+/g, '').toUpperCase(); 
+      const itemKey = `${auth}|${cleanPnCell}`;
       const isSelected = selectedItems.has(itemKey);
       
       const safeDesc = row[6].replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
       const safePnForClick = pnRaw.replace(/'/g, "\\'").replace(/[\r\n]+/g, ' ');
 
-      // LOGIKA: Sembunyikan checkbox jika sudah punya (Owned)
-      const checkboxHtml = isOwned ? 
-        '<div></div>' : 
-        `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`;
-
-      // LOGIKA: Matikan fungsi klik jika sudah punya (Owned)
+      // Hilangkan checkbox jika sudah dimiliki
+      const sideActionHtml = isOwned ? '<div></div>' : `<input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`;
       const clickAction = isOwned ? "" : `onclick="toggleBulkItem('${auth}', '${safePnForClick}', '${safeDesc}', '${row[3]}')"`;
 
       return `
         <div class="bulk-item ${isOwned ? 'already-owned' : (isSelected ? 'selected' : '')}" ${clickAction}>
-          ${checkboxHtml}
+          ${sideActionHtml}
           <div class="bulk-info">
             <span class="bulk-pn">${pnRaw}</span>
             <span class="bulk-desc">${row[6]}</span>
@@ -258,8 +257,10 @@
 
   function toggleBulkItem(auth, pn, desc, ata) {
     const cleanPn = pn.replace(/\s+/g, '').toUpperCase();
-    const itemKey = `${auth.toUpperCase()}|${cleanPn}`; 
+    const authUpper = auth.toUpperCase();
+    const itemKey = `${authUpper}|${cleanPn}`; 
     
+    // Safety check again
     if (alreadyOwnedItems.has(itemKey)) return;
 
     if(selectedItems.has(itemKey)) {
@@ -268,7 +269,6 @@
       selectedItems.set(itemKey, { authority: auth, pn: pn, desc: desc, ata: ata });
     }
     updateBasketUI();
-    // Re-render biar highlight biru/putih langsung berubah
     updateBulkAdvice(document.getElementById('bulkSearchInput').value);
   }
 
@@ -296,46 +296,16 @@
   async function saveBulkAuthorized() {
     const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
     const itemsArray = Array.from(selectedItems.values());
-    
-    // SPINNER: Muncul di atas modal dengan z-index tinggi
-    const swalConfig = {
-      target: document.getElementById('bulkAddModalOverlay'),
-      allowOutsideClick: false,
-      didOpen: () => { Swal.showLoading(); }
-    };
-
-    Swal.fire({
-      ...swalConfig,
-      title: 'Updating Ability List',
-      html: `Recording <b>${itemsArray.length}</b> new items to Employee <b>${empId}</b>...`
-    });
-    
+    const swalConfig = { target: document.getElementById('bulkAddModalOverlay'), allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } };
+    Swal.fire({ ...swalConfig, title: 'Updating...', html: `Saving <b>${itemsArray.length}</b> records to ${empId}` });
     try {
-      const res = await fetch(GAS_API_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray })
-      });
+      const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) });
       const result = await res.json();
-      
       if(result.success) {
-        await Swal.fire({
-          ...swalConfig,
-          icon: 'success',
-          title: 'Items Saved!',
-          text: `Capability list updated for ${empId}`,
-          timer: 2000,
-          showConfirmButton: false
-        });
-
+        await Swal.fire({ ...swalConfig, icon: 'success', title: 'Items Saved!', timer: 2000, showConfirmButton: false });
         closeBulkAddModal();
-        if (typeof openPALDocument === 'function') {
-           openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent);
-        }
-      } else {
-        throw new Error(result.error);
-      }
-    } catch(e) {
-      Swal.fire({ ...swalConfig, icon: 'error', title: 'Save Failed', text: e.message });
-    }
+        if (typeof openPALDocument === 'function') { openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent); }
+      } else { throw new Error(result.error); }
+    } catch(e) { Swal.fire({ ...swalConfig, icon: 'error', title: 'Save Failed', text: e.message }); }
   }
 </script>
