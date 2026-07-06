@@ -171,11 +171,9 @@
          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
          Print to PDF
        </button>
-       <button class="btn" onclick="openBulkAddModal()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 6px;">+ Add Items</button>
+       <button id="btnPalAddItems" class="btn" onclick="openBulkAddModal()" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.3); padding: 8px 16px; cursor:pointer; font-weight: bold; border-radius: 6px;">+ Add Items</button>
      </div>
-     
      <div style="color: #ccc; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;">PERSONAL ABILITY LIST PREVIEW | MULTI-PAGE MODE</div>
-     
      <button class="close-x" onclick="document.getElementById('palDocumentModal').style.display='none'; document.body.style.overflow='auto';" style="color:white; font-size:30px; border:none; background:none; cursor:pointer;">&times;</button>
   </div>
 
@@ -195,8 +193,21 @@ window.openPALDocument = async function(empId, name, title) {
   const wrapper = document.getElementById('palPagesWrapper');
   if (!modal || !wrapper) return;
 
-  // Simpan ID untuk keperluan Bulk Add
   window.currentPalEmpId = empId;
+  window.currentPalName = name;
+  window.currentPalTitle = title;
+
+  // 2. Logika Sembunyikan Tombol berdasarkan Role (Normalize Case)
+  const btnAdd = document.getElementById('btnPalAddItems');
+  const session = JSON.parse(localStorage.getItem('capability_session'));
+  
+  if (btnAdd) {
+    if (session && session.role && session.role.toLowerCase() === 'admin') {
+      btnAdd.style.display = 'block';
+    } else {
+      btnAdd.style.display = 'none';
+    }
+  }
 
   // 1. Tampilkan modal & Reset Tampilan Awal
   modal.style.display = 'block';
