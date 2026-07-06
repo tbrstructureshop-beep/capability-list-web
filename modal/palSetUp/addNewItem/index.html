@@ -306,18 +306,60 @@
   }
 
   async function saveBulkAuthorized() {
-    const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
-    const itemsArray = Array.from(selectedItems.values());
-    const swalConfig = { target: document.getElementById('bulkAddModalOverlay'), allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } };
-    Swal.fire({ ...swalConfig, title: 'Updating Ability List', html: `Recording records to ${empId}...` });
-    try {
-      const res = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) });
-      const result = await res.json();
-      if(result.success) {
-        await Swal.fire({ ...swalConfig, icon: 'success', title: 'Items Saved!', timer: 2000, showConfirmButton: false });
-        closeBulkAddModal();
-        if (typeof openPALDocument === 'function') { openPALDocument(empId, document.getElementById('pal_name').textContent, document.getElementById('pal_title').textContent); }
-      } else { throw new Error(result.error); }
-    } catch(e) { Swal.fire({ ...swalConfig, icon: 'error', title: 'Save Failed', text: e.message }); }
+  // Mengambil empId dari window (prioritas) atau dari element
+  const empId = window.currentPalEmpId || document.getElementById('pal_id').textContent;
+  const itemsArray = Array.from(selectedItems.values());
+  
+  const swalConfig = { 
+    target: document.getElementById('bulkAddModalOverlay'), 
+    allowOutsideClick: false, 
+    didOpen: () => { Swal.showLoading(); } 
+  };
+
+  Swal.fire({ 
+    ...swalConfig, 
+    title: 'Updating Ability List', 
+    html: `Recording records to ${empId}...` 
+  });
+
+  try {
+    const res = await fetch(GAS_API_URL, { 
+      method: "POST", 
+      body: JSON.stringify({ action: "bulkAddAuthorized", empId: empId, items: itemsArray }) 
+    });
+    
+    const result = await res.json();
+    
+    if(result.success) {
+      await Swal.fire({ 
+        ...swalConfig, 
+        icon: 'success', 
+        title: 'Items Saved!', 
+        timer: 2000, 
+        showConfirmButton: false 
+      });
+
+      // 1. Tutup modal Add New Item
+      closeBulkAddModal();
+
+      // 2. Refresh modal palSetUp menggunakan data dari window
+      if (typeof openPALDocument === 'function') { 
+        openPALDocument(
+          window.currentPalEmpId, 
+          window.currentPalName, 
+          window.currentPalTitle
+        ); 
+      }
+    } else { 
+      throw new Error(result.error); 
+    }
+  } catch(e) { 
+    Swal.fire({ 
+      ...swalConfig, 
+      icon: 'error', 
+      title: 'Save Failed', 
+      text: e.message 
+    }); 
   }
+}
 </script>
