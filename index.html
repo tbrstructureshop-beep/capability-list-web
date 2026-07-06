@@ -1391,6 +1391,9 @@
       // 2. Gunakan DocumentFragment (Memproses HTML di memori, bukan di DOM pohon langsung)
       const fragment = document.createDocumentFragment();
       const pageData = data.slice(start, end);
+
+      // --- LOGIN ROLE CHECK (Normalize Case) ---
+      const isAdmin = currentUser && currentUser.role && currentUser.role.toLowerCase() === 'admin';
     
       pageData.forEach((row, rIdx) => {
         const card = document.createElement("div");
@@ -1407,8 +1410,9 @@
         const safePn = String(pn).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").replace(/"/g, '\\"');
     
         // 3. Logic Tombol (Seleksi vs Menu Tiga Titik)
+        // Tombol menu ditambahkan syarat: HARUS ADMIN
         const checkHtml = actionMode ? `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
-        const menuBtnHtml = !actionMode ? `
+        const menuBtnHtml = (!actionMode && isAdmin) ? `
           <button class="card-menu-btn" title="Update Status" onclick="event.stopPropagation(); openStatusForm('${safeAuthName}', '${safePn}', '${currentStatusValue}')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
           </button>
