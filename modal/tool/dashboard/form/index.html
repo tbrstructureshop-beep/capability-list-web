@@ -34,63 +34,32 @@
 
     <!-- Form Grid -->
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-      <div><label class="form-label">Tool Part Number</label><input type="text" id="f_toolPN" class="form-control"></div>
-      <div><label class="form-label">Serial Number</label><input type="text" id="f_toolSN" class="form-control"></div>
-      <div><label class="form-label">Reg Number</label><input type="text" id="f_toolReg" class="form-control"></div>
-      <div><label class="form-label">Model</label><input type="text" id="f_toolModel" class="form-control"></div>
-      <div><label class="form-label">Location</label><input type="text" id="f_toolLoc" class="form-control"></div>
-      <div><label class="form-label">Manufacture</label><input type="text" id="f_toolManuf" class="form-control"></div>
+      <div><label class="form-label">Tool Part Number</label><input type="text" id="f_toolPN" class="form-control force-up"></div>
+      <div><label class="form-label">Serial Number</label><input type="text" id="f_toolSN" class="form-control force-up"></div>
+      <div><label class="form-label">Reg Number</label><input type="text" id="f_toolReg" class="form-control force-up"></div>
+      <div><label class="form-label">Model</label><input type="text" id="f_toolModel" class="form-control force-up"></div>
+      <div><label class="form-label">Location</label><input type="text" id="f_toolLoc" class="form-control force-up"></div>
+      <div><label class="form-label">Manufacture</label><input type="text" id="f_toolManuf" class="form-control force-up"></div>
       
-      <!-- COMPLETE STORE LIST -->
+      <!-- ENRICHED STORE DROPDOWN (Combobox Style) -->
       <div>
         <label class="form-label">Store</label>
-        <select id="f_toolStore" class="form-control">
-          <option value="">Select one</option>
-          <option value="H1">H1</option><option value="H2">H2</option><option value="H3">H3</option><option value="H4">H4</option>
-          <option value="ND">ND</option><option value="HP">HP</option><option value="W1">W1</option><option value="XX">XX</option>
-          <option value="72">72</option><option value="DI">DI</option><option value="AN">AN</option><option value="UP">UP</option>
-          <option value="OT">OT</option><option value="W2">W2</option><option value="LG">LG</option><option value="DP">DP</option>
-          <option value="19">19</option><option value="F3">F3</option><option value="XC">XC</option>
-        </select>
+        <input type="text" id="f_toolStore" list="list_stores" class="form-control force-up" placeholder="Type or Select">
+        <datalist id="list_stores"></datalist>
       </div>
 
-      <!-- COMPLETE STATUS LIST -->
+      <!-- ENRICHED STATUS DROPDOWN (Combobox Style) -->
       <div>
         <label class="form-label">Status</label>
-        <select id="f_toolStatus" class="form-control">
-          <option value="">Select one</option>
-          <option value="BROKEN">BROKEN</option>
-          <option value="AVAILABLE">AVAILABLE</option>
-          <option value="CALIBRATION">CALIBRATION</option>
-          <option value="QUARANTINED">QUARANTINED</option>
-          <option value="MISSING">MISSING</option>
-          <option value="MAINTENANCE">MAINTENANCE</option>
-          <option value="BOOKED">BOOKED</option>
-        </select>
+        <input type="text" id="f_toolStatus" list="list_statuses" class="form-control force-up" placeholder="Type or Select">
+        <datalist id="list_statuses"></datalist>
       </div>
 
-      <!-- COMPLETE CATEGORY LIST -->
+      <!-- ENRICHED CATEGORY DROPDOWN (Combobox Style) -->
       <div style="grid-column: span 1;">
         <label class="form-label">Category</label>
-        <select id="f_toolCategory" class="form-control">
-          <option value="">Select one</option>
-          <option value="GENERAL">GENERAL</option>
-          <option value="IMTE">IMTE</option>
-          <option value="PMI TZ-MOTORIZED">PMI TZ-MOTORIZED</option>
-          <option value="PMI TZ-NON-MOTORIZED">PMI TZ-NON-MOTORIZED</option>
-          <option value="PMI TV-SPECIAL">PMI TV-SPECIAL</option>
-          <option value="PMI TV-PMI">PMI TV-PMI</option>
-          <option value="PMI TV-ENGINE-STAND">PMI TV-ENGINE-STAND</option>
-          <option value="PMI TC">PMI TC</option>
-          <option value="PMI CLB">PMI CLB</option>
-          <option value="PMI TCW">PMI TCW</option>
-          <option value="PMI NDT">PMI NDT</option>
-          <option value="PMI SPC">PMI SPC</option>
-          <option value="PMI ADA">PMI ADA</option>
-          <option value="PMI APU">PMI APU</option>
-          <option value="PMI MAC">PMI MAC</option>
-          <option value="PMI TCR">PMI TCR</option>
-        </select>
+        <input type="text" id="f_toolCategory" list="list_categories" class="form-control force-up" placeholder="Type or Select">
+        <datalist id="list_categories"></datalist>
       </div>
     </div>
 
@@ -124,10 +93,10 @@
 
 <script>
 /**
- * INA - Full Implementation of initToolForm
- * Handles complete dropdown population, Parent/Child PN separation, and GAS Posting.
+ * INA - Master initToolForm Logic with Dynamic Dropdowns
+ * Ensures uppercase forcing and dynamic option synchronization.
  */
-function initToolForm(tn, pn) {
+async function initToolForm(tn, pn) {
     const saveBtn = document.getElementById('f_saveToolBtn');
     if (!saveBtn) return; 
     
@@ -138,7 +107,24 @@ function initToolForm(tn, pn) {
     document.getElementById('formDisplayPN').textContent = caplistPn || "MASTER";
     document.getElementById('formDisplayTN').textContent = tn || "NEW ENTRY";
 
-    // 1. Populate Existing Data
+    // --- FETCH DYNAMIC DROPDOWN OPTIONS FROM BACKEND ---
+    try {
+      const optResp = await fetch(`${GAS_API_URL}?action=getToolDropdownOptions`);
+      const opts = await optResp.json();
+      
+      const buildList = (id, items) => {
+        const dl = document.getElementById(id);
+        if (dl && items) {
+          dl.innerHTML = items.map(i => `<option value="${i.toUpperCase()}">`).join('');
+        }
+      };
+      
+      buildList('list_stores', opts.stores);
+      buildList('list_statuses', opts.statuses);
+      buildList('list_categories', opts.categories);
+    } catch(e) { console.error("Dropdown options failed to sync", e); }
+
+    // 1. Populate Existing Data with Sanitization
     if (tn && typeof allToolData !== 'undefined') {
       const existing = allToolData.find(i => i.tn === tn);
       if (existing) {
@@ -168,9 +154,16 @@ function initToolForm(tn, pn) {
 
     if(tn) document.getElementById('f_formQRImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${tn}`;
 
-    // 2. Change Listeners
+    // 2. Event Listeners: Forced Uppercase & Save Trigger
     document.querySelectorAll('#toolFormModal .form-control').forEach(input => {
-      input.onchange = () => { saveBtn.disabled = false; saveBtn.textContent = "Save Changes"; };
+      input.addEventListener('input', function() {
+        if(this.classList.contains('force-up')) {
+            this.value = this.value.toUpperCase();
+        }
+        saveBtn.disabled = false; 
+        saveBtn.textContent = "Save Changes"; 
+        saveBtn.style.opacity = "1";
+      });
     });
 
     // 3. File Handlers
@@ -181,6 +174,7 @@ function initToolForm(tn, pn) {
         document.getElementById('f_toolImgPreview').src = ev.target.result;
         uploadedImg = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
         saveBtn.disabled = false;
+        saveBtn.textContent = "Save Changes";
       };
       reader.readAsDataURL(e.target.files[0]);
     };
@@ -194,14 +188,15 @@ function initToolForm(tn, pn) {
          pLabel.style.color = "var(--primary)";
          uploadedPdf = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
          saveBtn.disabled = false;
+         saveBtn.textContent = "Save Changes";
        };
        reader.readAsDataURL(e.target.files[0]);
     };
 
-    // 4. Submit Logic
+    // 4. Submit Logic (Post to Apps Script)
     saveBtn.onclick = async () => {
       saveBtn.disabled = true;
-      saveBtn.textContent = "Saving...";
+      saveBtn.textContent = "Processing...";
       
       const payload = {
         action: "saveToolVariant",
@@ -225,7 +220,7 @@ function initToolForm(tn, pn) {
         const r = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
         const res = await r.json();
         if(res.success) {
-          Swal.fire({ icon: 'success', title: 'Saved!', timer: 1000, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: 'Tool Saved', timer: 1200, showConfirmButton: false });
           closeToolForm();
           if(typeof loadToolData === 'function') loadToolData();
         }
@@ -233,6 +228,7 @@ function initToolForm(tn, pn) {
         console.error(e); 
         Swal.fire("Error", e.message, "error"); 
         saveBtn.disabled = false; 
+        saveBtn.textContent = "Save Changes";
       }
     };
 }
