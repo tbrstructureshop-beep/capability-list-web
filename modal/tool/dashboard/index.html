@@ -1,5 +1,6 @@
 <!-- modal/tool/dashboard/index.html -->
 <style>
+  /* Existing styles preserved */
   .tool-dashboard-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
   .tool-dashboard-table th { background: #f8fafc; padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
   .tool-dashboard-table td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; color: var(--text-main); vertical-align: middle; }
@@ -22,6 +23,7 @@
   </div>
 
   <div class="modal-body" style="background: #ffffff; padding: 0;">
+    <!-- Context Header Preserved -->
     <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; background: #fcfcfc; border-bottom: 1px solid var(--border);">
       <div style="display: flex; align-items: center; gap: 20px;">
         <div style="padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: white; color: var(--primary);">
@@ -80,29 +82,79 @@
 <script>
   let currentDashPn = "";
   let allToolData = [];
+  
+  // TOOL CACHE CONFIG
+  const TOOL_DB = { name: "ToolInventoryDB", store: "tool_cache", version: 1 };
+
+  // 1. CACHE HELPERS
+  async function getToolCache(pn) {
+    return new Promise((resolve) => {
+      const req = indexedDB.open(TOOL_DB.name, TOOL_DB.version);
+      req.onupgradeneeded = (e) => e.target.result.createObjectStore(TOOL_DB.store);
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction(TOOL_DB.store, "readonly");
+        const store = tx.objectStore(TOOL_DB.store);
+        const get = store.get(pn);
+        get.onsuccess = () => resolve(get.result);
+        get.onerror = () => resolve(null);
+      };
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async function setToolCache(pn, payload) {
+    const req = indexedDB.open(TOOL_DB.name, TOOL_DB.version);
+    req.onsuccess = (e) => {
+      const db = e.target.result;
+      const tx = db.transaction(TOOL_DB.store, "readwrite");
+      tx.objectStore(TOOL_DB.store).put(payload, pn);
+    };
+  }
 
   const getDriveThumb = (url, size = 100) => {
-    if(!url || url === "" || url === "undefined") return "https://via.placeholder.com/100?text=No+Img";
+    if(!url || url === "" || url === "undefined" || url.includes('placeholder')) return "https://via.placeholder.com/100?text=No+Img";
     const match = url.match(/[-\w]{25,}/);
     return match ? `https://lh3.googleusercontent.com/d/${match[0]}=s${size}` : url;
   };
 
+  /**
+   * INA - Master init with Cache Support
+   */
   async function initToolDashboard(data) {
     if(!data) return;
     currentDashPn = data.pn;
     document.getElementById('headerContextName').textContent = currentDashPn;
+    
+    // LOAD DARI CACHE (Instant!)
+    const cache = await getToolCache(currentDashPn);
+    if(cache && cache.length > 0) {
+      allToolData = cache;
+      renderToolTable(allToolData);
+      document.getElementById('toolDashStatus').textContent = `Loaded from cache: ${allToolData.length} records`;
+    }
+
+    // BACKGROUND FETCH (Update latest data)
     loadToolData();
   }
 
   async function loadToolData() {
     const tbody = document.getElementById('toolVariantTableBody');
     try {
-      const resp = await fetch(`${GAS_API_URL}?action=getToolVariants&pn=${encodeURIComponent(currentDashPn)}`);
-      allToolData = await resp.json();
-      renderToolTable(allToolData);
-      document.getElementById('toolDashStatus').textContent = `Total: ${allToolData.length} tools found`;
+      const resp = await fetch(`${GAS_API_URL}?action=getToolVariants&pn=${encodeURIComponent(currentDashPn)}&_=${Date.now()}`);
+      const latestData = await resp.json();
+      
+      // Bandingkan jika data berubah, baru re-render & update cache
+      if(JSON.stringify(latestData) !== JSON.stringify(allToolData)) {
+        allToolData = latestData;
+        renderToolTable(allToolData);
+        setToolCache(currentDashPn, allToolData); // Simpan data terbaru ke disk
+        document.getElementById('toolDashStatus').textContent = `Database Synced: ${allToolData.length} records`;
+      }
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: red;">Error: ${e.message}</td></tr>`;
+      if(!allToolData.length) { // Hanya show error jika cache juga kosong
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: red;">Offline Error: ${e.message}</td></tr>`;
+      }
     }
   }
 
@@ -113,7 +165,7 @@
     data.forEach(item => {
       const tr = document.createElement('tr');
       const statusClass = item.status === 'AVAILABLE' ? 'badge-available' : 'badge-broken';
-      const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : '-';
+      const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-GB') : '-';
       
       tr.innerHTML = `
         <td><span class="badge-status ${statusClass}">${item.status || 'N/A'}</span></td>
@@ -127,7 +179,7 @@
         <td><div style="font-weight:600;">${item.store}</div><small style="color:var(--text-muted)">${item.location}</small></td>
         <td style="font-size: 11px; line-height:1.2;">${timeStr}<br>${item.updatedBy || 'System'}</td>
         <td style="text-align: center;">
-          <button class="action-icon-btn" onclick="openToolFormModal('${item.tn}', '${item.pn}')">
+          <button class="action-icon-btn" onclick="openToolFormModal('${item.tn}', '${currentDashPn}')">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           </button>
         </td>
@@ -135,6 +187,18 @@
       tbody.appendChild(tr);
     });
   }
+
+  // Search filter logic
+  document.getElementById('toolDashSearch').addEventListener('input', (e) => {
+    const kw = e.target.value.toLowerCase();
+    const filtered = allToolData.filter(i => 
+      (i.pn && i.pn.toLowerCase().includes(kw)) || 
+      (i.tn && i.tn.toLowerCase().includes(kw)) || 
+      (i.sn && i.sn.toLowerCase().includes(kw)) ||
+      (i.model && i.model.toLowerCase().includes(kw))
+    );
+    renderToolTable(filtered);
+  });
 
   async function openToolFormModal(tn = null, pn = null) {
     const overlay = document.getElementById("toolFormModalOverlay");
