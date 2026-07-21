@@ -1,115 +1,176 @@
 <!-- modal/tool/dashboard/form/index.html -->
 <style>
-  /* ... existing styles preserved ... */
-  .preview-loading { opacity: 0.5; filter: grayscale(1); }
+  #toolFormModal .form-label { display: block; font-size: 11px; font-weight: 700; margin-bottom: 6px; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.02em; }
+  #toolFormModal .form-control { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: #f9fafb; font-size: 13px; transition: 0.2s; }
+  #toolFormModal .form-control:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(60, 146, 166, 0.1); }
+  .media-upload-box { background: #fff; border: 1px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; }
 </style>
 
 <div id="toolFormModal" class="modal-card" style="max-width: 900px; box-shadow: var(--shadow-md);">
-  <!-- ... Header and Identity Header preserved ... -->
-  
+  <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid var(--border);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      <h2 style="margin:0; font-size: 16px; color: var(--text-main);">Tool Detail / Edit Variant</h2>
+    </div>
+    <button class="close-x" onclick="closeToolForm()">&times;</button>
+  </div>
+
   <div class="modal-body" style="background: #ffffff; padding: 24px;">
-    <!-- Identity Header code here -->
-    
-    <!-- Main Grid Form code here -->
+    <!-- Identity Header -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 40px; padding: 24px; background: #fff; border-radius: 14px; margin-bottom: 24px; border: 1px solid var(--border);">
+      <div style="padding: 8px; border: 1px solid #e5e7eb; border-radius: 10px; background: white;">
+        <img id="f_formQRImg" src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=TOOL" width="70" height="70">
+      </div>
+      <div style="text-align: left;">
+        <div id="formDisplayPN" style="font-size: 28px; font-weight: 800; color: #1e40af; line-height: 1;">PN</div>
+        <div style="font-size: 11px; color: var(--text-light); text-transform: uppercase; font-weight: 700;">part number</div>
+      </div>
+      <div style="text-align: left;">
+        <div id="formDisplayTN" style="font-size: 28px; font-weight: 800; color: #1e40af; line-height: 1;">TN</div>
+        <div style="font-size: 11px; color: var(--text-light); text-transform: uppercase; font-weight: 700;">tool number</div>
+      </div>
+    </div>
+
+    <!-- Form Grid -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+      <div><label class="form-label">Serial Number</label><input type="text" id="f_toolSN" class="form-control"></div>
+      <div><label class="form-label">Reg Number</label><input type="text" id="f_toolReg" class="form-control"></div>
+      <div><label class="form-label">Model</label><input type="text" id="f_toolModel" class="form-control"></div>
+      <div><label class="form-label">Location</label><input type="text" id="f_toolLoc" class="form-control"></div>
+      <div><label class="form-label">Manufacture</label><input type="text" id="f_toolManuf" class="form-control"></div>
+      <div>
+        <label class="form-label">Store</label>
+        <select id="f_toolStore" class="form-control">
+          <option value="H1">H1</option><option value="ND" selected>ND</option><option value="DP">DP</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Status</label>
+        <select id="f_toolStatus" class="form-control">
+          <option value="AVAILABLE">AVAILABLE</option><option value="BROKEN">BROKEN</option>
+        </select>
+      </div>
+      <div style="grid-column: span 2;">
+        <label class="form-label">Category</label>
+        <select id="f_toolCategory" class="form-control">
+          <option value="IMTE">IMTE</option><option value="GENERAL">GENERAL</option>
+        </select>
+      </div>
+    </div>
 
     <!-- Media Section -->
     <div style="margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
         <div class="media-upload-box">
-            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase;">TOOL VISUAL ASSET</div>
-            <div style="height: 140px; background: #f1f5f9; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #e2e8f0;">
-                <!-- Thumbnail display using GDrive Proxy logic -->
+            <div style="font-size: 11px; font-weight: 800; margin-bottom: 12px;">TOOL IMAGE</div>
+            <div style="height: 140px; background: #f1f5f9; border-radius: 10px; margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
                 <img id="f_toolImgPreview" src="https://via.placeholder.com/200x140?text=NO+IMAGE" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
-            <!-- Hidden Input -->
             <input type="file" id="f_toolImgInput" accept="image/*" hidden>
-            <button class="btn" style="width: 100%; justify-content: center; font-size: 12px; background: white;" onclick="document.getElementById('f_toolImgInput').click()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              Update Image
-            </button>
+            <button class="btn" style="width: 100%;" onclick="document.getElementById('f_toolImgInput').click()">Update Image</button>
         </div>
         <div class="media-upload-box">
-            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase;">TECHNICAL DOCUMENT / PDF</div>
-            <div id="f_pdfPreviewContainer" style="height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff1f2; border-radius: 10px; margin-bottom: 15px; border: 1px solid #fecaca;">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                <div id="f_pdfFileName" style="margin-top: 8px; font-size: 10px; font-weight: 700; color: #b91c1c;">NO PDF UPLOADED</div>
+            <div style="font-size: 11px; font-weight: 800; margin-bottom: 12px;">PDF DOCUMENT</div>
+            <div style="height: 140px; background: #fff1f2; border-radius: 10px; margin-bottom: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                <div id="f_pdfFileName" style="margin-top: 8px; font-size: 10px; font-weight: 700; color: #b91c1c;">NO PDF</div>
             </div>
-            <!-- Hidden Input -->
             <input type="file" id="f_toolPdfInput" accept="application/pdf" hidden>
-            <button class="btn" style="width: 100%; justify-content: center; font-size: 12px; background: white;" onclick="document.getElementById('f_toolPdfInput').click()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              Upload Document
-            </button>
+            <button class="btn" style="width: 100%;" onclick="document.getElementById('f_toolPdfInput').click()">Upload PDF</button>
         </div>
     </div>
   </div>
-  
-  <!-- Modal Footer preserved -->
+
+  <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px;">
+    <button class="btn" onclick="closeToolForm()" style="background: white;">Cancel</button>
+    <button class="btn btn-primary" id="f_saveToolBtn" disabled style="min-width: 180px;">No Data Changed</button>
+  </div>
 </div>
 
 <script>
-/**
- * INA - Revised initToolForm with Image/PDF support
- */
 function initToolForm(tn, pn) {
     const saveBtn = document.getElementById('f_saveToolBtn');
+    if (!saveBtn) return; // Guard
+    
     let uploadedImg = null;
     let uploadedPdf = null;
 
-    // Helper to extract Drive ID and get high-res thumbnail
-    const getDriveThumb = (url) => {
-      if(!url || url.includes('placeholder')) return url;
-      const id = url.match(/[-\w]{25,}/);
-      return id ? `https://lh3.googleusercontent.com/d/${id[0]}=s400` : url;
-    };
+    document.getElementById('formDisplayPN').textContent = pn || "NEW PN";
+    document.getElementById('formDisplayTN').textContent = tn || "NEW TN";
 
-    // 1. Populate data
+    // Populate existing
     if (tn && typeof allToolData !== 'undefined') {
       const existing = allToolData.find(i => i.tn === tn && i.pn === pn);
       if (existing) {
-        // ... previous field population ...
-        document.getElementById('f_toolImgPreview').src = getDriveThumb(existing.imgUrl);
-        if(existing.pdfUrl) document.getElementById('f_pdfFileName').textContent = "VIEW DOCUMENT";
+        document.getElementById('f_toolSN').value = existing.sn || "";
+        document.getElementById('f_toolReg').value = existing.reg || "";
+        document.getElementById('f_toolModel').value = existing.model || "";
+        document.getElementById('f_toolLoc').value = existing.location || "";
+        document.getElementById('f_toolManuf').value = existing.manufacturer || "";
+        document.getElementById('f_toolStore').value = existing.store || "ND";
+        document.getElementById('f_toolStatus').value = existing.status || "AVAILABLE";
+        document.getElementById('f_toolCategory').value = existing.category || "IMTE";
+        
+        if(existing.imgUrl) {
+           const id = existing.imgUrl.match(/[-\w]{25,}/);
+           document.getElementById('f_toolImgPreview').src = id ? `https://lh3.googleusercontent.com/d/${id[0]}=s400` : existing.imgUrl;
+        }
       }
     }
 
-    // 2. Handle Image Selection
-    document.getElementById('f_toolImgInput').onchange = function(e) {
-      const file = e.target.files[0];
+    // Change listeners
+    document.querySelectorAll('#toolFormModal .form-control').forEach(input => {
+      input.onchange = () => { saveBtn.disabled = false; saveBtn.textContent = "Save Changes"; };
+    });
+
+    document.getElementById('f_toolImgInput').onchange = (e) => {
       const reader = new FileReader();
       reader.onload = (ev) => {
         document.getElementById('f_toolImgPreview').src = ev.target.result;
-        uploadedImg = { name: file.name, data: ev.target.result.split(',')[1] };
+        uploadedImg = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
         saveBtn.disabled = false;
-        saveBtn.style.opacity = "1";
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(e.target.files[0]);
     };
 
-    // 3. Handle PDF Selection
-    document.getElementById('f_toolPdfInput').onchange = function(e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        document.getElementById('f_pdfFileName').textContent = file.name;
-        uploadedPdf = { name: file.name, data: ev.target.result.split(',')[1] };
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = "1";
-      };
-      reader.readAsDataURL(file);
+    document.getElementById('f_toolPdfInput').onchange = (e) => {
+       const reader = new FileReader();
+       reader.onload = (ev) => {
+         document.getElementById('f_pdfFileName').textContent = e.target.files[0].name;
+         uploadedPdf = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
+         saveBtn.disabled = false;
+       };
+       reader.readAsDataURL(e.target.files[0]);
     };
 
     saveBtn.onclick = async () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
       const payload = {
         action: "saveToolVariant",
         pn: pn,
         tn: tn || `TN-${Date.now()}`,
-        // ... other text fields ...
+        sn: document.getElementById('f_toolSN').value,
+        reg: document.getElementById('f_toolReg').value,
+        model: document.getElementById('f_toolModel').value,
+        location: document.getElementById('f_toolLoc').value,
+        manufacturer: document.getElementById('f_toolManuf').value,
+        store: document.getElementById('f_toolStore').value,
+        status: document.getElementById('f_toolStatus').value,
+        category: document.getElementById('f_toolCategory').value,
         imgFile: uploadedImg,
         pdfFile: uploadedPdf,
         updatedBy: currentUser ? currentUser.name : "Guest"
       };
 
-      // ... existing post logic ...
+      try {
+        const r = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const res = await r.json();
+        if(res.success) {
+          Swal.fire("Saved!", res.message, "success");
+          closeToolForm();
+          if(typeof loadToolData === 'function') loadToolData();
+        }
+      } catch(e) { Swal.fire("Error", e.message, "error"); saveBtn.disabled = false; }
     };
 }
 </script>
