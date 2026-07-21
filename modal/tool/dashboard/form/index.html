@@ -4,6 +4,7 @@
   #toolFormModal .form-control { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: #f9fafb; font-size: 13px; transition: 0.2s; }
   #toolFormModal .form-control:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(60, 146, 166, 0.1); }
   .media-upload-box { background: #fff; border: 1px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+  .tool-thumb { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: #f1f5f9; cursor: pointer; }
 </style>
 
 <div id="toolFormModal" class="modal-card" style="max-width: 900px; box-shadow: var(--shadow-md);">
@@ -61,7 +62,7 @@
     <!-- Media Section -->
     <div style="margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
         <div class="media-upload-box">
-            <div style="font-size: 11px; font-weight: 800; margin-bottom: 12px;">TOOL IMAGE</div>
+            <div style="font-size: 11px; font-weight: 800; margin-bottom: 12px;">TOOL VISUAL ASSET</div>
             <div style="height: 140px; background: #f1f5f9; border-radius: 10px; margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
                 <img id="f_toolImgPreview" src="https://via.placeholder.com/200x140?text=NO+IMAGE" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
@@ -90,6 +91,7 @@
 /**
  * INA - Master initToolForm Logic (Final Merged Version)
  * Combined with sanitization, high-res thumbnails, and full POST logic.
+ * Apply with no Ruin: Corrected property mapping and Thumbnail display.
  */
 function initToolForm(tn, pn) {
     const saveBtn = document.getElementById('f_saveToolBtn');
