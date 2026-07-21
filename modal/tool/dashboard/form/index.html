@@ -1,1 +1,240 @@
+<!-- modal/tool/dashboard/form/index.html -->
+<style>
+  #toolFormModal .form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  
+  #toolFormModal .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #f9fafb;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
 
+  #toolFormModal .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(60, 146, 166, 0.1);
+  }
+
+  #toolFormModal .input-status-icon {
+    position: absolute;
+    right: 10px;
+    top: 32px;
+    color: #22c55e;
+    font-size: 14px;
+  }
+
+  .field-wrapper {
+    position: relative;
+  }
+
+  .media-upload-box {
+    background: #ffffff;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: 0.2s;
+  }
+  
+  .media-upload-box:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+</style>
+
+<div id="toolFormModal" class="modal-card" style="max-width: 900px; box-shadow: var(--shadow-md);">
+  <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid var(--border);">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+      <h2 style="margin:0; font-size: 16px; color: var(--text-main);">Tool Detail / Edit Variant</h2>
+    </div>
+    <button class="close-x" onclick="closeToolForm()">&times;</button>
+  </div>
+
+  <div class="modal-body" style="background: #ffffff; padding: 24px;">
+    <!-- Tool Identity Header -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 40px; padding: 24px; background: #fff; border-radius: 14px; margin-bottom: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);">
+      <div id="formQR" style="padding: 8px; border: 1px solid #e5e7eb; border-radius: 10px; background: white; position: relative;">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=TOOL-SAMPLE" id="formQRImg" width="70" height="70">
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:3px; border-radius:50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--primary)"><path d="M14.7 6.3l1.6 1.6-3.77 3.77-1.6-1.6 3.77-3.77zM2 22l3-3 6.91-6.91a6 6 0 1 0-3-3L2 16v6h6l3-3"></path></svg>
+        </div>
+      </div>
+      <div style="height: 60px; width: 2px; background: #e5e7eb;"></div>
+      <div style="text-align: left;">
+        <div id="formDisplayPN" style="font-size: 28px; font-weight: 800; color: #1e40af; line-height: 1; letter-spacing: -0.02em;">NORTEC600D</div>
+        <div style="font-size: 11px; color: var(--text-light); text-transform: uppercase; font-weight: 700; margin-top: 4px;">part number</div>
+      </div>
+      <div style="text-align: left;">
+        <div id="formDisplayTN" style="font-size: 28px; font-weight: 800; color: #1e40af; line-height: 1; letter-spacing: -0.02em;">1NTXX0113</div>
+        <div style="font-size: 11px; color: var(--text-light); text-transform: uppercase; font-weight: 700; margin-top: 4px;">tool number</div>
+      </div>
+    </div>
+
+    <!-- Main Grid Form -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+      <div class="field-wrapper">
+        <label class="form-label">Tools Serial Number</label>
+        <input type="text" id="f_toolSN" class="form-control" value="140024606">
+        <span class="input-status-icon">●</span>
+      </div>
+      <div class="field-wrapper">
+        <label class="form-label">Tools Reg Number</label>
+        <input type="text" id="f_toolReg" class="form-control" value="1NTXX0113">
+        <span class="input-status-icon">●</span>
+      </div>
+      <div class="field-wrapper">
+        <label class="form-label">Model</label>
+        <input type="text" id="f_toolModel" class="form-control" value="NORTEC600">
+        <span class="input-status-icon">●</span>
+      </div>
+      
+      <div class="field-wrapper">
+        <label class="form-label">Location</label>
+        <input type="text" id="f_toolLoc" class="form-control" value="NDT H2">
+        <span class="input-status-icon">●</span>
+      </div>
+      <div class="field-wrapper">
+        <label class="form-label">Manufacture</label>
+        <input type="text" id="f_toolManuf" class="form-control" value="OLYMPUS">
+        <span class="input-status-icon">●</span>
+      </div>
+      <div class="field-wrapper">
+        <label class="form-label">Store</label>
+        <select id="f_toolStore" class="form-control">
+          <option>Select one</option>
+          <option value="H1">H1</option><option value="H2">H2</option><option value="H3">H3</option><option value="H4">H4</option>
+          <option value="ND" selected>ND</option><option value="HP">HP</option><option value="W1">W1</option><option value="XX">XX</option>
+          <option value="72">72</option><option value="DI">DI</option><option value="AN">AN</option><option value="UP">UP</option>
+          <option value="OT">OT</option><option value="W2">W2</option><option value="LG">LG</option><option value="DP">DP</option>
+          <option value="19">19</option><option value="F3">F3</option><option value="XC">XC</option>
+        </select>
+        <span class="input-status-icon">●</span>
+      </div>
+
+      <div class="field-wrapper">
+        <label class="form-label">Status</label>
+        <select id="f_toolStatus" class="form-control">
+          <option value="SELECT">Select one</option>
+          <option value="BROKEN">BROKEN</option>
+          <option value="AVAILABLE" selected>AVAILABLE</option>
+          <option value="CALIBRATION">CALIBRATION</option>
+          <option value="QUARANTINED">QUARANTINED</option>
+          <option value="MISSING">MISSING</option>
+          <option value="MAINTENANCE">MAINTENANCE</option>
+          <option value="BOOKED">BOOKED</option>
+        </select>
+        <span class="input-status-icon">●</span>
+      </div>
+      <div class="field-wrapper" style="grid-column: span 2;">
+        <label class="form-label">Category</label>
+        <select id="f_toolCategory" class="form-control">
+          <option>Select one</option>
+          <option value="GENERAL">GENERAL</option>
+          <option value="IMTE" selected>IMTE</option>
+          <option value="PMI TZ-MOTORIZED">PMI TZ-MOTORIZED</option>
+          <option value="PMI TZ-NON-MOTORIZED">PMI TZ-NON-MOTORIZED</option>
+          <option value="PMI TV-SPECIAL">PMI TV-SPECIAL</option>
+          <option value="PMI TV-PMI">PMI TV-PMI</option>
+          <option value="PMI TV-ENGINE-STAND">PMI TV-ENGINE-STAND</option>
+          <option value="PMI TC">PMI TC</option>
+          <option value="PMI CLB">PMI CLB</option>
+          <option value="PMI TCW">PMI TCW</option>
+          <option value="PMI NDT">PMI NDT</option>
+          <option value="PMI SPC">PMI SPC</option>
+          <option value="PMI ADA">PMI ADA</option>
+          <option value="PMI APU">PMI APU</option>
+          <option value="PMI MAC">PMI MAC</option>
+          <option value="PMI TCR">PMI TCR</option>
+        </select>
+        <span class="input-status-icon">●</span>
+      </div>
+    </div>
+
+    <!-- Media Section -->
+    <div style="margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
+        <div class="media-upload-box">
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase;">TOOL VISUAL ASSET</div>
+            <div style="height: 140px; background: #f1f5f9; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #e2e8f0;">
+                <img id="f_toolImgPreview" src="https://via.placeholder.com/200x140?text=NO+IMAGE" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <button class="btn" style="width: 100%; justify-content: center; font-size: 12px; background: white;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              Update Image
+            </button>
+        </div>
+        <div class="media-upload-box">
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase;">TECHNICAL DOCUMENT / PDF</div>
+            <div style="height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff1f2; border-radius: 10px; margin-bottom: 15px; border: 1px solid #fecaca;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <div style="margin-top: 8px; font-size: 10px; font-weight: 700; color: #b91c1c;">MANUAL_REV_02.PDF</div>
+            </div>
+            <button class="btn" style="width: 100%; justify-content: center; font-size: 12px; background: white;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              Upload Document
+            </button>
+        </div>
+    </div>
+  </div>
+
+  <div class="modal-footer" style="padding: 20px 24px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: flex-end; gap: 12px;">
+    <button class="btn" onclick="closeToolForm()" style="background: white;">Cancel Action</button>
+    <button class="btn btn-primary" id="f_saveToolBtn" disabled style="min-width: 180px; transition: 0.3s; opacity: 0.5;">No Data Changed</button>
+  </div>
+</div>
+
+<script>
+  /**
+   * INA - Master Implementation for initToolForm
+   * Preserves function naming without ruin.
+   */
+  function initToolForm(tn) {
+    console.log("Initializing Form for Tool Number:", tn);
+    
+    const saveBtn = document.getElementById('f_saveToolBtn');
+    const inputs = document.querySelectorAll('#toolFormModal .form-control');
+    
+    // Logic to detect changes
+    const initialValues = {};
+    inputs.forEach(input => {
+      initialValues[input.id] = input.value;
+      
+      input.addEventListener('input', () => {
+        let isChanged = false;
+        inputs.forEach(i => {
+          if (i.value !== initialValues[i.id]) isChanged = true;
+        });
+
+        if (isChanged) {
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = "1";
+          saveBtn.textContent = "Save Changes";
+          saveBtn.style.background = "var(--primary)";
+        } else {
+          saveBtn.disabled = true;
+          saveBtn.style.opacity = "0.5";
+          saveBtn.textContent = "No Data Changed";
+        }
+      });
+    });
+
+    // Update Header UI based on data
+    if(tn) {
+      document.getElementById('formDisplayTN').textContent = tn;
+      document.getElementById('formQRImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${tn}`;
+    }
+  }
+</script>
