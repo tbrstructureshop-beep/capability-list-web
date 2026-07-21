@@ -24,7 +24,7 @@
       </div>
       <div style="text-align: left;">
         <div id="formDisplayPN" style="font-size: 28px; font-weight: 800; color: #1e40af; line-height: 1;">PN</div>
-        <div style="font-size: 11px; color: var(--text-light); text-transform: uppercase; font-weight: 700;">part number</div>
+        <div style="font-size: 11px; color: var(--text-light); text-transform: uppercase; font-weight: 700;">Reference Group PN</div>
       </div>
       <div style="text-align: left;">
         <div id="formDisplayTN" style="font-size: 28px; font-weight: 800; color: #1e40af; line-height: 1;">TN</div>
@@ -34,6 +34,8 @@
 
     <!-- Form Grid -->
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+      <!-- REVISED: Dedicated Tool PN Field -->
+      <div><label class="form-label">Tool Part Number</label><input type="text" id="f_toolPN" class="form-control" placeholder="e.g. D53132010000"></div>
       <div><label class="form-label">Serial Number</label><input type="text" id="f_toolSN" class="form-control"></div>
       <div><label class="form-label">Reg Number</label><input type="text" id="f_toolReg" class="form-control"></div>
       <div><label class="form-label">Model</label><input type="text" id="f_toolModel" class="form-control"></div>
@@ -62,7 +64,7 @@
     <!-- Media Section -->
     <div style="margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 24px; border-top: 1px solid var(--border);">
         <div class="media-upload-box">
-            <div style="font-size: 11px; font-weight: 800; margin-bottom: 12px;">TOOL VISUAL ASSET</div>
+            <div style="font-size: 11px; font-weight: 800; margin-bottom: 12px;">TOOL IMAGE</div>
             <div style="height: 140px; background: #f1f5f9; border-radius: 10px; margin-bottom: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
                 <img id="f_toolImgPreview" src="https://via.placeholder.com/200x140?text=NO+IMAGE" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
@@ -88,27 +90,20 @@
 </div>
 
 <script>
-/**
- * INA - Master initToolForm Logic (Final Merged Version)
- * Combined with sanitization, high-res thumbnails, and full POST logic.
- * Apply with no Ruin: Corrected property mapping and Thumbnail display.
- */
 function initToolForm(tn, pn) {
     const saveBtn = document.getElementById('f_saveToolBtn');
-    if (!saveBtn) return; // Guard
+    if (!saveBtn) return; 
     
     let uploadedImg = null;
     let uploadedPdf = null;
 
-    // Use professional default labels
-    document.getElementById('formDisplayPN').textContent = pn || "NEW TOOL";
+    document.getElementById('formDisplayPN').textContent = pn || "NEW PN";
     document.getElementById('formDisplayTN').textContent = tn || "AUTO-GEN";
 
-    // 1. Populate existing using synchronized keys & Sanitization
     if (tn && typeof allToolData !== 'undefined') {
-      const existing = allToolData.find(i => i.tn === tn && i.pn === pn);
+      const existing = allToolData.find(i => i.tn === tn);
       if (existing) {
-        // Sanitize "N/A" values for a cleaner UI
+        document.getElementById('f_toolPN').value = existing.pn || pn; // Use item PN, fallback to context
         document.getElementById('f_toolSN').value = (existing.sn && existing.sn !== "N/A") ? existing.sn : "";
         document.getElementById('f_toolReg').value = (existing.reg && existing.reg !== "N/A") ? existing.reg : "";
         document.getElementById('f_toolModel').value = existing.model || "";
@@ -118,74 +113,51 @@ function initToolForm(tn, pn) {
         document.getElementById('f_toolStatus').value = existing.status || "AVAILABLE";
         document.getElementById('f_toolCategory').value = existing.category || "IMTE";
         
-        // High-Res Thumbnail Logic
         if(existing.imgUrl && existing.imgUrl !== "" && existing.imgUrl !== "undefined") {
            const idMatch = existing.imgUrl.match(/[-\w]{25,}/);
-           if(idMatch) {
-             document.getElementById('f_toolImgPreview').src = `https://lh3.googleusercontent.com/d/${idMatch[0]}=s400`;
-           } else {
-             document.getElementById('f_toolImgPreview').src = existing.imgUrl;
-           }
+           document.getElementById('f_toolImgPreview').src = idMatch ? `https://lh3.googleusercontent.com/d/${idMatch[0]}=s400` : existing.imgUrl;
         }
-        
-        // PDF Link Indicator
         if(existing.pdfUrl && existing.pdfUrl !== "" && existing.pdfUrl !== "undefined") {
-          const pdfLabel = document.getElementById('f_pdfFileName');
-          pdfLabel.textContent = "CURRENT_DOCUMENT.PDF";
-          pdfLabel.style.color = "#22c55e"; // Success green
+          document.getElementById('f_pdfFileName').textContent = "CURRENT_DOCUMENT.PDF";
+          document.getElementById('f_pdfFileName').style.color = "#22c55e";
         }
       }
+    } else {
+      document.getElementById('f_toolPN').value = pn; // Default to Capability PN if new
     }
 
-    // 2. Refresh QR code if editing specific TN
-    if(tn) {
-      document.getElementById('f_formQRImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${tn}`;
-    }
+    if(tn) document.getElementById('f_formQRImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${tn}`;
 
-    // 3. Change listeners for input tracking
     document.querySelectorAll('#toolFormModal .form-control').forEach(input => {
-      input.onchange = () => { 
-        saveBtn.disabled = false; 
-        saveBtn.textContent = "Save Changes";
-        saveBtn.style.opacity = "1";
-      };
+      input.onchange = () => { saveBtn.disabled = false; saveBtn.textContent = "Save Changes"; };
     });
 
-    // 4. Handle File Explorers
     document.getElementById('f_toolImgInput').onchange = (e) => {
-      if(!e.target.files.length) return;
       const reader = new FileReader();
       reader.onload = (ev) => {
         document.getElementById('f_toolImgPreview').src = ev.target.result;
         uploadedImg = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
         saveBtn.disabled = false;
-        saveBtn.textContent = "Save Changes";
       };
       reader.readAsDataURL(e.target.files[0]);
     };
 
     document.getElementById('f_toolPdfInput').onchange = (e) => {
-       if(!e.target.files.length) return;
        const reader = new FileReader();
        reader.onload = (ev) => {
-         const pdfLabel = document.getElementById('f_pdfFileName');
-         pdfLabel.textContent = e.target.files[0].name;
-         pdfLabel.style.color = "var(--primary)";
+         document.getElementById('f_pdfFileName').textContent = e.target.files[0].name;
          uploadedPdf = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
          saveBtn.disabled = false;
-         saveBtn.textContent = "Save Changes";
        };
        reader.readAsDataURL(e.target.files[0]);
     };
 
-    // 5. Submit Logic (POST to GAS)
     saveBtn.onclick = async () => {
       saveBtn.disabled = true;
       saveBtn.textContent = "Saving...";
-      
       const payload = {
         action: "saveToolVariant",
-        pn: pn,
+        pn: document.getElementById('f_toolPN').value, // Use the value from the new field
         tn: tn || `TN-${Date.now()}`,
         sn: document.getElementById('f_toolSN').value,
         reg: document.getElementById('f_toolReg').value,
@@ -204,18 +176,11 @@ function initToolForm(tn, pn) {
         const r = await fetch(GAS_API_URL, { method: "POST", body: JSON.stringify(payload) });
         const res = await r.json();
         if(res.success) {
-          Swal.fire({ icon: 'success', title: 'Saved!', text: res.message, timer: 1500, showConfirmButton: false });
+          Swal.fire({ icon: 'success', title: 'Saved!', timer: 1500, showConfirmButton: false });
           closeToolForm();
           if(typeof loadToolData === 'function') loadToolData();
-        } else {
-          throw new Error(res.error || "Failed to save tool data");
         }
-      } catch(e) { 
-        console.error(e);
-        Swal.fire("Error", e.message, "error"); 
-        saveBtn.disabled = false; 
-        saveBtn.textContent = "Save Changes";
-      }
+      } catch(e) { Swal.fire("Error", e.message, "error"); saveBtn.disabled = false; }
     };
 }
 </script>
