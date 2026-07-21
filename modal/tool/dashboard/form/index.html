@@ -201,40 +201,80 @@
    * INA - Master Implementation for initToolForm
    * Preserves function naming without ruin.
    */
-  function initToolForm(tn) {
-    console.log("Initializing Form for Tool Number:", tn);
-    
+  /**
+ * INA - Revised initToolForm for GAS Integration
+ * Handles data population and saving.
+ */
+function initToolForm(tn, pn) {
     const saveBtn = document.getElementById('f_saveToolBtn');
-    const inputs = document.querySelectorAll('#toolFormModal .form-control');
+    const modal = document.getElementById('toolFormModal');
     
-    // Logic to detect changes
-    const initialValues = {};
-    inputs.forEach(input => {
-      initialValues[input.id] = input.value;
-      
-      input.addEventListener('input', () => {
-        let isChanged = false;
-        inputs.forEach(i => {
-          if (i.value !== initialValues[i.id]) isChanged = true;
-        });
-
-        if (isChanged) {
-          saveBtn.disabled = false;
-          saveBtn.style.opacity = "1";
-          saveBtn.textContent = "Save Changes";
-          saveBtn.style.background = "var(--primary)";
-        } else {
-          saveBtn.disabled = true;
-          saveBtn.style.opacity = "0.5";
-          saveBtn.textContent = "No Data Changed";
-        }
-      });
-    });
-
-    // Update Header UI based on data
-    if(tn) {
-      document.getElementById('formDisplayTN').textContent = tn;
-      document.getElementById('formQRImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${tn}`;
+    // Set Context
+    document.getElementById('formDisplayPN').textContent = pn || "NEW PN";
+    document.getElementById('formDisplayTN').textContent = tn || "NEW TN";
+  
+    // 1. Populate data if Edit Mode
+    if (tn && typeof allToolData !== 'undefined') {
+      const existing = allToolData.find(i => i.tn === tn && i.pn === pn);
+      if (existing) {
+        document.getElementById('f_toolSN').value = existing.sn;
+        document.getElementById('f_toolReg').value = existing.reg;
+        document.getElementById('f_toolModel').value = existing.model;
+        document.getElementById('f_toolLoc').value = existing.location;
+        document.getElementById('f_toolManuf').value = existing.manufacturer;
+        document.getElementById('f_toolStore').value = existing.store;
+        document.getElementById('f_toolStatus').value = existing.status;
+        document.getElementById('f_toolCategory').value = existing.category;
+      }
     }
+  
+    // Change Detection Logic
+    const inputs = modal.querySelectorAll('.form-control');
+    inputs.forEach(i => i.addEventListener('change', () => {
+      saveBtn.disabled = false;
+      saveBtn.style.opacity = "1";
+      saveBtn.textContent = "Save Changes";
+      saveBtn.style.background = "var(--primary)";
+    }));
+  
+    // 2. Submit Logic
+    saveBtn.onclick = async () => {
+      const payload = {
+        action: "saveToolVariant",
+        pn: pn,
+        tn: tn || `TN-${Date.now()}`, // Auto-generate TN if adding new
+        sn: document.getElementById('f_toolSN').value,
+        reg: document.getElementById('f_toolReg').value,
+        model: document.getElementById('f_toolModel').value,
+        location: document.getElementById('f_toolLoc').value,
+        manufacturer: document.getElementById('f_toolManuf').value,
+        store: document.getElementById('f_toolStore').value,
+        status: document.getElementById('f_toolStatus').value,
+        category: document.getElementById('f_toolCategory').value,
+        updatedBy: currentUser ? currentUser.name : "Guest"
+      };
+  
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+  
+      try {
+        const resp = await fetch(GAS_API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        const res = await resp.json();
+        if (res.success) {
+          Swal.fire("Saved!", res.message, "success");
+          closeToolForm();
+          if (typeof loadToolData === 'function') loadToolData(); // Refresh table
+        } else {
+          throw new Error(res.error);
+        }
+      } catch (e) {
+        Swal.fire("Error", e.message, "error");
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Changes";
+      }
+    };
   }
 </script>
