@@ -1409,13 +1409,25 @@
         const safeAuthName = String(authName).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").replace(/"/g, '\\"');
         const safePn = String(pn).replace(/[\r\n]+/g, " ").replace(/'/g, "\\'").replace(/"/g, '\\"');
     
-        // 3. Logic Tombol (Seleksi vs Menu Tiga Titik)
-        // Tombol menu ditambahkan syarat: HARUS ADMIN
+        // --- 3. Logic Tombol (Seleksi vs Menu Tiga Titik) ---
+        // Apply with no Ruin: Integrated Tool Dashboard + Status Update Button
         const checkHtml = actionMode ? `<div class="selection-area"><input type="checkbox" class="rowCheck" data-index="${start + rIdx}"></div>` : '';
+        
         const menuBtnHtml = (!actionMode && isAdmin) ? `
-          <button class="card-menu-btn" title="Update Status" onclick="event.stopPropagation(); openStatusForm('${safeAuthName}', '${safePn}', '${currentStatusValue}')">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-          </button>
+          <div style="position: absolute; top: 24px; right: 24px; display: flex; gap: 8px;">
+            <!-- NEW TOOL DASHBOARD ICON -->
+            <button class="card-menu-btn" title="Tool Dashboard" style="background: var(--primary); color: white;" 
+              onclick="event.stopPropagation(); openToolDashboard('${safePn}', '${row[0]}')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+              </svg>
+            </button>
+
+            <!-- EXISTING UPDATE STATUS ICON -->
+            <button class="card-menu-btn" title="Update Status" onclick="event.stopPropagation(); openStatusForm('${safeAuthName}', '${safePn}', '${currentStatusValue}')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+            </button>
+          </div>
         ` : '';
     
         // 4. Optimasi Loop Detail (Hanya loop index yang dibutuhkan)
@@ -2282,6 +2294,57 @@
       console.error("Gagal load Bulk Module:", e);
       return false;
     }
+  }
+
+  /**
+   * BRIDGE: Open Tool Dashboard Modal
+   * Fetches the professional UI from modal/tool/dashboard/index.html
+   */
+  async function openToolDashboard(pn, tn) {
+    showLoader();
+    const targetPath = "modal/tool/dashboard/index.html"; // Ensure this path exists in your repo
+    
+    try {
+      const response = await fetch(targetPath);
+      if (!response.ok) throw new Error("Dashboard file not found");
+      const html = await response.text();
+      
+      let overlay = document.getElementById("toolDashboardOverlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "toolDashboardOverlay";
+        overlay.className = "modal-overlay";
+        document.body.appendChild(overlay);
+      }
+      
+      overlay.innerHTML = html;
+      overlay.style.display = "flex";
+      hideLoader();
+  
+      // Re-inject scripts inside fetched HTML to run init
+      const scripts = overlay.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+        newScript.text = oldScript.innerHTML;
+        document.body.appendChild(newScript);
+      });
+  
+      if (typeof initToolDashboard === "function") {
+        initToolDashboard({ pn: pn, tn: tn });
+      }
+    } catch (err) {
+      hideLoader();
+      console.error(err);
+      Swal.fire("Error", "Gagal memuat Dashboard Tool.", "error");
+    }
+  }
+  
+  /**
+   * Close the Tool Dashboard
+   */
+  function closeToolDashboard() {
+    const overlay = document.getElementById("toolDashboardOverlay");
+    if (overlay) overlay.style.display = "none";
   }
   
   /**
