@@ -1,55 +1,14 @@
 <!-- modal/tool/dashboard/index.html -->
 <style>
-  .tool-dashboard-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 12px;
-  }
-  .tool-dashboard-table th {
-    background: #f8fafc;
-    padding: 12px 16px;
-    text-align: left;
-    font-weight: 700;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .tool-dashboard-table td {
-    padding: 10px 16px;
-    border-bottom: 1px solid #f1f5f9;
-    color: var(--text-main);
-    vertical-align: middle;
-  }
+  .tool-dashboard-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
+  .tool-dashboard-table th { background: #f8fafc; padding: 12px 16px; text-align: left; font-weight: 700; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .tool-dashboard-table td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; color: var(--text-main); vertical-align: middle; }
   .tool-dashboard-table tr:hover { background: #f1f7f8; }
-  
-  .badge-status {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 10px;
-    display: inline-block;
-  }
+  .badge-status { padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 10px; display: inline-block; }
   .badge-available { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
   .badge-broken { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-
-  .action-icon-btn {
-    background: none;
-    border: 1px solid var(--border);
-    padding: 6px;
-    border-radius: 6px;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: 0.2s;
-  }
-  .action-icon-btn:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-  }
+  .action-icon-btn { background: none; border: 1px solid var(--border); padding: 6px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: 0.2s; }
+  .action-icon-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
 </style>
 
 <div id="toolDashboardModal" class="modal-card" style="max-width: 1300px; width: 98vw;">
@@ -62,38 +21,35 @@
   </div>
 
   <div class="modal-body" style="background: #ffffff; padding: 0;">
-    <!-- Context Summary Header (Now represents the Card Category) -->
     <div style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; background: #fcfcfc; border-bottom: 1px solid var(--border);">
       <div style="display: flex; align-items: center; gap: 20px;">
-        <div id="toolHeaderIcon" style="padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: white; color: var(--primary);">
+        <div style="padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: white; color: var(--primary);">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         </div>
         <div>
-          <div id="headerContextName" style="font-size: 20px; font-weight: 800; color: var(--primary);">EQUIPMENT GROUP LIST</div>
+          <div id="headerContextName" style="font-size: 20px; font-weight: 800; color: var(--primary);">LOADING...</div>
           <div id="headerContextDesc" style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Managing multiple Part Numbers associated with this capability</div>
         </div>
       </div>
       
       <div style="display: flex; gap: 12px;">
-        <div class="search-input-box" style="width: 300px;">
-          <input type="text" placeholder="Search by PN, SN, or Model..." style="padding: 8px 12px 8px 35px; font-size: 13px; width: 100%; border-radius: 8px; border: 1px solid var(--border);">
-          <svg class="search-icon" style="left: 10px; width: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <div class="search-input-box" style="width: 300px; position: relative;">
+          <input type="text" id="toolDashSearch" placeholder="Search by PN, SN, or Model..." style="padding: 8px 12px 8px 35px; font-size: 13px; width: 100%; border-radius: 8px; border: 1px solid var(--border);">
+          <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 16px; color: var(--text-light);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
-        <!-- Note: This "Add" now opens a blank form to input a potentially new PN -->
-        <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px;" onclick="openToolFormModal()">
+        <button class="btn btn-primary" style="font-size: 12px; padding: 8px 16px;" onclick="openToolFormModal(null, currentDashPn)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Add New Tool
         </button>
       </div>
     </div>
 
-    <!-- Multi-PN Table List -->
     <div style="max-height: 65vh; overflow-y: auto;">
       <table class="tool-dashboard-table">
         <thead>
           <tr>
             <th style="width: 100px;">Status</th>
-            <th>Part Number</th> <!-- REVISED: PN is now a column -->
+            <th>Part Number</th>
             <th>Tool Number</th>
             <th>Reg Number</th>
             <th>Serial Number</th>
@@ -105,46 +61,14 @@
           </tr>
         </thead>
         <tbody id="toolVariantTableBody">
-          <!-- Dynamic Data Example with Different PNs -->
-          <tr>
-            <td><span class="badge-status badge-available">Available</span></td>
-            <td style="font-weight: 700; color: #1e40af;">NORTEC600D</td>
-            <td style="font-weight: 600;">1NTXX0113</td>
-            <td>1NTXX0113</td>
-            <td>140024606</td>
-            <td>NORTEC600</td>
-            <td>OLYMPUS</td>
-            <td><div style="font-weight:600;">ND</div><small style="color:var(--text-muted)">NDT H2</small></td>
-            <td style="font-size: 11px; line-height:1.2;">2026-07-21<br>Ariyanto</td>
-            <td style="text-align: center;">
-              <button class="action-icon-btn" onclick="openToolFormModal('1NTXX0113', 'NORTEC600D')" title="Edit Tool">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              </button>
-            </td>
-          </tr>
-          <tr>
-            <td><span class="badge-status badge-broken">Broken</span></td>
-            <td style="font-weight: 700; color: #1e40af;">EPOCH650</td> <!-- Different PN same group -->
-            <td style="font-weight: 600;">2EPXX0055</td>
-            <td>2EPXX0055</td>
-            <td>SN998877</td>
-            <td>EPOCH</td>
-            <td>OLYMPUS</td>
-            <td><div style="font-weight:600;">HP</div><small style="color:var(--text-muted)">SHOP 1</small></td>
-            <td style="font-size: 11px; line-height:1.2;">2026-07-20<br>Budi S.</td>
-            <td style="text-align: center;">
-              <button class="action-icon-btn" onclick="openToolFormModal('2EPXX0055', 'EPOCH650')">
-                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              </button>
-            </td>
-          </tr>
+          <tr><td colspan="10" style="text-align: center; padding: 40px; color: var(--text-muted);">Fetching tool data...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
   <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
-    <div style="font-size: 12px; color: var(--text-muted);">Showing tools associated with current Capability Card</div>
+    <div id="toolDashStatus" style="font-size: 12px; color: var(--text-muted);">Ready</div>
     <button class="btn" onclick="closeToolDashboard()">Close Dashboard</button>
   </div>
 </div>
@@ -152,46 +76,84 @@
 <div id="toolFormModalOverlay" class="modal-overlay" style="z-index: 12000;"></div>
 
 <script>
+  let currentDashPn = "";
+  let allToolData = [];
+
   /**
-   * Apply with no Ruin: Main init for Dashboard
+   * INA - Load Data from GAS
    */
-  function initToolDashboard(data) {
+  async function initToolDashboard(data) {
     if(!data) return;
-    // Set the Group Header Context (can be the primary PN or a Name)
-    document.getElementById('headerContextName').textContent = data.pn || 'COMPONENT GROUP';
+    currentDashPn = data.pn;
+    document.getElementById('headerContextName').textContent = currentDashPn;
+    loadToolData();
   }
 
-  /**
-   * REVISED: Now accepts both Tool Number and Part Number to load specific data
-   */
-  async function openToolFormModal(tn = null, pn = null) {
-    const overlay = document.getElementById("toolFormModalOverlay");
-    const targetPath = "modal/tool/dashboard/form/index.html";
-    
+  async function loadToolData() {
+    const tbody = document.getElementById('toolVariantTableBody');
     try {
-      const response = await fetch(targetPath);
-      const html = await response.text();
-      overlay.innerHTML = html;
-      overlay.style.display = "flex";
-
-      const scripts = overlay.querySelectorAll("script");
-      scripts.forEach(s => {
-        const newS = document.createElement("script");
-        newS.text = s.innerHTML;
-        document.body.appendChild(newS);
-      });
-
-      if (typeof initToolForm === "function") {
-        // Pass both PN and TN so the form knows which tool it's editing
-        initToolForm(tn, pn);
-      }
+      const resp = await fetch(`${GAS_API_URL}?action=getToolVariants&pn=${encodeURIComponent(currentDashPn)}`);
+      allToolData = await resp.json();
+      renderToolTable(allToolData);
+      document.getElementById('toolDashStatus').textContent = `Total: ${allToolData.length} records found`;
     } catch (e) {
-      console.error(e);
-      Swal.fire("Error", "Gagal memuat formulir variant tool.", "error");
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: red;">Error: ${e.message}</td></tr>`;
     }
   }
 
-  function closeToolForm() {
-    document.getElementById("toolFormModalOverlay").style.display = "none";
+  function renderToolTable(data) {
+    const tbody = document.getElementById('toolVariantTableBody');
+    tbody.innerHTML = data.length === 0 ? '<tr><td colspan="10" style="text-align: center; padding: 40px;">No tools associated yet.</td></tr>' : '';
+    
+    data.forEach(item => {
+      const tr = document.createElement('tr');
+      const statusClass = item.status === 'AVAILABLE' ? 'badge-available' : 'badge-broken';
+      const timeStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : '-';
+      
+      tr.innerHTML = `
+        <td><span class="badge-status ${statusClass}">${item.status}</span></td>
+        <td style="font-weight: 700; color: #1e40af;">${item.pn}</td>
+        <td style="font-weight: 600;">${item.tn}</td>
+        <td>${item.reg}</td>
+        <td>${item.sn}</td>
+        <td>${item.model}</td>
+        <td>${item.manufacturer}</td>
+        <td><div style="font-weight:600;">${item.store}</div><small style="color:var(--text-muted)">${item.location}</small></td>
+        <td style="font-size: 11px; line-height:1.2;">${timeStr}<br>${item.updatedBy || 'System'}</td>
+        <td style="text-align: center;">
+          <button class="action-icon-btn" onclick="openToolFormModal('${item.tn}', '${item.pn}')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
   }
+
+  // Search filter logic
+  document.getElementById('toolDashSearch').addEventListener('input', (e) => {
+    const kw = e.target.value.toLowerCase();
+    const filtered = allToolData.filter(i => 
+      i.pn.toLowerCase().includes(kw) || 
+      i.tn.toLowerCase().includes(kw) || 
+      i.sn.toLowerCase().includes(kw) ||
+      i.model.toLowerCase().includes(kw)
+    );
+    renderToolTable(filtered);
+  });
+
+  async function openToolFormModal(tn = null, pn = null) {
+    const overlay = document.getElementById("toolFormModalOverlay");
+    const targetPath = "modal/tool/dashboard/form/index.html";
+    try {
+      const response = await fetch(targetPath);
+      overlay.innerHTML = await response.text();
+      overlay.style.display = "flex";
+      const scripts = overlay.querySelectorAll("script");
+      scripts.forEach(s => { const newS = document.createElement("script"); newS.text = s.innerHTML; document.body.appendChild(newS); });
+      if (typeof initToolForm === "function") initToolForm(tn, pn);
+    } catch (e) { Swal.fire("Error", "Gagal load form.", "error"); }
+  }
+
+  function closeToolForm() { document.getElementById("toolFormModalOverlay").style.display = "none"; }
 </script>
