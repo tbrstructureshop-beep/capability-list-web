@@ -812,6 +812,17 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
       Export Selection
     </button>
+
+    <!-- Apply with no Ruin: Sidebar Button -->
+    <button id="getToolExcelBtn" onclick="exportToolsToExcel(); toggleSidebar();" class="menu-item" style="color: #166534;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <path d="M8 13h8M8 17h8"></path>
+      </svg>
+      Get Tool Excel
+    </button>
+    
   </div>
 
   <button onclick="openUpdateSourceModal(); toggleSidebar();" class="menu-item">
@@ -2344,6 +2355,56 @@
   function closeToolDashboard() {
     const overlay = document.getElementById("toolDashboardOverlay");
     if (overlay) overlay.style.display = "none";
+  }
+
+  /**
+   * INA - Export All Tools to Excel
+   * Fetches data from GAS and triggers download using XLSX library
+   */
+  async function exportToolsToExcel() {
+    showLoader();
+    try {
+      const url = `${GAS_API_URL}?action=getAllTools`;
+      const response = await fetch(url);
+      const data = await response.json();
+  
+      if (!data || data.length === 0) {
+        Swal.fire("Empty", "No data found in Tools tab.", "info");
+        return;
+      }
+  
+      // Process data for Excel
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Tools Inventory");
+  
+      // Auto-calculate column widths
+      const maxWidths = data.reduce((acc, row) => {
+        Object.keys(row).forEach((key, i) => {
+          const val = row[key] ? row[key].toString().length : 5;
+          acc[i] = Math.max(acc[i] || 10, val, key.length);
+        });
+        return acc;
+      }, []);
+      worksheet['!cols'] = maxWidths.map(w => ({ wch: w + 2 }));
+  
+      // Generate Timestamp for Filename
+      const ts = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `GMF_Tool_Inventory_${ts}.xlsx`);
+  
+      Swal.fire({
+        icon: 'success',
+        title: 'Excel Generated',
+        text: `${data.length} records exported successfully.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      console.error("Export Error:", err);
+      Swal.fire("Error", "Failed to generate Excel file: " + err.message, "error");
+    } finally {
+      hideLoader();
+    }
   }
   
   /**
