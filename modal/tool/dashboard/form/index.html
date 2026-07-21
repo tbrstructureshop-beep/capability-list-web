@@ -5,6 +5,34 @@
   #toolFormModal .form-control:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(60, 146, 166, 0.1); }
   .media-upload-box { background: #fff; border: 1px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; }
   .tool-thumb { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: #f1f5f9; cursor: pointer; }
+
+  /* Autocomplete Styles for "Google Advice" feel */
+  .autocomplete-container { position: relative; }
+  .suggestion-box {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    z-index: 2000;
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+  }
+  .suggestion-item {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-main);
+    border-bottom: 1px solid #f9fafb;
+    transition: background 0.1s;
+  }
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+  .suggestion-header { padding: 6px 14px; font-size: 9px; font-weight: 800; color: var(--text-light); background: #f9fafb; text-transform: uppercase; }
 </style>
 
 <div id="toolFormModal" class="modal-card" style="max-width: 900px; box-shadow: var(--shadow-md);">
@@ -41,25 +69,25 @@
       <div><label class="form-label">Location</label><input type="text" id="f_toolLoc" class="form-control force-up"></div>
       <div><label class="form-label">Manufacture</label><input type="text" id="f_toolManuf" class="form-control force-up"></div>
       
-      <!-- ENRICHED STORE DROPDOWN (Combobox Style) -->
-      <div>
+      <!-- STYLED AUTOCOMPLETE STORE -->
+      <div class="autocomplete-container">
         <label class="form-label">Store</label>
-        <input type="text" id="f_toolStore" list="list_stores" class="form-control force-up" placeholder="Type or Select">
-        <datalist id="list_stores"></datalist>
+        <input type="text" id="f_toolStore" class="form-control force-up" placeholder="Type store..." autocomplete="off">
+        <div id="box_stores" class="suggestion-box"></div>
       </div>
 
-      <!-- ENRICHED STATUS DROPDOWN (Combobox Style) -->
-      <div>
+      <!-- STYLED AUTOCOMPLETE STATUS -->
+      <div class="autocomplete-container">
         <label class="form-label">Status</label>
-        <input type="text" id="f_toolStatus" list="list_statuses" class="form-control force-up" placeholder="Type or Select">
-        <datalist id="list_statuses"></datalist>
+        <input type="text" id="f_toolStatus" class="form-control force-up" placeholder="Type status..." autocomplete="off">
+        <div id="box_statuses" class="suggestion-box"></div>
       </div>
 
-      <!-- ENRICHED CATEGORY DROPDOWN (Combobox Style) -->
-      <div style="grid-column: span 1;">
+      <!-- STYLED AUTOCOMPLETE CATEGORY -->
+      <div class="autocomplete-container" style="grid-column: span 1;">
         <label class="form-label">Category</label>
-        <input type="text" id="f_toolCategory" list="list_categories" class="form-control force-up" placeholder="Type or Select">
-        <datalist id="list_categories"></datalist>
+        <input type="text" id="f_toolCategory" class="form-control force-up" placeholder="Type category..." autocomplete="off">
+        <div id="box_categories" class="suggestion-box"></div>
       </div>
     </div>
 
@@ -93,8 +121,7 @@
 
 <script>
 /**
- * INA - Master initToolForm Logic with Dynamic Dropdowns
- * Ensures uppercase forcing and dynamic option synchronization.
+ * INA - Master initToolForm with Autocomplete Suggestion logic
  */
 async function initToolForm(tn, pn) {
     const saveBtn = document.getElementById('f_saveToolBtn');
@@ -103,28 +130,53 @@ async function initToolForm(tn, pn) {
     let uploadedImg = null;
     let uploadedPdf = null;
     let caplistPn = pn; 
+    let masterOptions = { stores: [], statuses: [], categories: [] };
 
     document.getElementById('formDisplayPN').textContent = caplistPn || "MASTER";
     document.getElementById('formDisplayTN').textContent = tn || "NEW ENTRY";
 
-    // --- FETCH DYNAMIC DROPDOWN OPTIONS FROM BACKEND ---
+    // --- FETCH OPTIONS & SETUP AUTOCOMPLETE ---
     try {
       const optResp = await fetch(`${GAS_API_URL}?action=getToolDropdownOptions`);
-      const opts = await optResp.json();
+      masterOptions = await optResp.json();
       
-      const buildList = (id, items) => {
-        const dl = document.getElementById(id);
-        if (dl && items) {
-          dl.innerHTML = items.map(i => `<option value="${i.toUpperCase()}">`).join('');
+      setupAutocomplete('f_toolStore', 'box_stores', masterOptions.stores);
+      setupAutocomplete('f_toolStatus', 'box_statuses', masterOptions.statuses);
+      setupAutocomplete('f_toolCategory', 'box_categories', masterOptions.categories);
+    } catch(e) { console.error("Dropdown options failed to load", e); }
+
+    function setupAutocomplete(inputId, boxId, options) {
+      const input = document.getElementById(inputId);
+      const box = document.getElementById(boxId);
+
+      const renderList = (val) => {
+        const filtered = options.filter(o => o.toLowerCase().includes(val.toLowerCase()));
+        if(filtered.length === 0 && val === "") {
+          box.innerHTML = `<div class="suggestion-header">Recent Options</div>` + options.slice(0, 5).map(o => `<div class="suggestion-item">${o}</div>`).join('');
+        } else if (filtered.length > 0) {
+          box.innerHTML = `<div class="suggestion-header">Suggestions</div>` + filtered.map(o => `<div class="suggestion-item">${o}</div>`).join('');
+        } else {
+          box.innerHTML = `<div class="suggestion-item" style="color:var(--text-light); cursor:default;">New: "${val.toUpperCase()}"</div>`;
+        }
+        box.style.display = "block";
+      };
+
+      input.onfocus = () => renderList(input.value);
+      input.oninput = () => renderList(input.value);
+      
+      // Close on blur but allow for item click
+      input.onblur = () => setTimeout(() => { box.style.display = "none"; }, 200);
+
+      box.onclick = (e) => {
+        if(e.target.classList.contains('suggestion-item') && !e.target.innerText.startsWith('New:')) {
+          input.value = e.target.innerText;
+          input.dispatchEvent(new Event('input')); // Trigger save button check
+          box.style.display = "none";
         }
       };
-      
-      buildList('list_stores', opts.stores);
-      buildList('list_statuses', opts.statuses);
-      buildList('list_categories', opts.categories);
-    } catch(e) { console.error("Dropdown options failed to sync", e); }
+    }
 
-    // 1. Populate Existing Data with Sanitization
+    // 1. Populate Existing Data
     if (tn && typeof allToolData !== 'undefined') {
       const existing = allToolData.find(i => i.tn === tn);
       if (existing) {
@@ -154,19 +206,17 @@ async function initToolForm(tn, pn) {
 
     if(tn) document.getElementById('f_formQRImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${tn}`;
 
-    // 2. Event Listeners: Forced Uppercase & Save Trigger
+    // 2. Change Listeners & Forced Uppercase
     document.querySelectorAll('#toolFormModal .form-control').forEach(input => {
       input.addEventListener('input', function() {
-        if(this.classList.contains('force-up')) {
-            this.value = this.value.toUpperCase();
-        }
+        if(this.classList.contains('force-up')) this.value = this.value.toUpperCase();
         saveBtn.disabled = false; 
         saveBtn.textContent = "Save Changes"; 
         saveBtn.style.opacity = "1";
       });
     });
 
-    // 3. File Handlers
+    // 3. File Handlers (preserved)
     document.getElementById('f_toolImgInput').onchange = (e) => {
       if(!e.target.files.length) return;
       const reader = new FileReader();
@@ -174,7 +224,6 @@ async function initToolForm(tn, pn) {
         document.getElementById('f_toolImgPreview').src = ev.target.result;
         uploadedImg = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
         saveBtn.disabled = false;
-        saveBtn.textContent = "Save Changes";
       };
       reader.readAsDataURL(e.target.files[0]);
     };
@@ -183,21 +232,17 @@ async function initToolForm(tn, pn) {
        if(!e.target.files.length) return;
        const reader = new FileReader();
        reader.onload = (ev) => {
-         const pLabel = document.getElementById('f_pdfFileName');
-         pLabel.textContent = e.target.files[0].name;
-         pLabel.style.color = "var(--primary)";
+         document.getElementById('f_pdfFileName').textContent = e.target.files[0].name;
          uploadedPdf = { name: e.target.files[0].name, data: ev.target.result.split(',')[1] };
          saveBtn.disabled = false;
-         saveBtn.textContent = "Save Changes";
        };
        reader.readAsDataURL(e.target.files[0]);
     };
 
-    // 4. Submit Logic (Post to Apps Script)
+    // 4. Submit Logic
     saveBtn.onclick = async () => {
       saveBtn.disabled = true;
-      saveBtn.textContent = "Processing...";
-      
+      saveBtn.textContent = "Saving...";
       const payload = {
         action: "saveToolVariant",
         caplistPn: caplistPn,
@@ -224,12 +269,7 @@ async function initToolForm(tn, pn) {
           closeToolForm();
           if(typeof loadToolData === 'function') loadToolData();
         }
-      } catch(e) { 
-        console.error(e); 
-        Swal.fire("Error", e.message, "error"); 
-        saveBtn.disabled = false; 
-        saveBtn.textContent = "Save Changes";
-      }
+      } catch(e) { console.error(e); Swal.fire("Error", e.message, "error"); saveBtn.disabled = false; }
     };
 }
 </script>
