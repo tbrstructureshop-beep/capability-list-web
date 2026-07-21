@@ -142,17 +142,49 @@
     renderToolTable(filtered);
   });
 
+  /**
+   * INA - Revised openToolFormModal
+   * Fixes pathing issues and adds HTTP status validation
+   */
   async function openToolFormModal(tn = null, pn = null) {
     const overlay = document.getElementById("toolFormModalOverlay");
-    const targetPath = "modal/tool/dashboard/form/index.html";
+    
+    // Use leading slash to ensure the path is resolved from the site root
+    // This is the standard for Vercel, Netlify, and custom domains
+    const targetPath = "/modal/tool/dashboard/form/index.html"; 
+    
     try {
       const response = await fetch(targetPath);
-      overlay.innerHTML = await response.text();
+      
+      // Check if the file actually exists (fetch doesn't throw on 404)
+      if (!response.ok) {
+        throw new Error(`File not found (Status: ${response.status}). Check if the directory /form/ exists.`);
+      }
+  
+      const html = await response.text();
+      overlay.innerHTML = html;
       overlay.style.display = "flex";
+  
+      // Clear and Re-inject scripts to prevent memory leaks and ensure clean execution
       const scripts = overlay.querySelectorAll("script");
-      scripts.forEach(s => { const newS = document.createElement("script"); newS.text = s.innerHTML; document.body.appendChild(newS); });
-      if (typeof initToolForm === "function") initToolForm(tn, pn);
-    } catch (e) { Swal.fire("Error", "Gagal load form.", "error"); }
+      scripts.forEach(s => { 
+        const newS = document.createElement("script"); 
+        newS.text = s.innerHTML; 
+        document.body.appendChild(newS); 
+      });
+  
+      if (typeof initToolForm === "function") {
+        initToolForm(tn, pn);
+      }
+    } catch (e) {
+      console.error("Critical Load Error:", e);
+      Swal.fire({
+        icon: 'error',
+        title: 'Form Load Failed',
+        text: `System cannot reach: ${targetPath}. Error: ${e.message}`,
+        footer: '<span style="color: #6b7280;">Verify that /modal/tool/dashboard/form/index.html exists in your GitHub Repo.</span>'
+      });
+    }
   }
 
   function closeToolForm() { document.getElementById("toolFormModalOverlay").style.display = "none"; }
