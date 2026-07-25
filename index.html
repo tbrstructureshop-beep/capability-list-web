@@ -1989,10 +1989,6 @@
       document.querySelectorAll('.context-dropdown').forEach(d => d.classList.remove('active'));
     });
 
-    /**
-     * BRIDGE: Open CoGS Master Log Modal
-     * Surgically injects modal/cogsList/index.html into the overlay
-     */
     async function openCoGS(pn) {
       showLoader();
       const targetPath = "modal/cogsList/index.html"; 
@@ -2001,12 +1997,28 @@
       try {
         const response = await fetch(targetPath);
         if (!response.ok) throw new Error("File not found");
-        const html = await response.text();
+        let html = await response.text();
         
-        overlay.innerHTML = html;
+        // 1. EXTRACT THE STYLE AND BODY CONTENT
+        // This ensures styles are applied and we don't nest <html> tags
+        const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/i);
+        const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/i);
+        
+        const styles = styleMatch ? styleMatch[0] : "";
+        const bodyContent = bodyMatch ? bodyMatch[1] : html;
+    
+        // 2. WRAP IN A CONTAINER (.modal-card)
+        // We add specific dimensions here so the flexbox inside has a height to fill
+        overlay.innerHTML = `
+          ${styles}
+          <div class="modal-card" style="width: 95%; max-width: 1400px; height: 90vh; display: flex; flex-direction: column; background: white;">
+            ${bodyContent}
+          </div>
+        `;
+        
         overlay.style.display = "flex";
-  
-        // Re-inject and execute scripts from the fetched HTML
+    
+        // 3. RE-INJECT SCRIPTS (Your existing logic)
         const scripts = overlay.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -2015,8 +2027,8 @@
         });
         
         hideLoader();
-  
-        // SURGICAL: Wait for the child data to load, then filter
+    
+        // 4. FILTER TRIGGER
         if (pn) {
           let attempts = 0;
           const checkFilter = setInterval(() => {
@@ -2024,7 +2036,7 @@
               window.applyExternalPnFilter(pn);
               clearInterval(checkFilter);
             }
-            if (attempts++ > 50) clearInterval(checkFilter); // Safety timeout
+            if (attempts++ > 50) clearInterval(checkFilter);
           }, 100);
         }
       } catch (err) {
