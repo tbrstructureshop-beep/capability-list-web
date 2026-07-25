@@ -1987,7 +1987,46 @@
     });
 
     // Dummy functions for menu actions
-    function openCoGS(pn) { Swal.fire("CoGS", "Opening CoGS for " + pn, "info"); }
+    async function openCoGS(pn) {
+      showLoader();
+      const targetPath = "modal/cogsList/index.html"; 
+      
+      try {
+        const response = await fetch(targetPath);
+        if (!response.ok) throw new Error("CoGS Log file not found");
+        const html = await response.text();
+        
+        let overlay = document.getElementById("cogsListModalOverlay");
+        if (!overlay) {
+          overlay = document.createElement("div");
+          overlay.id = "cogsListModalOverlay";
+          overlay.className = "modal-overlay";
+          document.body.appendChild(overlay);
+        }
+        
+        overlay.innerHTML = html;
+        overlay.style.display = "flex";
+        hideLoader();
+    
+        // Re-inject scripts inside fetched HTML
+        const scripts = overlay.querySelectorAll("script");
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.text = oldScript.innerHTML;
+          document.body.appendChild(newScript);
+        });
+    
+        // SURGICAL: Auto-apply the PN filter once the modal is loaded
+        if (pn && typeof window.applyExternalPnFilter === "function") {
+          window.applyExternalPnFilter(pn);
+        }
+      } catch (err) {
+        hideLoader();
+        console.error(err);
+        Swal.fire("Error", "Gagal memuat CoGS Log.", "error");
+      }
+    }
+    
     function openMaterial(pn) { Swal.fire("Material", "Opening Materials for " + pn, "info"); }
     function openManual(pn) { Swal.fire("Manual", "Opening Manual for " + pn, "info"); }
     function openAttachment(pn) { Swal.fire("Attachment", "Opening Attachments for " + pn, "info"); }
@@ -2563,6 +2602,13 @@
       document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
       renderCards(viewData);
     };
+
+    window.addEventListener('message', (e) => {
+      if (e.data.type === 'CLOSE_COGS_MODAL') {
+        const overlay = document.getElementById("cogsListModalOverlay");
+        if (overlay) overlay.style.display = "none";
+      }
+    });
 
     // Tambahkan efek border pada header saat scroll
     window.addEventListener('scroll', () => {
