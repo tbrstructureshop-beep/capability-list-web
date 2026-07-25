@@ -733,6 +733,13 @@
     .context-menu-wrapper:has(.active) {
         z-index: 9999 !important;
     }
+
+    .data-card:has(.context-dropdown.active) {
+      z-index: 10002 !important;
+      position: relative;
+      /* Ensure other card elements don't clip the shadow */
+      isolation: isolate; 
+    }
     
     .dot-menu-btn {
       background: var(--primary-light);
@@ -755,11 +762,11 @@
         width: 180px;
         background: white;
         border-radius: 12px;
-        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); /* Stronger shadow for "Above" feel */
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
         border: 1px solid var(--border);
         display: none;
         flex-direction: column;
-        z-index: 10000 !important; /* Maximum priority */
+        z-index: 10003 !important; /* One step higher than the card */
         margin-top: 8px;
         overflow: hidden;
     }
@@ -1959,19 +1966,19 @@
     }
 
     function toggleCardContext(btn) {
+      // Prevent the click from triggering card-level events
+      if (window.event) window.event.stopPropagation();
+      
       const dropdown = btn.nextElementSibling;
       const isActive = dropdown.classList.contains('active');
       
-      // 1. Close all other dropdowns first
-      document.querySelectorAll('.context-dropdown').forEach(d => d.classList.remove('active'));
+      // 1. Close all other active dropdowns in all cards
+      document.querySelectorAll('.context-dropdown').forEach(d => {
+        if (d !== dropdown) d.classList.remove('active');
+      });
       
-      // 2. Toggle current
-      if (!isActive) {
-          dropdown.classList.add('active');
-      }
-      
-      // 3. Prevent the card from receiving the click
-      if (event) event.stopPropagation();
+      // 2. Toggle current dropdown
+      dropdown.classList.toggle('active', !isActive);
     }
 
     // Close dropdowns on outside click
