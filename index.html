@@ -1987,7 +1987,25 @@
     });
 
     // Dummy functions for menu actions
-    function openCoGS(pn) { Swal.fire("CoGS", "Opening CoGS for " + pn, "info"); }
+    function openCoGS(pn) {
+      // Use the existing modal overlay structure from your Repo 2
+      let modal = document.getElementById("cogsModalOverlay");
+      if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "cogsModalOverlay";
+        modal.className = "modal-overlay"; // Uses your existing CSS
+        document.body.appendChild(modal);
+      }
+    
+      // Inject a clean iframe to load the new cogsList design
+      modal.innerHTML = `
+        <div class="modal-card" style="width: 95%; max-width: 1200px; height: 90vh;">
+          <iframe src="modal/cogsList/index.html?pn=${encodeURIComponent(pn)}" 
+                  style="width:100%; height:100%; border:none; border-radius:14px;"></iframe>
+        </div>
+      `;
+      modal.style.display = "flex";
+    }
     function openMaterial(pn) { Swal.fire("Material", "Opening Materials for " + pn, "info"); }
     function openManual(pn) { Swal.fire("Manual", "Opening Manual for " + pn, "info"); }
     function openAttachment(pn) { Swal.fire("Attachment", "Opening Attachments for " + pn, "info"); }
