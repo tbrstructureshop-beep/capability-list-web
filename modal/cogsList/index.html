@@ -9,322 +9,266 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
-            --primary: #286573;
-            --primary-dark: #1f4e54;
-            --primary-light: #eef6f7;
-            --bg: #f8fafc;
-            --text-main: #1e293b;
-            --text-light: #64748b;
-            --border: #e2e8f0;
+            /* Synchronized with Main Dashboard */
+            --primary: #3c92a6;
+            --primary-dark: #2d6e7e;
+            --primary-light: #eef7f9;
+            --bg: #f9fafb;
+            --text-main: #111827;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
             --white: #ffffff;
+            --radius-lg: 14px;
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
     
-        body { 
+        /* Use a dedicated container for the modal content to avoid body conflicts */
+        .cogs-modal-container { 
             font-family: 'Inter', sans-serif; 
-            background: var(--bg); 
+            background: var(--white); 
             color: var(--text-main); 
             margin: 0; 
-            padding: 20px;
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100%; /* Fill the injected .modal-card */
             box-sizing: border-box;
             overflow: hidden;
         }
     
-        /* --- PROFESSIONAL HEADER (SURGICAL ALIGNMENT FIX) --- */
-        .header { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; flex-shrink: 0; }
+        /* --- HEADER --- */
+        .header { 
+            padding: 20px 24px;
+            display: flex; 
+            flex-direction: column; 
+            gap: 16px; 
+            flex-shrink: 0; 
+            border-bottom: 1px solid var(--border);
+            background: var(--white);
+        }
         
-        /* Row 1: Title & Close */
         .header-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .header-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-        .header-title-box { display: flex; align-items: center; gap: 10px; min-width: 0; }
-        .header-title-box h2 { margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--primary); text-transform: uppercase; white-space: nowrap; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-title-box h2 { 
+            margin: 0; 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            color: var(--text-main); 
+            letter-spacing: -0.02em;
+        }
     
-        /* Row 2: Search & Refresh (Locked to Right) */
+        #counter { 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: var(--primary); 
+            background: var(--primary-light); 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(60, 146, 166, 0.2); 
+        }
+
         .header-bottom-row { 
             display: flex; 
-            justify-content: flex-end; /* Align everything to the right */
+            justify-content: flex-end; 
             align-items: center; 
-            width: 100%; 
-            gap: 12px; /* Fixed distance maintained */
-            flex-wrap: nowrap; /* Prevents stacking */
+            gap: 12px; 
         }
     
-        /* Pill Search Styling */
-        .search-wrapper { position: relative; flex: 0 1 300px; min-width: 150px; }
+        /* Search Pill */
+        .search-wrapper { position: relative; flex: 0 1 320px; }
         .search-wrapper input {
             width: 100%;
-            height: 38px;
-            padding: 0 15px 0 38px;
-            border-radius: 20px; /* Modern Pill */
-            border: 1.5px solid var(--border);
-            font-size: 0.8rem;
+            height: 40px;
+            padding: 0 15px 0 42px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-size: 14px;
             outline: none;
-            background: var(--white);
-            box-sizing: border-box;
+            background: var(--bg);
             transition: 0.2s;
         }
-        .search-wrapper input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(40, 101, 115, 0.1); }
-        .search-wrapper .material-icons { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 1.1rem; }
+        .search-wrapper input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1); background: white;}
+        .search-wrapper .material-icons { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 1.2rem; }
     
-        /* Pill Refresh Button */
         .btn-refresh { 
             background: var(--primary); 
             color: white; 
-            height: 38px;
-            padding: 0 18px; 
-            font-size: 0.7rem; 
-            font-weight: 700; 
-            gap: 6px; 
-            border-radius: 20px; /* Modern Pill */
-            flex-shrink: 0; 
+            height: 40px;
+            padding: 0 20px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            gap: 8px; 
+            border-radius: 10px;
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: 0.2s;
         }
         .btn-refresh:hover { background: var(--primary-dark); transform: translateY(-1px); }
     
-        /* --- TABLE STYLE (CENTERED) --- */
+        /* --- TABLE --- */
         .table-wrapper {
-            background: var(--white);
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            overflow: auto;
-            border: 1px solid var(--border);
             flex-grow: 1;
+            overflow: auto;
             position: relative;
+            background: #fff;
         }
     
-        table { width: 100%; border-collapse: collapse; min-width: 1100px; }
-        thead { position: sticky; top: 0; z-index: 10; background: #f8fafc; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        thead { position: sticky; top: 0; z-index: 10; background: var(--bg); }
         
-        /* TABLE BODY & HEADER CENTER ALIGN */
-        th, td { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-align: center !important; vertical-align: middle !important; }
-        th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-light); border-bottom: 2px solid var(--border); }
+        th, td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: center; vertical-align: middle; }
+        th { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-light); letter-spacing: 0.05em; }
         
-        /* Exception for Identification */
         td.align-left, th.align-left { text-align: left !important; }
+        tr:hover { background: var(--primary-light); }
     
-        tr:hover { background: #f9fafb; }
-    
-        /* --- PAGINATION BAR --- */
+        /* --- PAGINATION --- */
         .pagination-bar {
             background: var(--white);
-            padding: 12px 24px;
+            padding: 14px 24px;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
-            z-index: 100;
-            font-size: 0.8rem;
+            font-size: 13px;
             color: var(--text-light);
         }
-        .pag-controls { display: flex; align-items: center; gap: 8px; }
+        .pag-controls { display: flex; align-items: center; gap: 10px; }
         .pag-btn { 
             background: var(--white); border: 1px solid var(--border); 
-            padding: 4px 8px; border-radius: 6px; cursor: pointer; 
-            font-weight: 600; display: flex; align-items: center;
+            width: 36px; height: 36px; border-radius: 8px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-main); transition: 0.2s;
         }
-        .pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .pag-btn:hover:not(:disabled) { background: var(--primary-light); color: var(--primary); }
+        .pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .pag-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
         
         .rows-select { 
-            padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); 
-            font-size: 0.8rem; outline: none; font-weight: 600;
+            padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); 
+            font-size: 13px; outline: none; font-weight: 600; cursor: pointer;
         }
-    
-        /* --- LOADING SPINNER --- */
-        .local-loader {
-            position: absolute; inset: 0; background: rgba(255,255,255,0.8);
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 50; backdrop-filter: blur(1px);
-        }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     
         /* --- COMPONENTS --- */
-        .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 800; display: inline-block; }
-        .badge-yes { background: #dcfce7; color: #166534; }
-        .badge-no { background: #f1f5f9; color: #94a3b8; }
-        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; display: inline-block; border: 1px solid transparent;}
+        .badge-yes { background: #d1fae5; color: #065f46; border-color: #6ee7b7;}
+        .badge-no { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb;}
+        .status-pill { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: white; }
 
-        /* --- SURGICAL ACTION COLUMN FIX (NO BREAKING LINES) --- */
-        .menu-container { 
-            position: relative; 
-            display: inline-flex; /* Ganti dari flex ke inline-flex */
-            align-items: center; 
-            justify-content: center;
-            vertical-align: middle;
-        }
-
-        .pic-action-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between; /* Nama di kiri, Kebab di kanan */
-            width: 100%;
-            gap: 10px;
-        }
-        
-        .pic-name {
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-align: left;
-            flex-grow: 1; /* Biarkan teks mengambil ruang sisa */
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
+        .pic-action-container { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; }
+        .pic-name { font-weight: 600; font-size: 13px; text-align: left; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .kebab-btn-mini {
-            cursor: pointer;
-            color: var(--text-light);
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
-            flex-shrink: 0; /* Jangan biarkan icon mengecil */
+            cursor: pointer; color: var(--text-light); border-radius: 8px; width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;
+            border: 1px solid var(--border);
         }
-        .kebab-btn-mini:hover { background: #eee; color: var(--primary); }
+        .kebab-btn-mini:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
         
         .dropdown-menu {
-            position: absolute; 
-            right: 10px; /* Sesuaikan posisi munculnya */
-            top: 40px; 
-            width: 160px;
-            background: white; 
-            border-radius: 8px; 
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
-            border: 1px solid var(--border); 
-            z-index: 1000; 
-            display: none; 
-            text-align: left;
+            position: absolute; right: 20px; top: 50px; width: 170px;
+            background: white; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            border: 1px solid var(--border); z-index: 1000; display: none; text-align: left; overflow: hidden;
         }
-        .dropdown-menu.show { display: block; }
-        .dropdown-item { padding: 10px 15px; font-size: 0.8rem; display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-main); text-decoration: none; }
-        .dropdown-item:hover { background: #f1f5f9; color: var(--primary); }
-        
-        /* --- STABLE ROW ALIGNMENT --- */
-        table { border-spacing: 0; border-collapse: collapse; }
-
-        td { 
-            /* Hapus height: 70px; ganti dengan padding yang konsisten */
-            padding: 12px 20px; 
-            border-bottom: 1px solid var(--border); 
-            font-size: 0.85rem; 
-            text-align: center !important; 
-            vertical-align: middle !important; 
-            box-sizing: border-box;
-            height: 65px; /* Tetapkan height di sini jika ingin seragam */
-        }
+        .dropdown-menu.show { display: flex; flex-direction: column; }
+        .dropdown-item { padding: 12px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text-main); text-decoration: none; transition: 0.2s;}
+        .dropdown-item:hover { background: var(--primary-light); color: var(--primary); }
     
         /* --- DETAIL MODAL --- */
-        #detailOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 2000; justify-content: flex-end; backdrop-filter: blur(2px); }
-        #detailDrawer { width: 400px; height: 100%; background: white; box-shadow: -5px 0 25px rgba(0,0,0,0.1); padding: 30px; display: flex; flex-direction: column; overflow-y: auto; }
-        .detail-row { margin-bottom: 20px; }
-        .detail-label { font-size: 0.65rem; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 5px; }
-        .detail-val { font-size: 0.95rem; font-weight: 600; color: var(--text-main); }
-        .status-edit { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-weight: 700; }
+        #detailOverlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.4); display: none; z-index: 2000; justify-content: flex-end; backdrop-filter: blur(4px); }
+        #detailDrawer { width: 420px; height: 100%; background: white; box-shadow: -10px 0 30px rgba(0,0,0,0.1); padding: 40px 30px; display: flex; flex-direction: column; overflow-y: auto; }
+        .detail-row { margin-bottom: 24px; }
+        .detail-label { font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em; }
+        .detail-val { font-size: 15px; font-weight: 600; color: var(--text-main); }
+        .status-edit { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-weight: 700; outline: none; }
     
-        .icon-btn { cursor: pointer; border: none; border-radius: 8px; height: 36px; width: 36px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-close { background: #f1f5f9; color: #475569; border: 1px solid var(--border); }
-        .btn-close:hover { background: #fee2e2; color: #b91c1c; }
+        .btn-close-modal { background: var(--primary-light); color: var(--primary); border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-close-modal:hover { background: #fee2e2; color: #ef4444; }
+
+        /* Loader */
+        .local-loader { position: absolute; inset: 0; background: rgba(255,255,255,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(2px); }
+        .spinner-local { width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div class="header">
-        <!-- TOP ROW: Title & Result Counter -->
-        <div class="header-top-row">
-            <div class="header-left">
-                <span class="material-icons" style="color: var(--primary); font-size: 1.8rem;">fact_check</span>
-                <div class="header-title-box">
-                    <h2>CoGS Dashboard</h2>
-                    <div id="counter" style="font-size: 0.65rem; font-weight: 800; color: var(--primary); background: var(--primary-light); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(40, 101, 115, 0.2); white-space: nowrap;">0 Records Found</div>
+    <!-- Root Container -->
+    <div class="cogs-modal-container">
+        <div class="header">
+            <div class="header-top-row">
+                <div class="header-left">
+                    <span class="material-icons" style="color: var(--primary); font-size: 2rem;">folder_shared</span>
+                    <div class="header-title-box">
+                        <h2>CoGS Master Log</h2>
+                        <span id="counter">Checking records...</span>
+                    </div>
                 </div>
+                <button class="btn-close-modal" onclick="closeModal()">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
-            <button class="icon-btn btn-close" onclick="closeModal()">
-                <span class="material-icons">close</span>
-            </button>
-        </div>
 
-        <!-- BOTTOM ROW: Search and Refresh aligned right -->
-        <div class="header-bottom-row">
-            <div class="search-wrapper">
-                <span class="material-icons">search</span>
-                <input type="text" id="searchInput" placeholder="Search Master Log..." oninput="filterData(this.value)">
+            <div class="header-bottom-row">
+                <div class="search-wrapper">
+                    <span class="material-icons">search</span>
+                    <input type="text" id="searchInput" placeholder="Search PN, Order No, or PIC..." oninput="filterData(this.value)">
+                </div>
+                <button class="btn-refresh" onclick="fetchData()">
+                    <span class="material-icons">sync</span> SYNC DATA
+                </button>
             </div>
-            <button class="btn btn-refresh" onclick="fetchData()">
-                <span class="material-icons" style="font-size: 1rem;">refresh</span> REFRESH
-            </button>
         </div>
-    </div>
-    
-    <div class="table-wrapper">
-        <!-- LOCAL LOADER -->
-        <div id="localLoader" class="local-loader">
-            <div class="spinner"></div>
-            <p style="font-size: 11px; font-weight: 700; color: var(--primary); margin-top: 10px;">SYNCING DATA...</p>
+        
+        <div class="table-wrapper">
+            <div id="localLoader" class="local-loader">
+                <div class="spinner-local"></div>
+                <p style="font-size: 12px; font-weight: 700; color: var(--primary); margin-top: 15px;">REFRESHING LOGS...</p>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Ref Number</th>
+                        <th class="align-left">Part Identification</th>
+                        <th style="width: 120px;">A/C Reg</th>
+                        <th style="width: 200px;">Authority Capability</th>
+                        <th style="width: 160px;">Process Status</th>
+                        <th style="width: 240px;">Personnel & Action</th>
+                    </tr>
+                </thead>
+                <tbody id="logBody"></tbody>
+            </table>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 130px;">Ref Number</th>
-                    <th class="align-left">Part Identification</th>
-                    <th style="width: 120px;">A/C Reg</th>
-                    <th style="width: 180px;">Authority Status</th>
-                    <th style="width: 140px;">Process Status</th>
-                    <th style="width: 220px;">Personnel & Action</th> <!-- Lebarkan sedikit kolom ini -->
-                </tr>
-            </thead>
-            <tbody id="logBody"></tbody>
-        </table>
-    </div>
-
-    <!-- NEW PAGINATION BAR (STEADY FOOTER) -->
-    <div class="pagination-bar">
-        <div>
-            Show 
-            <select id="rowsPerPage" class="rows-select" onchange="changeRowsPerPage(this.value)">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="99999">All</option>
-            </select>
-            rows
-        </div>
-        <div id="pageInfo">Page 1 of 1</div>
-        <div class="pag-controls">
-            <button class="pag-btn" id="prevBtn" onclick="changePage(-1)">
-                <span class="material-icons" style="font-size:18px">chevron_left</span>
-            </button>
-            <button class="pag-btn" id="nextBtn" onclick="changePage(1)">
-                <span class="material-icons" style="font-size:18px">chevron_right</span>
-            </button>
+        <div class="pagination-bar">
+            <div>
+                Show 
+                <select id="rowsPerPage" class="rows-select" onchange="changeRowsPerPage(this.value)">
+                    <option value="10">10 rows</option>
+                    <option value="25">25 rows</option>
+                    <option value="50">50 rows</option>
+                    <option value="99999">Show All</option>
+                </select>
+            </div>
+            <div id="pageInfo" style="font-weight: 600; color: var(--text-main);">Page 1 of 1</div>
+            <div class="pag-controls">
+                <button class="pag-btn" id="prevBtn" onclick="changePage(-1)">
+                    <span class="material-icons">chevron_left</span>
+                </button>
+                <button class="pag-btn" id="nextBtn" onclick="changePage(1)">
+                    <span class="material-icons">chevron_right</span>
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- DETAIL DRAWER -->
     <div id="detailOverlay" onclick="closeDetail()">
         <div id="detailDrawer" onclick="event.stopPropagation()">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; border-bottom: 2px solid var(--primary); padding-bottom: 15px;">
-                <h3 style="margin:0; color:var(--primary); text-transform: uppercase; font-size: 1rem;">Record Details</h3>
-                <span class="material-icons" style="cursor:pointer; color: #94a3b8;" onclick="closeDetail()">close</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
+                <h3 style="margin:0; color:var(--primary); font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em;">LOG DETAILS</h3>
+                <span class="material-icons" style="cursor:pointer; color: var(--text-light);" onclick="closeDetail()">close</span>
             </div>
             <div id="detailContent"></div>
         </div>
@@ -337,7 +281,6 @@
     let currentPage = 1;
     let rowsPerPage = 10;
 
-    // Update this line
     function closeModal() { window.parent.postMessage({ type: 'CLOSE_COGS_MODAL' }, '*'); }
 
     function toggleLoading(show) {
@@ -362,19 +305,12 @@
 
     function filterData(query) {
         const q = query.toLowerCase().trim();
-        
-        // Handling "Lazy" FAA format: The logic checks if any cell CONTAINS the search term.
-        // This naturally works for semicolon-separated strings in your master database.
         filteredData = masterData.filter(item => 
             Object.values(item).some(val => {
-                if (typeof val === 'string') {
-                    // Normalize the cell content (remove extra spaces/newlines)
-                    return val.toLowerCase().replace(/\s+/g, ' ').includes(q);
-                }
+                if (typeof val === 'string') return val.toLowerCase().includes(q);
                 return false;
             })
         );
-        
         document.getElementById('counter').innerText = `${filteredData.length} Records Found`;
         currentPage = 1; 
         updatePagination();
@@ -401,51 +337,48 @@
         document.getElementById('nextBtn').disabled = (currentPage === totalPages);
 
         const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        const pageData = filteredData.slice(start, end);
+        const pageData = filteredData.slice(start, end = start + rowsPerPage);
         renderTable(pageData);
     }
 
     function renderTable(data) {
         const body = document.getElementById('logBody');
         if (data.length === 0) {
-            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:100px; color: var(--text-light);">No matching logs found.</td></tr>';
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:100px; color: var(--text-light); font-weight: 500;">No matching logs found.</td></tr>';
             return;
         }
 
         const statusStyles = {
-            'Created': '#94a3b8', 'Revised': '#d97706', 'Approved': '#286573', 'Submitted': '#16a34a'
+            'Created': '#94a3b8', 'Revised': '#d97706', 'Approved': '#3c92a6', 'Submitted': '#16a34a'
         };
 
         body.innerHTML = data.map(row => `
             <tr>
                 <td style="font-family: monospace; font-weight: 700; color: var(--primary);">${row.orderNo}</td>
                 <td class="align-left">
-                    <div style="font-weight:700; font-size: 0.85rem;">${row.pn}</div>
-                    <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase; line-height:1.2;">${row.desc}</div>
+                    <div style="font-weight:700; font-size: 14px;">${row.pn}</div>
+                    <div style="font-size:11px; color:var(--text-light); text-transform:uppercase; font-weight:600;">${row.desc}</div>
                 </td>
                 <td style="font-weight:700;">${row.acReg}</td>
                 <td>
-                    <div class="badge-group" style="justify-content: center; gap:4px;">
+                    <div style="display: flex; justify-content: center; gap:6px;">
                         <span class="badge ${row.auth.dgca === 'YES' ? 'badge-yes' : 'badge-no'}">DGCA</span>
                         <span class="badge ${row.auth.faa === 'YES' ? 'badge-yes' : 'badge-no'}">FAA</span>
                         <span class="badge ${row.auth.easa === 'YES' ? 'badge-yes' : 'badge-no'}">EASA</span>
                     </div>
                 </td>
                 <td>
-                    <span class="status-pill" style="background:${statusStyles[row.status] || '#eee'}; color:white;">${row.status}</span>
+                    <span class="status-pill" style="background:${statusStyles[row.status] || '#eee'};">${row.status}</span>
                 </td>
-                <td style="position: relative;">
+                <td>
                     <div class="pic-action-container">
                         <div class="pic-name">${row.pic}</div>
                         <span class="material-icons kebab-btn-mini" onclick="toggleMenu(event, '${row.orderNo}')">more_vert</span>
                     </div>
-                    <!-- Menu is anchored to the relative TD -->
                     <div class="dropdown-menu" id="menu-${row.orderNo}">
-                        <div class="dropdown-item" onclick="openDetail('${row.orderNo}')"><span class="material-icons" style="font-size:16px;">visibility</span> Details</div>
-                        <a href="${row.url}" target="_blank" class="dropdown-item"><span class="material-icons" style="font-size:16px;">file_open</span> Open File</a>
-                        <hr style="margin:4px 0; border:0; border-top:1px solid #eee;">
-                        <div class="dropdown-item" style="color:#be123c;" onclick="confirmDelete('${row.orderNo}')"><span class="material-icons" style="font-size:16px;">delete_forever</span> Delete</div>
+                        <div class="dropdown-item" onclick="openDetail('${row.orderNo}')"><span class="material-icons" style="font-size:18px;">visibility</span> View Details</div>
+                        <a href="${row.url}" target="_blank" class="dropdown-item"><span class="material-icons" style="font-size:18px;">description</span> Open Document</a>
+                        <div class="dropdown-item" style="color:#ef4444;" onclick="confirmDelete('${row.orderNo}')"><span class="material-icons" style="font-size:18px;">delete</span> Delete Record</div>
                     </div>
                 </td>
             </tr>
@@ -468,18 +401,15 @@
     function openDetail(orderNo) {
         const row = masterData.find(r => r.orderNo === orderNo);
         const container = document.getElementById('detailContent');
-        
         container.innerHTML = `
             <div class="detail-row"><div class="detail-label">Order Reference</div><div class="detail-val">${row.orderNo}</div></div>
-            <div class="detail-row"><div class="detail-label">Category Group</div><div class="detail-val">${row.category}</div></div>
             <div class="detail-row"><div class="detail-label">Part Number</div><div class="detail-val">${row.pn}</div></div>
-            <div class="detail-row"><div class="detail-label">Serial Number</div><div class="detail-val">${row.sn || '-'}</div></div>
             <div class="detail-row"><div class="detail-label">Description</div><div class="detail-val">${row.desc}</div></div>
-            <div class="detail-row"><div class="detail-label">Aircraft Registration</div><div class="detail-val">${row.acReg}</div></div>
+            <div class="detail-row"><div class="detail-label">A/C Registration</div><div class="detail-val">${row.acReg}</div></div>
             <div class="detail-row"><div class="detail-label">PIC Personnel</div><div class="detail-val">${row.pic}</div></div>
-            <hr style="margin:20px 0; border:0; border-top:1px solid var(--border);">
+            <hr style="margin:30px 0; border:0; border-top:1px solid var(--border);">
             <div class="detail-row">
-                <div class="detail-label">Update Workflow Status</div>
+                <div class="detail-label">Workflow Status</div>
                 <select class="status-edit" onchange="updateStatus('${row.orderNo}', this.value)">
                     <option value="Created" ${row.status==='Created'?'selected':''}>Created</option>
                     <option value="Revised" ${row.status==='Revised'?'selected':''}>Revised</option>
@@ -487,8 +417,8 @@
                     <option value="Submitted" ${row.status==='Submitted'?'selected':''}>Submitted</option>
                 </select>
             </div>
-            <a href="${row.url}" target="_blank" style="display:block; text-align:center; padding:14px; background:var(--primary); color:white; text-decoration:none; border-radius:10px; font-weight:700; margin-top:20px; font-size:0.85rem;">
-                OPEN LOGGED DOCUMENT
+            <a href="${row.url}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:16px; background:var(--primary); color:white; text-decoration:none; border-radius:12px; font-weight:700; margin-top:30px; font-size:14px;">
+                <span class="material-icons">file_open</span> OPEN SOURCE FILE
             </a>
         `;
         document.getElementById('detailOverlay').style.display = 'flex';
@@ -509,18 +439,18 @@
                 await fetchData();
                 closeDetail();
             }
-        } catch (e) { alert("Failed to update status"); }
+        } catch (e) { Swal.fire("Failed", "Update failed", "error"); }
         finally { toggleLoading(false); }
     }
 
     function confirmDelete(orderNo) {
         Swal.fire({
-            title: 'Confirm Deletion',
-            text: `Ref: ${orderNo} - This will also remove the file from Drive trash.`,
+            title: 'Delete Record?',
+            text: `Permanently remove Ref: ${orderNo}?`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#be123c',
-            confirmButtonText: 'Permanently Delete'
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Yes, Delete'
         }).then(async (result) => {
             if (result.isConfirmed) {
                 toggleLoading(true);
@@ -531,10 +461,10 @@
                     });
                     const json = await res.json();
                     if(json.status === 'success') {
-                        Swal.fire("Deleted", "Record removed from master.", "success");
+                        Swal.fire("Deleted", "Record removed.", "success");
                         await fetchData();
                     }
-                } catch (e) { alert("Delete failed"); }
+                } catch (e) { Swal.fire("Error", "Delete failed", "error"); }
                 finally { toggleLoading(false); }
             }
         });
@@ -544,7 +474,6 @@
         const searchInp = document.getElementById('searchInput');
         if (searchInp) {
             searchInp.value = pn;
-            // Wait for masterData fetch to finish if it hasn't already
             const waitForData = setInterval(() => {
                 if (masterData && masterData.length > 0) {
                     filterData(pn);
@@ -555,7 +484,6 @@
         }
     };
 
-    // Initial Load
     fetchData();
 </script>
 </body>
