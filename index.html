@@ -989,6 +989,9 @@
 </div>
 
 <div id="modalUpdateSourceContainer"></div>
+
+<!-- Container for CoGS Master Log Modal -->
+<div id="cogsListModalOverlay" class="modal-overlay"></div>
   
 <script src="../auth/script.js"></script>
   <script>
@@ -1986,39 +1989,43 @@
       document.querySelectorAll('.context-dropdown').forEach(d => d.classList.remove('active'));
     });
 
-    // Dummy functions for menu actions
+    /**
+     * BRIDGE: Open CoGS Master Log Modal
+     * Surgically injects modal/cogsList/index.html into the overlay
+     */
     async function openCoGS(pn) {
       showLoader();
       const targetPath = "modal/cogsList/index.html"; 
+      const overlay = document.getElementById("cogsListModalOverlay");
       
       try {
         const response = await fetch(targetPath);
-        if (!response.ok) throw new Error("CoGS Log file not found");
+        if (!response.ok) throw new Error("File not found");
         const html = await response.text();
-        
-        let overlay = document.getElementById("cogsListModalOverlay");
-        if (!overlay) {
-          overlay = document.createElement("div");
-          overlay.id = "cogsListModalOverlay";
-          overlay.className = "modal-overlay";
-          document.body.appendChild(overlay);
-        }
         
         overlay.innerHTML = html;
         overlay.style.display = "flex";
-        hideLoader();
-    
-        // Re-inject scripts inside fetched HTML
+  
+        // Re-inject and execute scripts from the fetched HTML
         const scripts = overlay.querySelectorAll("script");
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
           newScript.text = oldScript.innerHTML;
           document.body.appendChild(newScript);
         });
-    
-        // SURGICAL: Auto-apply the PN filter once the modal is loaded
-        if (pn && typeof window.applyExternalPnFilter === "function") {
-          window.applyExternalPnFilter(pn);
+        
+        hideLoader();
+  
+        // SURGICAL: Wait for the child data to load, then filter
+        if (pn) {
+          let attempts = 0;
+          const checkFilter = setInterval(() => {
+            if (typeof window.applyExternalPnFilter === "function") {
+              window.applyExternalPnFilter(pn);
+              clearInterval(checkFilter);
+            }
+            if (attempts++ > 50) clearInterval(checkFilter); // Safety timeout
+          }, 100);
         }
       } catch (err) {
         hideLoader();
