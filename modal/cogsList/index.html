@@ -3,488 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CoGS Master Log - Pro</title>
+    <title>CoGS Context View</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
-            /* Synchronized with Main Dashboard */
-            --primary: #3c92a6;
-            --primary-dark: #2d6e7e;
-            --primary-light: #eef7f9;
-            --bg: #f9fafb;
-            --text-main: #111827;
-            --text-light: #6b7280;
-            --border: #e5e7eb;
-            --white: #ffffff;
-            --radius-lg: 14px;
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --primary: #286573;
+            --primary-light: #eef6f7;
+            --text-main: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
         }
-    
-        /* Use a dedicated container for the modal content to avoid body conflicts */
-        .cogs-modal-container { 
+
+        body { 
             font-family: 'Inter', sans-serif; 
-            background: var(--white); 
-            color: var(--text-main); 
-            margin: 0; 
-            display: flex;
-            flex-direction: column;
-            height: 100%; /* Fill the injected .modal-card */
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-    
-        /* --- HEADER --- */
-        .header { 
-            padding: 20px 24px;
-            display: flex; 
-            flex-direction: column; 
-            gap: 16px; 
-            flex-shrink: 0; 
-            border-bottom: 1px solid var(--border);
-            background: var(--white);
-        }
-        
-        .header-top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        .header-title-box h2 { 
-            margin: 0; 
-            font-size: 1.1rem; 
-            font-weight: 700; 
-            color: var(--text-main); 
-            letter-spacing: -0.02em;
-        }
-    
-        #counter { 
-            font-size: 11px; 
-            font-weight: 700; 
-            color: var(--primary); 
-            background: var(--primary-light); 
-            padding: 4px 12px; 
-            border-radius: 20px; 
-            border: 1px solid rgba(60, 146, 166, 0.2); 
+            background: var(--bg); 
+            margin: 0; padding: 20px; 
+            height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; 
         }
 
-        .header-bottom-row { 
-            display: flex; 
-            justify-content: flex-end; 
-            align-items: center; 
-            gap: 12px; 
+        /* Header Style */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+        .title-group { display: flex; align-items: center; gap: 12px; }
+        .pn-chip { 
+            background: var(--primary); color: white; padding: 4px 12px; 
+            border-radius: 6px; font-size: 0.85rem; font-weight: 700; 
         }
-    
-        /* Search Pill */
-        .search-wrapper { position: relative; flex: 0 1 320px; }
-        .search-wrapper input {
-            width: 100%;
-            height: 40px;
-            padding: 0 15px 0 42px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            font-size: 14px;
-            outline: none;
-            background: var(--bg);
-            transition: 0.2s;
+
+        /* Table Style */
+        .table-wrapper { 
+            background: white; border-radius: 12px; border: 1px solid var(--border); 
+            overflow: auto; flex-grow: 1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
-        .search-wrapper input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(60, 146, 166, 0.1); background: white;}
-        .search-wrapper .material-icons { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 1.2rem; }
-    
-        .btn-refresh { 
-            background: var(--primary); 
-            color: white; 
-            height: 40px;
-            padding: 0 20px; 
-            font-size: 13px; 
-            font-weight: 600; 
-            gap: 8px; 
-            border-radius: 10px;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            transition: 0.2s;
-        }
-        .btn-refresh:hover { background: var(--primary-dark); transform: translateY(-1px); }
-    
-        /* --- TABLE --- */
-        .table-wrapper {
-            flex-grow: 1;
-            overflow: auto;
-            position: relative;
-            background: #fff;
-        }
-    
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-        thead { position: sticky; top: 0; z-index: 10; background: var(--bg); }
-        
-        th, td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 13px; text-align: center; vertical-align: middle; }
-        th { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-light); letter-spacing: 0.05em; }
-        
-        td.align-left, th.align-left { text-align: left !important; }
-        tr:hover { background: var(--primary-light); }
-    
-        /* --- PAGINATION --- */
-        .pagination-bar {
-            background: var(--white);
-            padding: 14px 24px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
-            font-size: 13px;
-            color: var(--text-light);
+        th { 
+            position: sticky; top: 0; background: #f1f5f9; padding: 14px; 
+            font-size: 0.7rem; text-transform: uppercase; color: var(--text-light); 
+            text-align: center; border-bottom: 2px solid var(--border); z-index: 10;
         }
-        .pag-controls { display: flex; align-items: center; gap: 10px; }
-        .pag-btn { 
-            background: var(--white); border: 1px solid var(--border); 
-            width: 36px; height: 36px; border-radius: 8px; cursor: pointer; 
-            display: flex; align-items: center; justify-content: center;
-            color: var(--text-main); transition: 0.2s;
-        }
-        .pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .pag-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-align: center; }
         
-        .rows-select { 
-            padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); 
-            font-size: 13px; outline: none; font-weight: 600; cursor: pointer;
-        }
-    
-        /* --- COMPONENTS --- */
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; display: inline-block; border: 1px solid transparent;}
-        .badge-yes { background: #d1fae5; color: #065f46; border-color: #6ee7b7;}
-        .badge-no { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb;}
-        .status-pill { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: white; }
-
-        .pic-action-container { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; }
-        .pic-name { font-weight: 600; font-size: 13px; text-align: left; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .kebab-btn-mini {
-            cursor: pointer; color: var(--text-light); border-radius: 8px; width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0;
-            border: 1px solid var(--border);
-        }
-        .kebab-btn-mini:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
-        
-        .dropdown-menu {
-            position: absolute; right: 20px; top: 50px; width: 170px;
-            background: white; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-            border: 1px solid var(--border); z-index: 1000; display: none; text-align: left; overflow: hidden;
-        }
-        .dropdown-menu.show { display: flex; flex-direction: column; }
-        .dropdown-item { padding: 12px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--text-main); text-decoration: none; transition: 0.2s;}
-        .dropdown-item:hover { background: var(--primary-light); color: var(--primary); }
-    
-        /* --- DETAIL MODAL --- */
-        #detailOverlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.4); display: none; z-index: 2000; justify-content: flex-end; backdrop-filter: blur(4px); }
-        #detailDrawer { width: 420px; height: 100%; background: white; box-shadow: -10px 0 30px rgba(0,0,0,0.1); padding: 40px 30px; display: flex; flex-direction: column; overflow-y: auto; }
-        .detail-row { margin-bottom: 24px; }
-        .detail-label { font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.05em; }
-        .detail-val { font-size: 15px; font-weight: 600; color: var(--text-main); }
-        .status-edit { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-weight: 700; outline: none; }
-    
-        .btn-close-modal { background: var(--primary-light); color: var(--primary); border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-close-modal:hover { background: #fee2e2; color: #ef4444; }
+        .align-left { text-align: left !important; }
 
         /* Loader */
-        .local-loader { position: absolute; inset: 0; background: rgba(255,255,255,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50; backdrop-filter: blur(2px); }
-        .spinner-local { width: 40px; height: 40px; border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader { 
+            position: fixed; inset: 0; background: rgba(255,255,255,0.8); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; 
+        }
+        .spinner { width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Status Pills */
+        .status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: white; text-transform: uppercase; }
     </style>
 </head>
 <body>
-    <!-- Root Container -->
-    <div class="cogs-modal-container">
-        <div class="header">
-            <div class="header-top-row">
-                <div class="header-left">
-                    <span class="material-icons" style="color: var(--primary); font-size: 2rem;">folder_shared</span>
-                    <div class="header-title-box">
-                        <h2>CoGS Master Log</h2>
-                        <span id="counter">Checking records...</span>
-                    </div>
-                </div>
-                <button class="btn-close-modal" onclick="closeModal()">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
 
-            <div class="header-bottom-row">
-                <div class="search-wrapper">
-                    <span class="material-icons">search</span>
-                    <input type="text" id="searchInput" placeholder="Search PN, Order No, or PIC..." oninput="filterData(this.value)">
-                </div>
-                <button class="btn-refresh" onclick="fetchData()">
-                    <span class="material-icons">sync</span> SYNC DATA
-                </button>
-            </div>
-        </div>
-        
-        <div class="table-wrapper">
-            <div id="localLoader" class="local-loader">
-                <div class="spinner-local"></div>
-                <p style="font-size: 12px; font-weight: 700; color: var(--primary); margin-top: 15px;">REFRESHING LOGS...</p>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 140px;">Ref Number</th>
-                        <th class="align-left">Part Identification</th>
-                        <th style="width: 120px;">A/C Reg</th>
-                        <th style="width: 200px;">Authority Capability</th>
-                        <th style="width: 160px;">Process Status</th>
-                        <th style="width: 240px;">Personnel & Action</th>
-                    </tr>
-                </thead>
-                <tbody id="logBody"></tbody>
-            </table>
-        </div>
-
-        <div class="pagination-bar">
-            <div>
-                Show 
-                <select id="rowsPerPage" class="rows-select" onchange="changeRowsPerPage(this.value)">
-                    <option value="10">10 rows</option>
-                    <option value="25">25 rows</option>
-                    <option value="50">50 rows</option>
-                    <option value="99999">Show All</option>
-                </select>
-            </div>
-            <div id="pageInfo" style="font-weight: 600; color: var(--text-main);">Page 1 of 1</div>
-            <div class="pag-controls">
-                <button class="pag-btn" id="prevBtn" onclick="changePage(-1)">
-                    <span class="material-icons">chevron_left</span>
-                </button>
-                <button class="pag-btn" id="nextBtn" onclick="changePage(1)">
-                    <span class="material-icons">chevron_right</span>
-                </button>
-            </div>
-        </div>
+    <div id="loading" class="loader">
+        <div class="spinner"></div>
+        <p style="font-size: 0.7rem; font-weight: 700; color: var(--primary); margin-top: 10px;">FILTERING SERIES DATA...</p>
     </div>
 
-    <!-- DETAIL DRAWER -->
-    <div id="detailOverlay" onclick="closeDetail()">
-        <div id="detailDrawer" onclick="event.stopPropagation()">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:40px;">
-                <h3 style="margin:0; color:var(--primary); font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em;">LOG DETAILS</h3>
-                <span class="material-icons" style="cursor:pointer; color: var(--text-light);" onclick="closeDetail()">close</span>
-            </div>
-            <div id="detailContent"></div>
+    <div class="header">
+        <div class="title-group">
+            <span class="material-icons" style="color: var(--primary)">account_balance_wallet</span>
+            <h2 style="margin:0; font-size: 1.1rem; color: var(--primary)">CoGS Master Records</h2>
+            <div id="contextPnDisplay" class="pn-chip">All Records</div>
         </div>
+        <button onclick="window.parent.postMessage({type:'CLOSE_MODAL'}, '*')" style="background:none; border:none; cursor:pointer; color:var(--text-light)">
+            <span class="material-icons">close</span>
+        </button>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 120px;">Ref No</th>
+                    <th class="align-left">CoGS Part Identification</th>
+                    <th style="width: 100px;">A/C Reg</th>
+                    <th style="width: 120px;">Category</th>
+                    <th style="width: 120px;">Status</th>
+                    <th style="width: 150px;">PIC</th>
+                    <th style="width: 80px;">Link</th>
+                </tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+        </table>
     </div>
 
 <script>
+    // API from Repo 1
     const API_URL = "https://script.google.com/macros/s/AKfycbykCrJU0KPIYW9TVdLZNw-OAillhUjc1QcFG3xTflN4Yb1UmOwCr3YB6jiKgcUMkB2N/exec";
-    let masterData = [];
-    let filteredData = [];
-    let currentPage = 1;
-    let rowsPerPage = 10;
+    
+    // Get PN from URL (Context)
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetPn = urlParams.get('pn');
 
-    function closeModal() { window.parent.postMessage({ type: 'CLOSE_COGS_MODAL' }, '*'); }
-
-    function toggleLoading(show) {
-        document.getElementById('localLoader').style.display = show ? 'flex' : 'none';
+    if (targetPn) {
+        document.getElementById('contextPnDisplay').innerText = `Target: ${targetPn}`;
     }
 
-    async function fetchData() {
-        toggleLoading(true);
+    async function fetchAndFilter() {
         try {
             const res = await fetch(`${API_URL}?action=getCoGSList`);
             const json = await res.json();
+            
             if (json.status === "success") {
-                masterData = json.data;
-                filterData(document.getElementById('searchInput').value || "");
+                let data = json.data;
+
+                // SMART FAA FILTERING LOGIC
+                if (targetPn) {
+                    data = data.filter(item => {
+                        // 1. Clean the database PN string (remove quotes, newlines)
+                        const dbPnString = String(item.pn || "").replace(/["\r\n]/g, " ").toUpperCase();
+                        
+                        // 2. Clean the target PN (handle potential "-SERIES" suffixes if necessary)
+                        const searchPn = targetPn.toUpperCase().trim();
+
+                        // 3. Match Logic: Check if target exists as a word or substring in the series
+                        // This works for "325-026-001-0" matching a cell containing "325-026-001-0; 325-034-901-0"
+                        return dbPnString.includes(searchPn);
+                    });
+                }
+
+                renderTable(data);
             }
-        } catch (e) { 
-            Swal.fire("Connection Error", "Check GAS deployment", "error"); 
+        } catch (e) {
+            console.error(e);
         } finally {
-            toggleLoading(false);
+            document.getElementById('loading').style.display = 'none';
         }
-    }
-
-    function filterData(query) {
-        const q = query.toLowerCase().trim();
-        filteredData = masterData.filter(item => 
-            Object.values(item).some(val => {
-                if (typeof val === 'string') return val.toLowerCase().includes(q);
-                return false;
-            })
-        );
-        document.getElementById('counter').innerText = `${filteredData.length} Records Found`;
-        currentPage = 1; 
-        updatePagination();
-    }
-
-    function changeRowsPerPage(val) {
-        rowsPerPage = parseInt(val);
-        currentPage = 1;
-        updatePagination();
-    }
-
-    function changePage(dir) {
-        currentPage += dir;
-        updatePagination();
-    }
-
-    function updatePagination() {
-        const totalPages = Math.ceil(filteredData.length / rowsPerPage) || 1;
-        if (currentPage > totalPages) currentPage = totalPages;
-        if (currentPage < 1) currentPage = 1;
-
-        document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
-        document.getElementById('prevBtn').disabled = (currentPage === 1);
-        document.getElementById('nextBtn').disabled = (currentPage === totalPages);
-
-        const start = (currentPage - 1) * rowsPerPage;
-        const pageData = filteredData.slice(start, end = start + rowsPerPage);
-        renderTable(pageData);
     }
 
     function renderTable(data) {
         const body = document.getElementById('logBody');
+        const statusColors = { 'Approved': '#286573', 'Submitted': '#16a34a', 'Revised': '#d97706', 'Created': '#94a3b8' };
+
         if (data.length === 0) {
-            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:100px; color: var(--text-light); font-weight: 500;">No matching logs found.</td></tr>';
+            body.innerHTML = `<tr><td colspan="7" style="padding:100px; color:var(--text-light)">No CoGS records found for this Part Number series.</td></tr>`;
             return;
         }
 
-        const statusStyles = {
-            'Created': '#94a3b8', 'Revised': '#d97706', 'Approved': '#3c92a6', 'Submitted': '#16a34a'
-        };
-
         body.innerHTML = data.map(row => `
             <tr>
-                <td style="font-family: monospace; font-weight: 700; color: var(--primary);">${row.orderNo}</td>
+                <td style="font-weight:700; color:var(--primary); font-family:monospace;">${row.orderNo}</td>
                 <td class="align-left">
-                    <div style="font-weight:700; font-size: 14px;">${row.pn}</div>
-                    <div style="font-size:11px; color:var(--text-light); text-transform:uppercase; font-weight:600;">${row.desc}</div>
+                    <div style="font-weight:700; font-size:0.8rem;">${row.pn}</div>
+                    <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase;">${row.desc}</div>
                 </td>
-                <td style="font-weight:700;">${row.acReg}</td>
+                <td style="font-weight:600;">${row.acReg}</td>
+                <td style="font-size:0.75rem;">${row.category}</td>
                 <td>
-                    <div style="display: flex; justify-content: center; gap:6px;">
-                        <span class="badge ${row.auth.dgca === 'YES' ? 'badge-yes' : 'badge-no'}">DGCA</span>
-                        <span class="badge ${row.auth.faa === 'YES' ? 'badge-yes' : 'badge-no'}">FAA</span>
-                        <span class="badge ${row.auth.easa === 'YES' ? 'badge-yes' : 'badge-no'}">EASA</span>
-                    </div>
+                    <span class="status-pill" style="background:${statusColors[row.status] || '#94a3b8'}">
+                        ${row.status}
+                    </span>
                 </td>
+                <td style="font-weight:600; font-size:0.8rem;">${row.pic}</td>
                 <td>
-                    <span class="status-pill" style="background:${statusStyles[row.status] || '#eee'};">${row.status}</span>
-                </td>
-                <td>
-                    <div class="pic-action-container">
-                        <div class="pic-name">${row.pic}</div>
-                        <span class="material-icons kebab-btn-mini" onclick="toggleMenu(event, '${row.orderNo}')">more_vert</span>
-                    </div>
-                    <div class="dropdown-menu" id="menu-${row.orderNo}">
-                        <div class="dropdown-item" onclick="openDetail('${row.orderNo}')"><span class="material-icons" style="font-size:18px;">visibility</span> View Details</div>
-                        <a href="${row.url}" target="_blank" class="dropdown-item"><span class="material-icons" style="font-size:18px;">description</span> Open Document</a>
-                        <div class="dropdown-item" style="color:#ef4444;" onclick="confirmDelete('${row.orderNo}')"><span class="material-icons" style="font-size:18px;">delete</span> Delete Record</div>
-                    </div>
+                    <a href="${row.url}" target="_blank" class="material-icons" style="text-decoration:none; color:var(--primary); font-size:1.2rem;">open_in_new</a>
                 </td>
             </tr>
         `).join('');
     }
 
-    function toggleMenu(e, orderNo) {
-        e.stopPropagation();
-        document.querySelectorAll('.dropdown-menu').forEach(m => {
-            if (m.id !== `menu-${orderNo}`) m.classList.remove('show');
-        });
-        const targetMenu = document.getElementById(`menu-${orderNo}`);
-        if(targetMenu) targetMenu.classList.toggle('show');
-    }
-
-    document.addEventListener('click', () => {
-        document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('show'));
-    });
-
-    function openDetail(orderNo) {
-        const row = masterData.find(r => r.orderNo === orderNo);
-        const container = document.getElementById('detailContent');
-        container.innerHTML = `
-            <div class="detail-row"><div class="detail-label">Order Reference</div><div class="detail-val">${row.orderNo}</div></div>
-            <div class="detail-row"><div class="detail-label">Part Number</div><div class="detail-val">${row.pn}</div></div>
-            <div class="detail-row"><div class="detail-label">Description</div><div class="detail-val">${row.desc}</div></div>
-            <div class="detail-row"><div class="detail-label">A/C Registration</div><div class="detail-val">${row.acReg}</div></div>
-            <div class="detail-row"><div class="detail-label">PIC Personnel</div><div class="detail-val">${row.pic}</div></div>
-            <hr style="margin:30px 0; border:0; border-top:1px solid var(--border);">
-            <div class="detail-row">
-                <div class="detail-label">Workflow Status</div>
-                <select class="status-edit" onchange="updateStatus('${row.orderNo}', this.value)">
-                    <option value="Created" ${row.status==='Created'?'selected':''}>Created</option>
-                    <option value="Revised" ${row.status==='Revised'?'selected':''}>Revised</option>
-                    <option value="Approved" ${row.status==='Approved'?'selected':''}>Approved</option>
-                    <option value="Submitted" ${row.status==='Submitted'?'selected':''}>Submitted</option>
-                </select>
-            </div>
-            <a href="${row.url}" target="_blank" style="display:flex; align-items:center; justify-content:center; gap:10px; padding:16px; background:var(--primary); color:white; text-decoration:none; border-radius:12px; font-weight:700; margin-top:30px; font-size:14px;">
-                <span class="material-icons">file_open</span> OPEN SOURCE FILE
-            </a>
-        `;
-        document.getElementById('detailOverlay').style.display = 'flex';
-    }
-
-    function closeDetail() { document.getElementById('detailOverlay').style.display = 'none'; }
-
-    async function updateStatus(orderNo, newStatus) {
-        toggleLoading(true);
-        try {
-            const res = await fetch(`${API_URL}?action=updateCoGSStatus`, {
-                method: 'POST',
-                body: JSON.stringify({ orderNo, newStatus })
-            });
-            const json = await res.json();
-            if(json.status === 'success') {
-                Swal.fire({ icon: 'success', title: 'Status Updated', timer: 1000, showConfirmButton: false });
-                await fetchData();
-                closeDetail();
-            }
-        } catch (e) { Swal.fire("Failed", "Update failed", "error"); }
-        finally { toggleLoading(false); }
-    }
-
-    function confirmDelete(orderNo) {
-        Swal.fire({
-            title: 'Delete Record?',
-            text: `Permanently remove Ref: ${orderNo}?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            confirmButtonText: 'Yes, Delete'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                toggleLoading(true);
-                try {
-                    const res = await fetch(`${API_URL}?action=deleteCoGS`, {
-                        method: 'POST',
-                        body: JSON.stringify({ orderNo })
-                    });
-                    const json = await res.json();
-                    if(json.status === 'success') {
-                        Swal.fire("Deleted", "Record removed.", "success");
-                        await fetchData();
-                    }
-                } catch (e) { Swal.fire("Error", "Delete failed", "error"); }
-                finally { toggleLoading(false); }
-            }
-        });
-    }
-
-    window.applyExternalPnFilter = function(pn) {
-        const searchInp = document.getElementById('searchInput');
-        if (searchInp) {
-            searchInp.value = pn;
-            const waitForData = setInterval(() => {
-                if (masterData && masterData.length > 0) {
-                    filterData(pn);
-                    clearInterval(waitForData);
-                }
-            }, 100);
-            setTimeout(() => clearInterval(waitForData), 5000);
-        }
-    };
-
-    fetchData();
+    fetchAndFilter();
 </script>
 </body>
 </html>
