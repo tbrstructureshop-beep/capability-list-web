@@ -540,6 +540,21 @@
         });
     }
 
+    window.applyExternalPnFilter = function(pn) {
+        const searchInp = document.getElementById('searchInput');
+        if (searchInp) {
+            searchInp.value = pn;
+            // Wait for masterData fetch to finish if it hasn't already
+            const waitForData = setInterval(() => {
+                if (masterData && masterData.length > 0) {
+                    filterData(pn);
+                    clearInterval(waitForData);
+                }
+            }, 100);
+            setTimeout(() => clearInterval(waitForData), 5000);
+        }
+    };
+
     // Initial Load
     fetchData();
 </script>
