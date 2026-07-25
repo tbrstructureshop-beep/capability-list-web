@@ -337,7 +337,8 @@
     let currentPage = 1;
     let rowsPerPage = 10;
 
-    function closeModal() { window.parent.postMessage({ type: 'CLOSE_MODAL' }, '*'); }
+    // Update this line
+    function closeModal() { window.parent.postMessage({ type: 'CLOSE_COGS_MODAL' }, '*'); }
 
     function toggleLoading(show) {
         document.getElementById('localLoader').style.display = show ? 'flex' : 'none';
@@ -360,18 +361,22 @@
     }
 
     function filterData(query) {
-        const q = query.toLowerCase();
-        // Container Search: Checks PN, SN, Desc, Order, PIC, AC Reg, Category, and Status
+        const q = query.toLowerCase().trim();
+        
+        // Handling "Lazy" FAA format: The logic checks if any cell CONTAINS the search term.
+        // This naturally works for semicolon-separated strings in your master database.
         filteredData = masterData.filter(item => 
-            Object.values(item).some(val => 
-                typeof val === 'string' && val.toLowerCase().includes(q)
-            ) || 
-            item.auth.dgca.toLowerCase().includes(q) || 
-            item.auth.faa.toLowerCase().includes(q) || 
-            item.auth.easa.toLowerCase().includes(q)
+            Object.values(item).some(val => {
+                if (typeof val === 'string') {
+                    // Normalize the cell content (remove extra spaces/newlines)
+                    return val.toLowerCase().replace(/\s+/g, ' ').includes(q);
+                }
+                return false;
+            })
         );
+        
         document.getElementById('counter').innerText = `${filteredData.length} Records Found`;
-        currentPage = 1; // Reset to page 1 on search
+        currentPage = 1; 
         updatePagination();
     }
 
@@ -404,7 +409,7 @@
     function renderTable(data) {
         const body = document.getElementById('logBody');
         if (data.length === 0) {
-            body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:100px; color: var(--text-light);">No matching data found.</td></tr>';
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:100px; color: var(--text-light);">No matching logs found.</td></tr>';
             return;
         }
 
@@ -419,7 +424,7 @@
                     <div style="font-weight:700; font-size: 0.85rem;">${row.pn}</div>
                     <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase; line-height:1.2;">${row.desc}</div>
                 </td>
-                <td style="font-weight:700; color: #475569;">${row.acReg}</td>
+                <td style="font-weight:700;">${row.acReg}</td>
                 <td>
                     <div class="badge-group" style="justify-content: center; gap:4px;">
                         <span class="badge ${row.auth.dgca === 'YES' ? 'badge-yes' : 'badge-no'}">DGCA</span>
@@ -430,15 +435,15 @@
                 <td>
                     <span class="status-pill" style="background:${statusStyles[row.status] || '#eee'}; color:white;">${row.status}</span>
                 </td>
-                <td style="position: relative;"> <!-- Tambahkan position relative di sini -->
+                <td style="position: relative;">
                     <div class="pic-action-container">
                         <div class="pic-name">${row.pic}</div>
                         <span class="material-icons kebab-btn-mini" onclick="toggleMenu(event, '${row.orderNo}')">more_vert</span>
                     </div>
-                    <!-- Dropdown diletakkan di dalam TD yang sama -->
+                    <!-- Menu is anchored to the relative TD -->
                     <div class="dropdown-menu" id="menu-${row.orderNo}">
                         <div class="dropdown-item" onclick="openDetail('${row.orderNo}')"><span class="material-icons" style="font-size:16px;">visibility</span> Details</div>
-                        <a href="${row.url}" target="_blank" class="dropdown-item"><span class="material-icons" style="font-size:16px;">file_open</span> Open</a>
+                        <a href="${row.url}" target="_blank" class="dropdown-item"><span class="material-icons" style="font-size:16px;">file_open</span> Open File</a>
                         <hr style="margin:4px 0; border:0; border-top:1px solid #eee;">
                         <div class="dropdown-item" style="color:#be123c;" onclick="confirmDelete('${row.orderNo}')"><span class="material-icons" style="font-size:16px;">delete_forever</span> Delete</div>
                     </div>
