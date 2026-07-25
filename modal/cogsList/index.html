@@ -9,11 +9,13 @@
     <style>
         :root {
             --primary: #286573;
+            --primary-dark: #1f4e54;
             --primary-light: #eef6f7;
             --text-main: #1e293b;
             --text-light: #64748b;
             --border: #e2e8f0;
             --bg: #f8fafc;
+            --white: #ffffff;
         }
 
         body { 
@@ -21,30 +23,59 @@
             background: var(--bg); 
             margin: 0; padding: 20px; 
             height: 100vh; display: flex; flex-direction: column; box-sizing: border-box; 
+            overflow: hidden;
         }
 
         /* Header Style */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0; }
+        .header { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; flex-shrink: 0; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header-bottom { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+        
         .title-group { display: flex; align-items: center; gap: 12px; }
         .pn-chip { 
-            background: var(--primary); color: white; padding: 4px 12px; 
-            border-radius: 6px; font-size: 0.85rem; font-weight: 700; 
+            background: var(--primary-light); color: var(--primary); padding: 4px 12px; 
+            border-radius: 20px; font-size: 0.75rem; font-weight: 800; border: 1px solid rgba(40, 101, 115, 0.2);
         }
+
+        /* Search Pill */
+        .search-wrapper { position: relative; flex: 0 1 300px; }
+        .search-wrapper input {
+            width: 100%; height: 38px; padding: 0 15px 0 38px;
+            border-radius: 20px; border: 1.5px solid var(--border);
+            font-size: 0.8rem; outline: none; transition: 0.2s;
+        }
+        .search-wrapper input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(40, 101, 115, 0.1); }
+        .search-wrapper .material-icons { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 1.1rem; }
 
         /* Table Style */
         .table-wrapper { 
-            background: white; border-radius: 12px; border: 1px solid var(--border); 
-            overflow: auto; flex-grow: 1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            background: white; border-radius: 12px 12px 0 0; border: 1px solid var(--border); 
+            overflow: auto; flex-grow: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        thead { position: sticky; top: 0; z-index: 10; background: #f8fafc; }
         th { 
-            position: sticky; top: 0; background: #f1f5f9; padding: 14px; 
-            font-size: 0.7rem; text-transform: uppercase; color: var(--text-light); 
-            text-align: center; border-bottom: 2px solid var(--border); z-index: 10;
+            padding: 14px; font-size: 0.7rem; text-transform: uppercase; color: var(--text-light); 
+            text-align: center; border-bottom: 2px solid var(--border);
         }
-        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-align: center; }
-        
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.85rem; text-align: center; height: 60px; box-sizing: border-box;}
         .align-left { text-align: left !important; }
+
+        /* Pagination Bar */
+        .pagination-bar {
+            background: var(--white); padding: 12px 24px; border: 1px solid var(--border);
+            border-top: none; border-radius: 0 0 12px 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-shrink: 0; font-size: 0.8rem; color: var(--text-light);
+        }
+        .pag-controls { display: flex; align-items: center; gap: 8px; }
+        .pag-btn { 
+            background: var(--white); border: 1px solid var(--border); 
+            padding: 4px 8px; border-radius: 6px; cursor: pointer; 
+            display: flex; align-items: center;
+        }
+        .pag-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pag-btn:hover:not(:disabled) { background: var(--primary-light); color: var(--primary); }
 
         /* Loader */
         .loader { 
@@ -62,18 +93,28 @@
 
     <div id="loading" class="loader">
         <div class="spinner"></div>
-        <p style="font-size: 0.7rem; font-weight: 700; color: var(--primary); margin-top: 10px;">FILTERING SERIES DATA...</p>
+        <p style="font-size: 0.7rem; font-weight: 700; color: var(--primary); margin-top: 10px;">SYNCING RECORDS...</p>
     </div>
 
     <div class="header">
-        <div class="title-group">
-            <span class="material-icons" style="color: var(--primary)">account_balance_wallet</span>
-            <h2 style="margin:0; font-size: 1.1rem; color: var(--primary)">CoGS Master Records</h2>
-            <div id="contextPnDisplay" class="pn-chip">All Records</div>
+        <div class="header-top">
+            <div class="title-group">
+                <span class="material-icons" style="color: var(--primary)">fact_check</span>
+                <h2 style="margin:0; font-size: 1.1rem; color: var(--primary)">CoGS Master Log</h2>
+                <div id="contextPnDisplay" class="pn-chip">All Categories</div>
+                <div id="counter" style="font-size: 0.65rem; font-weight: 800; color: var(--text-light); background: #eee; padding: 3px 10px; border-radius: 20px;">0 Records</div>
+            </div>
+            <button onclick="window.parent.postMessage({type:'CLOSE_MODAL'}, '*')" style="background:none; border:none; cursor:pointer; color:var(--text-light)">
+                <span class="material-icons">close</span>
+            </button>
         </div>
-        <button onclick="window.parent.postMessage({type:'CLOSE_MODAL'}, '*')" style="background:none; border:none; cursor:pointer; color:var(--text-light)">
-            <span class="material-icons">close</span>
-        </button>
+
+        <div class="header-bottom">
+            <div class="search-wrapper">
+                <span class="material-icons">search</span>
+                <input type="text" id="searchInput" placeholder="Search in results..." oninput="filterData(this.value)">
+            </div>
+        </div>
     </div>
 
     <div class="table-wrapper">
@@ -85,19 +126,43 @@
                     <th style="width: 100px;">A/C Reg</th>
                     <th style="width: 120px;">Category</th>
                     <th style="width: 120px;">Status</th>
-                    <th style="width: 150px;">PIC</th>
-                    <th style="width: 80px;">Link</th>
+                    <th style="width: 150px;">Personnel</th>
+                    <th style="width: 80px;">Action</th>
                 </tr>
             </thead>
             <tbody id="logBody"></tbody>
         </table>
     </div>
 
+    <div class="pagination-bar">
+        <div>
+            Show 
+            <select id="rowsPerPage" style="padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border);" onchange="changeRowsPerPage(this.value)">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+        <div id="pageInfo">Page 1 of 1</div>
+        <div class="pag-controls">
+            <button class="pag-btn" id="prevBtn" onclick="changePage(-1)">
+                <span class="material-icons" style="font-size:18px">chevron_left</span>
+            </button>
+            <button class="pag-btn" id="nextBtn" onclick="changePage(1)">
+                <span class="material-icons" style="font-size:18px">chevron_right</span>
+            </button>
+        </div>
+    </div>
+
 <script>
-    // API from Repo 1
     const API_URL = "https://script.google.com/macros/s/AKfycbykCrJU0KPIYW9TVdLZNw-OAillhUjc1QcFG3xTflN4Yb1UmOwCr3YB6jiKgcUMkB2N/exec";
     
-    // Get PN from URL (Context)
+    // Pagination & Data State
+    let masterData = [];    // Raw data from context filter
+    let filteredData = [];  // Data after search input
+    let currentPage = 1;
+    let rowsPerPage = 10;
+
     const urlParams = new URLSearchParams(window.location.search);
     const targetPn = urlParams.get('pn');
 
@@ -113,22 +178,20 @@
             if (json.status === "success") {
                 let data = json.data;
 
-                // SMART FAA FILTERING LOGIC
+                // 1. Apply initial Context Filter (Target PN)
                 if (targetPn) {
-                    data = data.filter(item => {
-                        // 1. Clean the database PN string (remove quotes, newlines)
+                    const searchPn = targetPn.toUpperCase().trim();
+                    masterData = data.filter(item => {
                         const dbPnString = String(item.pn || "").replace(/["\r\n]/g, " ").toUpperCase();
-                        
-                        // 2. Clean the target PN (handle potential "-SERIES" suffixes if necessary)
-                        const searchPn = targetPn.toUpperCase().trim();
-
-                        // 3. Match Logic: Check if target exists as a word or substring in the series
-                        // This works for "325-026-001-0" matching a cell containing "325-026-001-0; 325-034-901-0"
                         return dbPnString.includes(searchPn);
                     });
+                } else {
+                    masterData = data;
                 }
 
-                renderTable(data);
+                // 2. Set to filtered and update UI
+                filteredData = [...masterData];
+                updatePagination();
             }
         } catch (e) {
             console.error(e);
@@ -137,12 +200,55 @@
         }
     }
 
+    // --- Search Logic ---
+    function filterData(query) {
+        const q = query.toLowerCase();
+        filteredData = masterData.filter(item => 
+            item.orderNo.toLowerCase().includes(q) ||
+            item.pn.toLowerCase().includes(q) ||
+            item.pic.toLowerCase().includes(q) ||
+            item.acReg.toLowerCase().includes(q) ||
+            item.desc.toLowerCase().includes(q)
+        );
+        currentPage = 1;
+        updatePagination();
+    }
+
+    // --- Pagination Logic ---
+    function changeRowsPerPage(val) {
+        rowsPerPage = parseInt(val);
+        currentPage = 1;
+        updatePagination();
+    }
+
+    function changePage(dir) {
+        currentPage += dir;
+        updatePagination();
+    }
+
+    function updatePagination() {
+        const total = filteredData.length;
+        document.getElementById('counter').innerText = `${total} Records`;
+
+        const totalPages = Math.ceil(total / rowsPerPage) || 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        document.getElementById('pageInfo').innerText = `Page ${currentPage} of ${totalPages}`;
+        document.getElementById('prevBtn').disabled = (currentPage === 1);
+        document.getElementById('nextBtn').disabled = (currentPage === totalPages);
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        renderTable(filteredData.slice(start, end));
+    }
+
     function renderTable(data) {
         const body = document.getElementById('logBody');
         const statusColors = { 'Approved': '#286573', 'Submitted': '#16a34a', 'Revised': '#d97706', 'Created': '#94a3b8' };
 
         if (data.length === 0) {
-            body.innerHTML = `<tr><td colspan="7" style="padding:100px; color:var(--text-light)">No CoGS records found for this Part Number series.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="7" style="padding:100px; color:var(--text-light)">No matching records found.</td></tr>`;
             return;
         }
 
@@ -151,9 +257,9 @@
                 <td style="font-weight:700; color:var(--primary); font-family:monospace;">${row.orderNo}</td>
                 <td class="align-left">
                     <div style="font-weight:700; font-size:0.8rem;">${row.pn}</div>
-                    <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase;">${row.desc}</div>
+                    <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase; line-height:1.2;">${row.desc}</div>
                 </td>
-                <td style="font-weight:600;">${row.acReg}</td>
+                <td style="font-weight:700; color:#475569;">${row.acReg}</td>
                 <td style="font-size:0.75rem;">${row.category}</td>
                 <td>
                     <span class="status-pill" style="background:${statusColors[row.status] || '#94a3b8'}">
