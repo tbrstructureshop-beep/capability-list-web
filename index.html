@@ -1981,6 +1981,15 @@
       dropdown.classList.toggle('active', !isActive);
     }
 
+    window.addEventListener('message', (event) => {
+      // Handle signals from any child iframe
+      if (event.data.type === 'CLOSE_MODAL') {
+        closeCoGS(); // Close the CoGS modal
+        closeUpdateSourceModal(); // Close others if they use the same signal
+        closeAuthPersonModal();
+      }
+    });
+
     // Close dropdowns on outside click
     window.addEventListener('click', () => {
       document.querySelectorAll('.context-dropdown').forEach(d => d.classList.remove('active'));
@@ -2006,6 +2015,15 @@
       `;
       modal.style.display = "flex";
     }
+
+    function closeCoGS() {
+      const modal = document.getElementById("cogsModalOverlay");
+      if (modal) {
+        modal.style.display = "none";
+        modal.innerHTML = ""; // Clear iframe to save memory/stop processes
+      }
+    }
+    
     function openMaterial(pn) { Swal.fire("Material", "Opening Materials for " + pn, "info"); }
     function openManual(pn) { Swal.fire("Manual", "Opening Manual for " + pn, "info"); }
     function openAttachment(pn) { Swal.fire("Attachment", "Opening Attachments for " + pn, "info"); }
