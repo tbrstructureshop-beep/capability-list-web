@@ -989,9 +989,6 @@
 </div>
 
 <div id="modalUpdateSourceContainer"></div>
-
-<!-- Container for CoGS Master Log Modal -->
-<div id="cogsListModalOverlay" class="modal-overlay"></div>
   
 <script src="../auth/script.js"></script>
   <script>
@@ -1989,63 +1986,8 @@
       document.querySelectorAll('.context-dropdown').forEach(d => d.classList.remove('active'));
     });
 
-    async function openCoGS(pn) {
-      showLoader();
-      const targetPath = "modal/cogsList/index.html"; 
-      const overlay = document.getElementById("cogsListModalOverlay");
-      
-      try {
-        const response = await fetch(targetPath);
-        if (!response.ok) throw new Error("File not found");
-        let html = await response.text();
-        
-        // 1. EXTRACT THE STYLE AND BODY CONTENT
-        // This ensures styles are applied and we don't nest <html> tags
-        const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/i);
-        const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/i);
-        
-        const styles = styleMatch ? styleMatch[0] : "";
-        const bodyContent = bodyMatch ? bodyMatch[1] : html;
-    
-        // 2. WRAP IN A CONTAINER (.modal-card)
-        // We add specific dimensions here so the flexbox inside has a height to fill
-        overlay.innerHTML = `
-          ${styles}
-          <div class="modal-card" style="width: 95%; max-width: 1400px; height: 90vh; display: flex; flex-direction: column; background: white;">
-            ${bodyContent}
-          </div>
-        `;
-        
-        overlay.style.display = "flex";
-    
-        // 3. RE-INJECT SCRIPTS (Your existing logic)
-        const scripts = overlay.querySelectorAll("script");
-        scripts.forEach(oldScript => {
-          const newScript = document.createElement("script");
-          newScript.text = oldScript.innerHTML;
-          document.body.appendChild(newScript);
-        });
-        
-        hideLoader();
-    
-        // 4. FILTER TRIGGER
-        if (pn) {
-          let attempts = 0;
-          const checkFilter = setInterval(() => {
-            if (typeof window.applyExternalPnFilter === "function") {
-              window.applyExternalPnFilter(pn);
-              clearInterval(checkFilter);
-            }
-            if (attempts++ > 50) clearInterval(checkFilter);
-          }, 100);
-        }
-      } catch (err) {
-        hideLoader();
-        console.error(err);
-        Swal.fire("Error", "Gagal memuat CoGS Log.", "error");
-      }
-    }
-    
+    // Dummy functions for menu actions
+    function openCoGS(pn) { Swal.fire("CoGS", "Opening CoGS for " + pn, "info"); }
     function openMaterial(pn) { Swal.fire("Material", "Opening Materials for " + pn, "info"); }
     function openManual(pn) { Swal.fire("Manual", "Opening Manual for " + pn, "info"); }
     function openAttachment(pn) { Swal.fire("Attachment", "Opening Attachments for " + pn, "info"); }
@@ -2621,13 +2563,6 @@
       document.getElementById("exportBtn").style.display = actionMode ? "inline-flex" : "none";
       renderCards(viewData);
     };
-
-    window.addEventListener('message', (e) => {
-      if (e.data.type === 'CLOSE_COGS_MODAL') {
-        const overlay = document.getElementById("cogsListModalOverlay");
-        if (overlay) overlay.style.display = "none";
-      }
-    });
 
     // Tambahkan efek border pada header saat scroll
     window.addEventListener('scroll', () => {
