@@ -177,24 +177,34 @@
             
             if (json.status === "success") {
                 let data = json.data;
-
-                // 1. Apply initial Context Filter (Target PN)
+    
                 if (targetPn) {
-                    const searchPn = targetPn.toUpperCase().trim();
-                    masterData = data.filter(item => {
-                        const dbPnString = String(item.pn || "").replace(/["\r\n]/g, " ").toUpperCase();
-                        return dbPnString.includes(searchPn);
+                    // 1. Create a "Search Array" from the Card's PN string
+                    // We split by semicolon, comma, or newlines and clean whitespace
+                    const targetParts = targetPn.toUpperCase()
+                        .replace(/["\r\n]/g, " ")      // Clean quotes/newlines
+                        .split(/[;,\n]/)               // Split by ; or , or newline
+                        .map(p => p.trim())            // Trim spaces
+                        .filter(p => p.length > 0);    // Remove empty entries
+    
+                    data = data.filter(item => {
+                        const dbPn = String(item.pn || "").toUpperCase().trim();
+                        
+                        // 2. SMART CHECK: 
+                        // Does any part of the Card's PN match the DB PN?
+                        return targetParts.some(part => {
+                            // We check both ways to handle "-SERIES" or partial matches
+                            return part.includes(dbPn) || dbPn.includes(part);
+                        });
                     });
-                } else {
-                    masterData = data;
                 }
-
-                // 2. Set to filtered and update UI
+    
+                masterData = data;
                 filteredData = [...masterData];
                 updatePagination();
             }
         } catch (e) {
-            console.error(e);
+            console.error("Fetch Error:", e);
         } finally {
             document.getElementById('loading').style.display = 'none';
         }
