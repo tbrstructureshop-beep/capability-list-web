@@ -723,7 +723,16 @@
     .timeline-btn:hover { background: var(--primary-light); transform: scale(1.1); }
 
     /* --- CARD CONTEXT MENU (Three Dots) --- */
-    .context-menu-wrapper { position: relative; display: inline-block; }
+    .context-menu-wrapper { 
+        position: relative; 
+        display: inline-block; 
+        z-index: 10; /* Base index */
+    }
+    
+    /* NEW: This lifts the specific menu container above other cards when active */
+    .context-menu-wrapper:has(.active) {
+        z-index: 9999 !important;
+    }
     
     .dot-menu-btn {
       background: var(--primary-light);
@@ -740,19 +749,19 @@
     .dot-menu-btn:hover { background: var(--primary); color: white; }
 
     .context-dropdown {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      width: 180px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: var(--shadow-md);
-      border: 1px solid var(--border);
-      display: none;
-      flex-direction: column;
-      z-index: 100;
-      margin-top: 8px;
-      overflow: hidden;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        width: 180px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); /* Stronger shadow for "Above" feel */
+        border: 1px solid var(--border);
+        display: none;
+        flex-direction: column;
+        z-index: 10000 !important; /* Maximum priority */
+        margin-top: 8px;
+        overflow: hidden;
     }
     
     .context-dropdown.active { display: flex !important; }
@@ -1953,10 +1962,16 @@
       const dropdown = btn.nextElementSibling;
       const isActive = dropdown.classList.contains('active');
       
-      // Close all other dropdowns
+      // 1. Close all other dropdowns first
       document.querySelectorAll('.context-dropdown').forEach(d => d.classList.remove('active'));
       
-      if (!isActive) dropdown.classList.add('active');
+      // 2. Toggle current
+      if (!isActive) {
+          dropdown.classList.add('active');
+      }
+      
+      // 3. Prevent the card from receiving the click
+      if (event) event.stopPropagation();
     }
 
     // Close dropdowns on outside click
